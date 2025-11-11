@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindPal - 登录</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 16px;
+      background: white;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      color: white;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.8);
+      font-size: 16px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.95);
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    input[type="tel"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .checkbox-group input {
+      margin-right: 8px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .test-info {
+      margin-top: 16px;
+      padding: 16px;
+      background: #F1F5F9;
+      border-radius: 8px;
+      text-align: center;
+      color: #64748B;
+      font-size: 14px;
+    }
+
+    .test-info p {
+      margin: 4px 0;
+    }
+
+    .test-info strong {
+      color: #334155;
+    }
+
+    .footer-link {
+      text-align: center;
+      margin-top: 24px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .footer-link a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">
+      <div class="logo-icon">🤖</div>
+      <h1>MindPal</h1>
+      <p class="subtitle">你的专属数字人伴侣</p>
+    </div>
+
+    <div class="card">
+      <form id="loginForm">
+        <div class="form-group">
+          <label>手机号</label>
+          <input type="tel" id="phone" value="13800138000" maxlength="11">
+        </div>
+
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="password" value="123456">
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="remember" checked>
+          <label for="remember">记住我</label>
+        </div>
+
+        <button type="submit" class="btn">登录</button>
+
+        <div class="test-info">
+          <p><strong>测试账号</strong></p>
+          <p>手机号：13800138000</p>
+          <p>密码：123456</p>
+          <p style="margin-top: 12px; color: #667eea;">✨ 已自动填充，直接点击登录即可</p>
+        </div>
+      </form>
+    </div>
+
+    <div class="footer-link">
+      <p>还没有账号？<a href="onboarding.html">立即注册</a></p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const phone = document.getElementById('phone').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const remember = document.getElementById('remember').checked;
+
+      if (!phone || !password) {
+        alert('请输入手机号和密码');
+        return;
+      }
+
+      // 保存登录状态
+      const userData = {
+        phone: phone,
+        isLoggedIn: true,
+        loginTime: new Date().toISOString()
+      };
+
+      localStorage.setItem('mindpal_user', JSON.stringify(userData));
+
+      if (remember) {
+        localStorage.setItem('mindpal_remember', 'true');
+      }
+
+      alert('登录成功！即将跳转...');
+
+      // 跳转到数字人列表页
+      setTimeout(() => {
+        window.location.href = 'dh-list.html';
+      }, 500);
+    });
+  </script>
+</body>
+</html>
