@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>对话 - MindPal</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .chat-page {
+      height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 顶部栏 */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-md) var(--spacing-lg);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      height: 60px;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+
+    .back-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .back-btn:hover {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--color-primary-1);
+    }
+
+    .dh-info-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .dh-avatar-small {
+      width: 36px;
+      height: 36px;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-md);
+    }
+
+    .dh-name-header {
+      font-size: var(--font-size-body-large);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+
+    /* 数字人显示区域 60vh */
+    .dh-display {
+      height: 60vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, var(--color-bg-dark) 100%);
+    }
+
+    .dh-avatar-large {
+      width: 200px;
+      height: 200px;
+      font-size: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-2xl);
+      background: var(--gradient-primary);
+      box-shadow: var(--shadow-glow);
+      animation: breathing 2s ease-in-out infinite;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .dh-emotion {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+    }
+
+    .emotion-icon {
+      font-size: 20px;
+    }
+
+    .dh-status {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+      text-align: center;
+      padding: var(--spacing-sm) var(--spacing-lg);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-full);
+    }
+
+    .dh-status.speaking {
+      color: var(--color-primary-1);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    /* 对话区域 */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--color-bg-dark);
+      overflow: hidden;
+    }
+
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--spacing-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .message {
+      display: flex;
+      gap: var(--spacing-sm);
+      animation: slideIn var(--duration-fast) var(--ease-custom);
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message-content.user {
+      background: var(--gradient-primary);
+      color: #FFFFFF;
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 12px 12px 4px 12px;
+      word-wrap: break-word;
+      line-height: 1.6;
+    }
+
+    .message-content.assistant {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: var(--color-text-primary);
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 12px 12px 12px 4px;
+      word-wrap: break-word;
+      line-height: 1.6;
+    }
+
+    /* 输入区域 */
+    .input-container {
+      padding: var(--spacing-lg);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      flex-shrink: 0;
+    }
+
+    .input-wrapper {
+      display: flex;
+      gap: var(--spacing-md);
+      align-items: flex-end;
+    }
+
+    .message-input {
+      flex: 1;
+      min-height: 48px;
+      max-height: 120px;
+      padding: 12px 16px;
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      resize: none;
+      font-family: inherit;
+      line-height: 1.6;
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .message-input::placeholder {
+      color: var(--color-text-placeholder);
+    }
+
+    .message-input:focus {
+      border-color: var(--color-primary-1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      outline: none;
+    }
+
+    .voice-btn {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      font-size: 20px;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      flex-shrink: 0;
+    }
+
+    .voice-btn:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: var(--color-primary-1);
+      color: var(--color-primary-1);
+    }
+
+    .voice-btn.recording {
+      background: var(--gradient-primary);
+      border-color: transparent;
+      color: #FFFFFF;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .send-btn {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gradient-primary);
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: 20px;
+      color: #FFFFFF;
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      box-shadow: var(--shadow);
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover:not(:disabled) {
+      transform: scale(1.1);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+      .dh-display {
+        height: 50vh;
+      }
+
+      .dh-avatar-large {
+        width: 140px;
+        height: 140px;
+        font-size: 100px;
+      }
+
+      .message-content.user,
+      .message-content.assistant {
+        max-width: 85%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-page page-transition">
+    <!-- 顶部栏 -->
+    <header class="chat-header">
+      <div class="header-left">
+        <button class="back-btn" onclick="window.location.href='dh-list.html'">
+          ←
+        </button>
+        <div class="dh-info-header">
+          <div class="dh-avatar-small" id="dhAvatarSmall">👤</div>
+          <div class="dh-name-header" id="dhNameHeader">数字人</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-icon" onclick="clearChat()" title="清除对话">
+          🗑️
+        </button>
+        <button class="btn btn-icon" onclick="toggleSettings()" title="设置">
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <!-- 数字人显示区域 -->
+    <div class="dh-display">
+      <div class="dh-emotion" id="emotionDisplay">
+        <span class="emotion-icon">😊</span>
+        <span>心情愉悦</span>
+      </div>
+      <div class="dh-avatar-large" id="dhAvatarLarge">👤</div>
+      <div class="dh-status" id="dhStatus">在线</div>
+    </div>
+
+    <!-- 对话区域 -->
+    <div class="chat-container">
+      <div class="messages-container" id="messagesContainer">
+        <!-- 消息将动态添加 -->
+      </div>
+
+      <!-- 输入区域 -->
+      <div class="input-container">
+        <div class="input-wrapper">
+          <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceInput()" title="语音输入">
+            🎤
+          </button>
+          <textarea
+            id="messageInput"
+            class="message-input"
+            placeholder="输入消息..."
+            rows="1"
+          ></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+            ➤
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 获取URL参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const dhId = parseInt(urlParams.get('id'));
+
+    // 加载数字人数据
+    let currentDH = null;
+    let messages = [];
+    let isRecording = false;
+
+    function loadDigitalHuman() {
+      const digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
+      currentDH = digitalHumans.find(dh => dh.id === dhId);
+
+      if (!currentDH) {
+        alert('数字人不存在');
+        window.location.href = 'dh-list.html';
+        return;
+      }
+
+      // 更新UI
+      document.getElementById('dhNameHeader').textContent = currentDH.name;
+      document.getElementById('dhAvatarSmall').textContent = currentDH.avatarEmoji || '👤';
+      document.getElementById('dhAvatarLarge').textContent = currentDH.avatarEmoji || '👤';
+
+      // 加载历史消息
+      loadMessages();
+    }
+
+    // 加载消息
+    function loadMessages() {
+      const messagesKey = `mindpal_messages_${dhId}`;
+      messages = JSON.parse(localStorage.getItem(messagesKey) || '[]');
+
+      renderMessages();
+
+      if (messages.length === 0) {
+        // 添加欢迎消息
+        addMessage('assistant', `你好！我是${currentDH.name}，很高兴认识你。有什么我可以帮你的吗？`);
+      }
+    }
+
+    // 渲染消息
+    function renderMessages() {
+      const container = document.getElementById('messagesContainer');
+      container.innerHTML = '';
+
+      messages.forEach(msg => {
+        const messageEl = createMessageElement(msg);
+        container.appendChild(messageEl);
+      });
+
+      // 滚动到底部
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // 创建消息元素
+    function createMessageElement(msg) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${msg.role}`;
+
+      const contentDiv = document.createElement('div');
+      contentDiv.className = `message-content ${msg.role}`;
+      contentDiv.textContent = msg.content;
+
+      messageDiv.appendChild(contentDiv);
+      return messageDiv;
+    }
+
+    // 添加消息
+    function addMessage(role, content) {
+      const message = {
+        role: role,
+        content: content,
+        timestamp: new Date().toISOString()
+      };
+
+      messages.push(message);
+      saveMessages();
+
+      const messageEl = createMessageElement(message);
+      document.getElementById('messagesContainer').appendChild(messageEl);
+
+      // 滚动到底部
+      const container = document.getElementById('messagesContainer');
+      container.scrollTop = container.scrollHeight;
+
+      // 更新数字人统计
+      updateDHStats();
+    }
+
+    // 保存消息
+    function saveMessages() {
+      const messagesKey = `mindpal_messages_${dhId}`;
+      localStorage.setItem(messagesKey, JSON.stringify(messages));
+    }
+
+    // 更新数字人统计
+    function updateDHStats() {
+      const digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
+      const dhIndex = digitalHumans.findIndex(dh => dh.id === dhId);
+
+      if (dhIndex >= 0) {
+        digitalHumans[dhIndex].lastChatAt = new Date().toISOString();
+        digitalHumans[dhIndex].messageCount = messages.length;
+        localStorage.setItem('mindpal_digital_humans', JSON.stringify(digitalHumans));
+      }
+    }
+
+    // 发送消息
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const content = input.value.trim();
+
+      if (!content) return;
+
+      // 添加用户消息
+      addMessage('user', content);
+      input.value = '';
+      adjustTextareaHeight();
+      document.getElementById('sendBtn').disabled = true;
+
+      // 显示正在输入状态
+      const status = document.getElementById('dhStatus');
+      status.textContent = '正在输入...';
+      status.classList.add('speaking');
+
+      // 调用后端API获取AI回复
+      try {
+        await generateReply(content);
+        status.textContent = '在线';
+        status.classList.remove('speaking');
+        document.getElementById('sendBtn').disabled = false;
+      } catch (error) {
+        console.error('发送消息失败:', error);
+        addMessage('assistant', '抱歉，我遇到了一些问题。请稍后再试。');
+        status.textContent = '在线';
+        status.classList.remove('speaking');
+        document.getElementById('sendBtn').disabled = false;
+      }
+    }
+
+    // 生成AI回复（调用后端API）
+    async function generateReply(userMessage) {
+      const token = localStorage.getItem('mindpal_token');
+      if (!token) {
+        throw new Error('未登录');
+      }
+
+      const response = await fetch('http://localhost:5000/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          dhId: parseInt(dhId),
+          message: userMessage
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('API请求失败');
+      }
+
+      // 处理流式响应
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let aiMessage = '';
+      let messageElement = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.chunk) {
+                aiMessage += data.chunk;
+
+                // 如果还没有创建消息元素，创建一个
+                if (!messageElement) {
+                  const messagesContainer = document.getElementById('messagesContainer');
+                  const messageDiv = document.createElement('div');
+                  messageDiv.className = 'message assistant';
+                  messageDiv.innerHTML = `
+                    <div class="message-avatar">${currentDH.avatarEmoji}</div>
+                    <div class="message-bubble"></div>
+                  `;
+                  messagesContainer.appendChild(messageDiv);
+                  messageElement = messageDiv.querySelector('.message-bubble');
+                  scrollToBottom();
+                }
+
+                // 更新消息内容
+                messageElement.textContent = aiMessage;
+                scrollToBottom();
+              } else if (data.done) {
+                // 消息完成，保存到本地
+                messages.push({
+                  role: 'assistant',
+                  content: aiMessage,
+                  timestamp: new Date().toISOString(),
+                  emotion: data.emotion || 'neutral'
+                });
+                saveMessages();
+              } else if (data.error) {
+                throw new Error(data.error);
+              }
+            } catch (e) {
+              console.error('解析流式数据失败:', e);
+            }
+          }
+        }
+      }
+    }
+
+    // 输入框自动调整高度
+    const messageInput = document.getElementById('messageInput');
+    messageInput.addEventListener('input', function() {
+      adjustTextareaHeight();
+
+      // 启用/禁用发送按钮
+      const sendBtn = document.getElementById('sendBtn');
+      sendBtn.disabled = !this.value.trim();
+    });
+
+    function adjustTextareaHeight() {
+      const textarea = document.getElementById('messageInput');
+      textarea.style.height = '48px';
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+
+    // 回车发送
+    messageInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // 语音输入
+    function toggleVoiceInput() {
+      const voiceBtn = document.getElementById('voiceBtn');
+
+      if (isRecording) {
+        // 停止录音
+        isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceBtn.textContent = '🎤';
+        alert('语音识别功能开发中...');
+      } else {
+        // 开始录音
+        isRecording = true;
+        voiceBtn.classList.add('recording');
+        voiceBtn.textContent = '⏸';
+      }
+    }
+
+    // 清除对话
+    function clearChat() {
+      if (!confirm('确定要清除所有对话记录吗？')) {
+        return;
+      }
+
+      messages = [];
+      saveMessages();
+      renderMessages();
+
+      // 添加欢迎消息
+      addMessage('assistant', `对话已清除。有什么新的话题想聊吗？`);
+    }
+
+    // 设置
+    function toggleSettings() {
+      alert('设置功能开发中...');
+    }
+
+    // 页面加载
+    window.addEventListener('load', loadDigitalHuman);
+  </script>
+</body>
+</html>

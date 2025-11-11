@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>创建数字人 - 选择形象</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .create-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 顶部导航 */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-md) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-size: var(--font-size-body-large);
+      transition: color var(--duration-fast) var(--ease-in-out);
+    }
+
+    .nav-back:hover {
+      color: var(--color-primary-1);
+    }
+
+    .nav-title {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    /* 步骤指示器 */
+    .create-stepper {
+      padding: var(--spacing-xl) var(--spacing-2xl);
+      background: var(--color-bg-dark);
+    }
+
+    /* 主内容区 */
+    .create-content {
+      flex: 1;
+      padding: var(--spacing-2xl);
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .content-header {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .content-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .content-description {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+    }
+
+    /* 形象选择网格 */
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .avatar-card {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-lg);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .avatar-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity var(--duration-fast) var(--ease-in-out);
+      z-index: 0;
+    }
+
+    .avatar-card:hover::before {
+      opacity: 0.1;
+    }
+
+    .avatar-card:hover {
+      border-color: var(--color-primary-1);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .avatar-card.selected {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.1);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .avatar-card.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 28px;
+      height: 28px;
+      background: var(--gradient-primary);
+      color: #FFFFFF;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: var(--font-weight-bold);
+      font-size: var(--font-size-body);
+      box-shadow: var(--shadow-glow);
+      z-index: 1;
+    }
+
+    .avatar-image {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto var(--spacing-md);
+      font-size: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-xl);
+      background: rgba(30, 41, 59, 0.6);
+      position: relative;
+      z-index: 1;
+    }
+
+    .avatar-label {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-medium);
+      margin-bottom: var(--spacing-xs);
+      position: relative;
+      z-index: 1;
+    }
+
+    .avatar-description {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+      position: relative;
+      z-index: 1;
+    }
+
+    .avatar-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 4px 8px;
+      background: rgba(244, 114, 182, 0.2);
+      color: var(--color-secondary-pink);
+      font-size: var(--font-size-body-small);
+      border-radius: var(--radius-sm);
+      font-weight: var(--font-weight-medium);
+      z-index: 1;
+    }
+
+    /* 自定义上传区域 */
+    .custom-upload {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-2xl);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      margin-top: var(--spacing-lg);
+    }
+
+    .custom-upload:hover {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .upload-title {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .upload-hint {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+    }
+
+    #avatarFileInput {
+      display: none;
+    }
+
+    /* 底部操作栏 */
+    .create-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      bottom: 0;
+    }
+
+    .footer-left {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .footer-right {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .top-nav,
+      .create-stepper,
+      .create-content,
+      .create-footer {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+      }
+
+      .avatar-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: var(--spacing-md);
+      }
+
+      .avatar-image {
+        width: 100px;
+        height: 100px;
+        font-size: 60px;
+      }
+
+      .create-footer {
+        flex-direction: column;
+        gap: var(--spacing-md);
+      }
+
+      .footer-left,
+      .footer-right {
+        width: 100%;
+      }
+
+      .footer-right .btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="create-page page-transition">
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+      <a href="dh-list.html" class="nav-back">
+        <span>←</span>
+        <span>返回</span>
+      </a>
+      <h2 class="nav-title">创建数字人</h2>
+      <div style="width: 60px;"></div>
+    </nav>
+
+    <!-- 步骤指示器 -->
+    <div class="create-stepper">
+      <div class="stepper">
+        <div class="step active">
+          <div class="step-circle">1</div>
+          <div class="step-label">选择形象</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">2</div>
+          <div class="step-label">设置性格</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">3</div>
+          <div class="step-label">选择声音</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">4</div>
+          <div class="step-label">设置知识库</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">5</div>
+          <div class="step-label">确认创建</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="create-content">
+      <div class="content-header">
+        <h1 class="content-title gradient-text">选择数字人形象</h1>
+        <p class="content-description">选择一个你喜欢的形象，或上传自定义头像</p>
+      </div>
+
+      <!-- 形象选择 -->
+      <div class="avatar-grid">
+        <div class="avatar-card" data-avatar="girl-cute" onclick="selectAvatar(this)">
+          <span class="avatar-badge">推荐</span>
+          <div class="avatar-image">👧</div>
+          <div class="avatar-label">可爱女生</div>
+          <div class="avatar-description">甜美温柔，活泼开朗</div>
+        </div>
+
+        <div class="avatar-card" data-avatar="girl-elegant" onclick="selectAvatar(this)">
+          <div class="avatar-image">👩</div>
+          <div class="avatar-label">优雅女性</div>
+          <div class="avatar-description">知性大方，温文尔雅</div>
+        </div>
+
+        <div class="avatar-card" data-avatar="boy-sunny" onclick="selectAvatar(this)">
+          <div class="avatar-image">👦</div>
+          <div class="avatar-label">阳光男生</div>
+          <div class="avatar-description">青春活力，积极向上</div>
+        </div>
+
+        <div class="avatar-card" data-avatar="man-mature" onclick="selectAvatar(this)">
+          <div class="avatar-image">👨</div>
+          <div class="avatar-label">成熟男性</div>
+          <div class="avatar-description">沉稳可靠，理性睿智</div>
+        </div>
+
+        <div class="avatar-card" data-avatar="girl-cool" onclick="selectAvatar(this)">
+          <div class="avatar-image">🧑‍🎤</div>
+          <div class="avatar-label">酷女孩</div>
+          <div class="avatar-description">个性独特，时尚前卫</div>
+        </div>
+
+        <div class="avatar-card" data-avatar="scholar" onclick="selectAvatar(this)">
+          <div class="avatar-image">👨‍🎓</div>
+          <div class="avatar-label">学者</div>
+          <div class="avatar-description">博学多识，专业权威</div>
+        </div>
+
+        <div class="avatar-card" data-avatar="artist" onclick="selectAvatar(this)">
+          <span class="avatar-badge">新品</span>
+          <div class="avatar-image">🧑‍🎨</div>
+          <div class="avatar-label">艺术家</div>
+          <div class="avatar-description">富有创意，浪漫感性</div>
+        </div>
+
+        <div class="avatar-card" data-avatar="scientist" onclick="selectAvatar(this)">
+          <div class="avatar-image">🧑‍🔬</div>
+          <div class="avatar-label">科学家</div>
+          <div class="avatar-description">严谨认真，逻辑清晰</div>
+        </div>
+      </div>
+
+      <!-- 自定义上传 -->
+      <div class="custom-upload" onclick="document.getElementById('avatarFileInput').click()">
+        <div class="upload-icon">📸</div>
+        <div class="upload-title">上传自定义头像</div>
+        <div class="upload-hint">支持 JPG、PNG 格式，建议尺寸 512x512</div>
+        <input type="file" id="avatarFileInput" accept="image/*">
+      </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <footer class="create-footer">
+      <div class="footer-left">
+        <button class="btn btn-text" onclick="saveDraft()">
+          💾 保存草稿
+        </button>
+      </div>
+      <div class="footer-right">
+        <button class="btn btn-secondary" onclick="window.location.href='dh-list.html'">
+          取消
+        </button>
+        <button class="btn btn-primary" id="nextBtn" onclick="goToNextStep()" disabled>
+          下一步
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // 初始化数字人数据
+    let dhData = JSON.parse(sessionStorage.getItem('create_dh_data') || '{}');
+
+    // 如果有保存的数据，恢复选择
+    if (dhData.avatar) {
+      const savedCard = document.querySelector(`[data-avatar="${dhData.avatar}"]`);
+      if (savedCard) {
+        savedCard.classList.add('selected');
+        document.getElementById('nextBtn').disabled = false;
+      }
+    }
+
+    // 选择形象
+    function selectAvatar(element) {
+      // 移除所有选中状态
+      document.querySelectorAll('.avatar-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+
+      // 选中当前卡片
+      element.classList.add('selected');
+
+      // 保存选择
+      const avatarType = element.dataset.avatar;
+      dhData.avatar = avatarType;
+      dhData.avatarEmoji = element.querySelector('.avatar-image').textContent;
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+
+      // 启用下一步按钮
+      document.getElementById('nextBtn').disabled = false;
+    }
+
+    // 文件上传
+    document.getElementById('avatarFileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        // 验证文件类型
+        if (!file.type.startsWith('image/')) {
+          alert('请上传图片文件');
+          return;
+        }
+
+        // 验证文件大小（最大5MB）
+        if (file.size > 5 * 1024 * 1024) {
+          alert('图片大小不能超过 5MB');
+          return;
+        }
+
+        // 读取文件
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          // 移除所有选中状态
+          document.querySelectorAll('.avatar-card').forEach(card => {
+            card.classList.remove('selected');
+          });
+
+          // 保存自定义头像
+          dhData.avatar = 'custom';
+          dhData.avatarCustom = event.target.result;
+          sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+
+          // 启用下一步按钮
+          document.getElementById('nextBtn').disabled = false;
+
+          alert('头像上传成功！');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // 保存草稿
+    function saveDraft() {
+      if (!dhData.avatar) {
+        alert('请先选择一个形象');
+        return;
+      }
+
+      dhData.isDraft = true;
+      dhData.lastSaved = new Date().toISOString();
+
+      // 保存到localStorage
+      const drafts = JSON.parse(localStorage.getItem('mindpal_dh_drafts') || '[]');
+      const existingIndex = drafts.findIndex(d => d.draftId === dhData.draftId);
+
+      if (existingIndex >= 0) {
+        drafts[existingIndex] = dhData;
+      } else {
+        dhData.draftId = Date.now();
+        drafts.push(dhData);
+      }
+
+      localStorage.setItem('mindpal_dh_drafts', JSON.stringify(drafts));
+      alert('草稿已保存！');
+    }
+
+    // 下一步
+    function goToNextStep() {
+      if (!dhData.avatar) {
+        alert('请先选择一个形象');
+        return;
+      }
+
+      dhData.currentStep = 2;
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+      window.location.href = 'create-dh-step2.html';
+    }
+
+    // 页面卸载前保存到sessionStorage
+    window.addEventListener('beforeunload', function() {
+      if (dhData.avatar) {
+        sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+      }
+    });
+  </script>
+</body>
+</html>

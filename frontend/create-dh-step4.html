@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>创建数字人 - 设置知识库</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .create-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-md) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-size: var(--font-size-body-large);
+      transition: color var(--duration-fast) var(--ease-in-out);
+    }
+
+    .nav-back:hover {
+      color: var(--color-primary-1);
+    }
+
+    .nav-title {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .create-stepper {
+      padding: var(--spacing-xl) var(--spacing-2xl);
+      background: var(--color-bg-dark);
+    }
+
+    .create-content {
+      flex: 1;
+      padding: var(--spacing-2xl);
+      max-width: 1000px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .content-header {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .content-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .content-description {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+    }
+
+    .skip-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      margin-top: var(--spacing-sm);
+      padding: var(--spacing-xs) var(--spacing-md);
+      background: rgba(99, 102, 241, 0.1);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-body-small);
+      color: var(--color-primary-1);
+    }
+
+    /* 上传区域 */
+    .upload-section {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .section-title {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .upload-area {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-2xl);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .upload-area:hover {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .upload-area.dragover {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.1);
+      transform: scale(1.02);
+    }
+
+    .upload-icon {
+      font-size: 64px;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .upload-title {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-medium);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .upload-hint {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .upload-formats {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      flex-wrap: wrap;
+    }
+
+    .format-tag {
+      padding: 4px 12px;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-disabled);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* URL输入 */
+    .url-input-section {
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .url-input-group {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .url-input {
+      flex: 1;
+      height: 48px;
+      padding: 12px 16px;
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .url-input::placeholder {
+      color: var(--color-text-placeholder);
+    }
+
+    .url-input:focus {
+      border-color: var(--color-primary-1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      outline: none;
+    }
+
+    /* 文件列表 */
+    .files-list {
+      margin-top: var(--spacing-lg);
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-sm);
+      animation: slideInFromBottom var(--duration-fast) var(--ease-out);
+    }
+
+    .file-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-md);
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: var(--font-size-body);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-xs);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-meta {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-disabled);
+    }
+
+    .file-status {
+      padding: 4px 12px;
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--color-success);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-body-small);
+      white-space: nowrap;
+    }
+
+    .file-status.uploading {
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--color-primary-1);
+    }
+
+    .file-remove {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--color-text-disabled);
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .file-remove:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--color-error);
+    }
+
+    /* 知识库统计 */
+    .kb-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-lg);
+    }
+
+    .stat-item {
+      background: rgba(30, 41, 59, 0.4);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-primary-1);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .stat-label {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+    }
+
+    .create-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      bottom: 0;
+    }
+
+    .footer-left {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .footer-right {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    @media (max-width: 768px) {
+      .top-nav,
+      .create-stepper,
+      .create-content,
+      .create-footer {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+      }
+
+      .url-input-group {
+        flex-direction: column;
+      }
+
+      .create-footer {
+        flex-direction: column;
+        gap: var(--spacing-md);
+      }
+
+      .footer-left,
+      .footer-right {
+        width: 100%;
+      }
+
+      .footer-right {
+        flex-direction: row-reverse;
+      }
+
+      .footer-right .btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="create-page page-transition">
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+      <a href="create-dh-step3.html" class="nav-back">
+        <span>←</span>
+        <span>返回</span>
+      </a>
+      <h2 class="nav-title">创建数字人</h2>
+      <div style="width: 60px;"></div>
+    </nav>
+
+    <!-- 步骤指示器 -->
+    <div class="create-stepper">
+      <div class="stepper">
+        <div class="step completed">
+          <div class="step-circle">1</div>
+          <div class="step-label">选择形象</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step completed">
+          <div class="step-circle">2</div>
+          <div class="step-label">设置性格</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step completed">
+          <div class="step-circle">3</div>
+          <div class="step-label">选择声音</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step active">
+          <div class="step-circle">4</div>
+          <div class="step-label">设置知识库</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">5</div>
+          <div class="step-label">确认创建</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="create-content">
+      <div class="content-header">
+        <h1 class="content-title gradient-text">设置知识库（可选）</h1>
+        <p class="content-description">上传文档或添加网页链接，让数字人获得专业知识</p>
+        <span class="skip-hint">
+          <span>💡</span>
+          <span>这一步可以跳过，后续在知识库页面继续添加</span>
+        </span>
+      </div>
+
+      <!-- 上传区域 -->
+      <div class="upload-section">
+        <h3 class="section-title">📄 上传文档</h3>
+
+        <!-- 拖拽上传 -->
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-icon">📂</div>
+          <div class="upload-title">点击选择文件或拖拽到此处</div>
+          <div class="upload-hint">支持批量上传，单个文件不超过 10MB</div>
+          <div class="upload-formats">
+            <span class="format-tag">PDF</span>
+            <span class="format-tag">Word</span>
+            <span class="format-tag">Excel</span>
+            <span class="format-tag">TXT</span>
+            <span class="format-tag">Markdown</span>
+          </div>
+        </div>
+        <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.md">
+
+        <!-- URL输入 -->
+        <div class="url-input-section">
+          <h3 class="section-title">🔗 添加网页链接</h3>
+          <div class="url-input-group">
+            <input
+              type="url"
+              class="url-input"
+              id="urlInput"
+              placeholder="输入网页链接，例如：https://example.com/article"
+            >
+            <button class="btn btn-primary" onclick="addUrl()">
+              添加链接
+            </button>
+          </div>
+        </div>
+
+        <!-- 文件列表 -->
+        <div class="files-list" id="filesList">
+          <!-- 文件项将动态添加 -->
+        </div>
+
+        <!-- 知识库统计 -->
+        <div class="kb-stats" id="kbStats" style="display: none;">
+          <div class="stat-item">
+            <div class="stat-value" id="fileCount">0</div>
+            <div class="stat-label">文档数量</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="totalSize">0 MB</div>
+            <div class="stat-label">总大小</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="urlCount">0</div>
+            <div class="stat-label">网页链接</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <footer class="create-footer">
+      <div class="footer-left">
+        <button class="btn btn-text" onclick="saveDraft()">
+          💾 保存草稿
+        </button>
+      </div>
+      <div class="footer-right">
+        <button class="btn btn-secondary" onclick="window.location.href='create-dh-step3.html'">
+          上一步
+        </button>
+        <button class="btn btn-primary" onclick="goToNextStep()">
+          下一步
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // 加载数据
+    let dhData = JSON.parse(sessionStorage.getItem('create_dh_data') || '{}');
+    if (!dhData.knowledge) {
+      dhData.knowledge = {
+        files: [],
+        urls: []
+      };
+    }
+
+    // 文件类型图标映射
+    const fileIconMap = {
+      'pdf': '📕',
+      'doc': '📘',
+      'docx': '📘',
+      'xls': '📗',
+      'xlsx': '📗',
+      'txt': '📄',
+      'md': '📝',
+      'url': '🔗'
+    };
+
+    // 初始化：恢复已保存的文件
+    if (dhData.knowledge.files.length > 0 || dhData.knowledge.urls.length > 0) {
+      renderFilesList();
+      updateStats();
+    }
+
+    // 点击上传
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      handleFiles(e.target.files);
+    });
+
+    // 拖拽上传
+    const uploadArea = document.getElementById('uploadArea');
+
+    uploadArea.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('dragover');
+
+      const files = e.dataTransfer.files;
+      handleFiles(files);
+    });
+
+    // 处理文件
+    function handleFiles(files) {
+      for (let file of files) {
+        // 验证文件大小
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`文件 ${file.name} 超过 10MB，请选择更小的文件`);
+          continue;
+        }
+
+        // 验证文件类型
+        const ext = file.name.split('.').pop().toLowerCase();
+        const allowedTypes = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'md'];
+        if (!allowedTypes.includes(ext)) {
+          alert(`不支持的文件格式: ${file.name}`);
+          continue;
+        }
+
+        // 添加到列表
+        const fileData = {
+          id: Date.now() + Math.random(),
+          name: file.name,
+          size: file.size,
+          type: ext,
+          status: 'uploaded',
+          addedAt: new Date().toISOString()
+        };
+
+        dhData.knowledge.files.push(fileData);
+      }
+
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+      renderFilesList();
+      updateStats();
+    }
+
+    // 添加URL
+    function addUrl() {
+      const urlInput = document.getElementById('urlInput');
+      const url = urlInput.value.trim();
+
+      if (!url) {
+        alert('请输入网页链接');
+        return;
+      }
+
+      // 简单URL验证
+      try {
+        new URL(url);
+      } catch (e) {
+        alert('请输入有效的网页链接');
+        return;
+      }
+
+      // 检查重复
+      if (dhData.knowledge.urls.some(item => item.url === url)) {
+        alert('该链接已添加');
+        return;
+      }
+
+      const urlData = {
+        id: Date.now() + Math.random(),
+        url: url,
+        name: url,
+        type: 'url',
+        status: 'uploaded',
+        addedAt: new Date().toISOString()
+      };
+
+      dhData.knowledge.urls.push(urlData);
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+
+      urlInput.value = '';
+      renderFilesList();
+      updateStats();
+    }
+
+    // 渲染文件列表
+    function renderFilesList() {
+      const filesList = document.getElementById('filesList');
+      const allItems = [...dhData.knowledge.files, ...dhData.knowledge.urls];
+
+      if (allItems.length === 0) {
+        filesList.innerHTML = '';
+        return;
+      }
+
+      filesList.innerHTML = allItems.map(item => `
+        <div class="file-item">
+          <div class="file-icon">${fileIconMap[item.type] || '📄'}</div>
+          <div class="file-info">
+            <div class="file-name">${item.name}</div>
+            <div class="file-meta">
+              ${item.size ? formatFileSize(item.size) : '网页链接'} · ${formatDate(item.addedAt)}
+            </div>
+          </div>
+          <div class="file-status">${item.status === 'uploaded' ? '已上传' : '上传中'}</div>
+          <button class="file-remove" onclick="removeItem('${item.id}')">✕</button>
+        </div>
+      `).join('');
+    }
+
+    // 移除文件
+    function removeItem(id) {
+      dhData.knowledge.files = dhData.knowledge.files.filter(f => f.id != id);
+      dhData.knowledge.urls = dhData.knowledge.urls.filter(u => u.id != id);
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+
+      renderFilesList();
+      updateStats();
+    }
+
+    // 更新统计
+    function updateStats() {
+      const fileCount = dhData.knowledge.files.length;
+      const urlCount = dhData.knowledge.urls.length;
+      const totalSize = dhData.knowledge.files.reduce((sum, f) => sum + (f.size || 0), 0);
+
+      if (fileCount > 0 || urlCount > 0) {
+        document.getElementById('kbStats').style.display = 'grid';
+        document.getElementById('fileCount').textContent = fileCount;
+        document.getElementById('urlCount').textContent = urlCount;
+        document.getElementById('totalSize').textContent = formatFileSize(totalSize);
+      } else {
+        document.getElementById('kbStats').style.display = 'none';
+      }
+    }
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    // 格式化日期
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString('zh-CN', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // 保存草稿
+    function saveDraft() {
+      dhData.isDraft = true;
+      dhData.lastSaved = new Date().toISOString();
+
+      const drafts = JSON.parse(localStorage.getItem('mindpal_dh_drafts') || '[]');
+      const existingIndex = drafts.findIndex(d => d.draftId === dhData.draftId);
+
+      if (existingIndex >= 0) {
+        drafts[existingIndex] = dhData;
+      } else {
+        dhData.draftId = dhData.draftId || Date.now();
+        drafts.push(dhData);
+      }
+
+      localStorage.setItem('mindpal_dh_drafts', JSON.stringify(drafts));
+      alert('草稿已保存！');
+    }
+
+    // 下一步
+    function goToNextStep() {
+      dhData.currentStep = 5;
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+      window.location.href = 'create-dh-step5.html';
+    }
+  </script>
+</body>
+</html>

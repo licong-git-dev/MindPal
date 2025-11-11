@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的数字人 - MindPal</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .dh-list-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 80px;
+    }
+
+    /* 顶部栏 */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .logo-text {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-bold);
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    /* 主内容 */
+    .main-content {
+      flex: 1;
+      padding: var(--spacing-2xl);
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .page-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .page-subtitle {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+    }
+
+    /* 数字人网格 */
+    .dh-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    /* 创建新数字人卡片 */
+    .create-dh-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-2xl);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      text-decoration: none;
+    }
+
+    .create-dh-card:hover {
+      border-color: var(--color-primary-1);
+      border-style: solid;
+      background: rgba(99, 102, 241, 0.05);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .create-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin-bottom: var(--spacing-md);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .create-text {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-2xl);
+    }
+
+    .empty-icon {
+      font-size: 80px;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .empty-title {
+      font-size: var(--font-size-h3);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .empty-description {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    /* 底部导航 */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: var(--z-dropdown);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: var(--spacing-sm) var(--spacing-lg);
+      color: var(--color-text-disabled);
+      text-decoration: none;
+      transition: color var(--duration-fast) var(--ease-in-out);
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      color: var(--color-primary-1);
+    }
+
+    .nav-icon {
+      font-size: 24px;
+    }
+
+    .nav-label {
+      font-size: var(--font-size-body-small);
+    }
+
+    @media (max-width: 768px) {
+      .top-bar,
+      .main-content {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+      }
+
+      .dh-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+      }
+
+      .logo-text {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dh-list-page page-transition">
+    <!-- 顶部栏 -->
+    <header class="top-bar">
+      <div class="logo">
+        <div class="logo-icon">🧠</div>
+        <div class="logo-text">MindPal</div>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-icon" onclick="window.location.reload()" title="刷新">
+          🔄
+        </button>
+      </div>
+    </header>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title gradient-text">我的数字人</h1>
+        <p class="page-subtitle" id="dhCount">-</p>
+      </div>
+
+      <!-- 数字人网格 -->
+      <div class="dh-grid" id="dhGrid">
+        <!-- 创建新数字人 -->
+        <a href="create-dh-step1.html" class="create-dh-card">
+          <div class="create-icon">➕</div>
+          <div class="create-text">创建新数字人</div>
+        </a>
+
+        <!-- 数字人卡片将动态添加 -->
+      </div>
+
+      <!-- 空状态（无数字人时显示） -->
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="empty-icon">🎭</div>
+        <h2 class="empty-title">还没有数字人</h2>
+        <p class="empty-description">创建你的第一个数字人伴侣，开始智能对话吧</p>
+        <a href="create-dh-step1.html" class="btn btn-primary btn-large">
+          创建数字人
+        </a>
+      </div>
+    </main>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav">
+      <a href="dh-list.html" class="nav-item active">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">数字人</span>
+      </a>
+      <a href="knowledge.html" class="nav-item">
+        <span class="nav-icon">📚</span>
+        <span class="nav-label">知识库</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">我的</span>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    // 加载数字人列表
+    function loadDigitalHumans() {
+      const digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
+      const dhGrid = document.getElementById('dhGrid');
+      const emptyState = document.getElementById('emptyState');
+      const dhCount = document.getElementById('dhCount');
+
+      // 更新计数
+      dhCount.textContent = digitalHumans.length > 0
+        ? `共 ${digitalHumans.length} 个数字人`
+        : '还没有数字人';
+
+      if (digitalHumans.length === 0) {
+        // 显示空状态
+        emptyState.style.display = 'block';
+        dhGrid.innerHTML = '';
+        return;
+      }
+
+      // 隐藏空状态
+      emptyState.style.display = 'none';
+
+      // 渲染数字人卡片
+      const createCard = dhGrid.querySelector('.create-dh-card');
+      dhGrid.innerHTML = '';
+      dhGrid.appendChild(createCard);
+
+      digitalHumans.forEach(dh => {
+        const card = createDHCard(dh);
+        dhGrid.appendChild(card);
+      });
+    }
+
+    // 创建数字人卡片
+    function createDHCard(dh) {
+      const card = document.createElement('div');
+      card.className = 'dh-card';
+      card.style.cursor = 'pointer';
+      card.onclick = () => {
+        window.location.href = `chat.html?id=${dh.id}`;
+      };
+
+      // 格式化最后对话时间
+      let lastChatText = '还未开始对话';
+      if (dh.lastChatAt) {
+        const lastChat = new Date(dh.lastChatAt);
+        const now = new Date();
+        const diff = now - lastChat;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+        if (days === 0) {
+          lastChatText = '今天';
+        } else if (days === 1) {
+          lastChatText = '昨天';
+        } else if (days < 7) {
+          lastChatText = `${days}天前`;
+        } else {
+          lastChatText = lastChat.toLocaleDateString('zh-CN');
+        }
+      }
+
+      card.innerHTML = `
+        <div class="dh-avatar">${dh.avatarEmoji || '👤'}</div>
+        <div class="dh-info">
+          <div class="dh-name">${dh.name}</div>
+          <div class="dh-meta">
+            <span>💬 ${dh.messageCount || 0}条对话</span>
+            <span style="margin-left: var(--spacing-sm);">⏰ ${lastChatText}</span>
+          </div>
+        </div>
+        <div class="dh-actions">
+          <button class="btn btn-small btn-primary" onclick="event.stopPropagation(); window.location.href='chat.html?id=${dh.id}'">
+            对话
+          </button>
+          <button class="btn btn-small btn-secondary" onclick="event.stopPropagation(); editDH(${dh.id})">
+            编辑
+          </button>
+        </div>
+      `;
+
+      return card;
+    }
+
+    // 编辑数字人
+    function editDH(id) {
+      alert('编辑功能开发中...');
+      // TODO: 实现编辑功能
+    }
+
+    // 删除数字人
+    function deleteDH(id) {
+      if (!confirm('确定要删除这个数字人吗？所有对话记录将被清除。')) {
+        return;
+      }
+
+      let digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
+      digitalHumans = digitalHumans.filter(dh => dh.id !== id);
+      localStorage.setItem('mindpal_digital_humans', JSON.stringify(digitalHumans));
+
+      loadDigitalHumans();
+    }
+
+    // 页面加载时加载列表
+    window.addEventListener('load', loadDigitalHumans);
+  </script>
+</body>
+</html>

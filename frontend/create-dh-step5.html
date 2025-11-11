@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>创建数字人 - 确认创建</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .create-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-md) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-size: var(--font-size-body-large);
+      transition: color var(--duration-fast) var(--ease-in-out);
+    }
+
+    .nav-back:hover {
+      color: var(--color-primary-1);
+    }
+
+    .nav-title {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .create-stepper {
+      padding: var(--spacing-xl) var(--spacing-2xl);
+      background: var(--color-bg-dark);
+    }
+
+    .create-content {
+      flex: 1;
+      padding: var(--spacing-2xl);
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .content-header {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .content-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .content-description {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+    }
+
+    /* 命名区域 */
+    .naming-section {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      text-align: center;
+    }
+
+    .avatar-preview {
+      width: 100px;
+      height: 100px;
+      font-size: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--spacing-lg);
+      border-radius: var(--radius-xl);
+      background: var(--gradient-primary);
+      box-shadow: var(--shadow-glow);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .name-input-group {
+      max-width: 400px;
+      margin: 0 auto var(--spacing-md);
+    }
+
+    .name-label {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .name-input {
+      width: 100%;
+      height: 56px;
+      padding: 16px 20px;
+      font-size: var(--font-size-h4);
+      color: var(--color-text-primary);
+      background: rgba(15, 23, 42, 0.6);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .name-input::placeholder {
+      color: var(--color-text-placeholder);
+    }
+
+    .name-input:focus {
+      border-color: var(--color-primary-1);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+      outline: none;
+    }
+
+    .name-hint {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-disabled);
+      margin-top: var(--spacing-sm);
+    }
+
+    /* 摘要预览 */
+    .summary-section {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .section-title {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: var(--spacing-md);
+    }
+
+    .summary-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      background: rgba(30, 41, 59, 0.4);
+      border-radius: var(--radius-md);
+    }
+
+    .summary-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-md);
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .summary-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .summary-label {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-disabled);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .summary-value {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .summary-edit {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-primary-1);
+      font-size: var(--font-size-body-small);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .summary-edit:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: var(--color-primary-1);
+    }
+
+    .create-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      bottom: 0;
+    }
+
+    .footer-left {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .footer-right {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .create-btn {
+      min-width: 160px;
+    }
+
+    @media (max-width: 768px) {
+      .top-nav,
+      .create-stepper,
+      .create-content,
+      .create-footer {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+      }
+
+      .create-footer {
+        flex-direction: column;
+        gap: var(--spacing-md);
+      }
+
+      .footer-left,
+      .footer-right {
+        width: 100%;
+      }
+
+      .footer-right {
+        flex-direction: row-reverse;
+      }
+
+      .footer-right .btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="create-page page-transition">
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+      <a href="create-dh-step4.html" class="nav-back">
+        <span>←</span>
+        <span>返回</span>
+      </a>
+      <h2 class="nav-title">创建数字人</h2>
+      <div style="width: 60px;"></div>
+    </nav>
+
+    <!-- 步骤指示器 -->
+    <div class="create-stepper">
+      <div class="stepper">
+        <div class="step completed">
+          <div class="step-circle">1</div>
+          <div class="step-label">选择形象</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step completed">
+          <div class="step-circle">2</div>
+          <div class="step-label">设置性格</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step completed">
+          <div class="step-circle">3</div>
+          <div class="step-label">选择声音</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step completed">
+          <div class="step-circle">4</div>
+          <div class="step-label">设置知识库</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step active">
+          <div class="step-circle">5</div>
+          <div class="step-label">确认创建</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="create-content">
+      <div class="content-header">
+        <h1 class="content-title gradient-text">最后一步，给Ta起个名字吧</h1>
+        <p class="content-description">确认你的数字人设置，准备开始对话</p>
+      </div>
+
+      <!-- 命名区域 -->
+      <div class="naming-section">
+        <div class="avatar-preview" id="avatarPreview">👤</div>
+        <div class="name-input-group">
+          <label class="name-label">数字人昵称</label>
+          <input
+            type="text"
+            id="dhName"
+            class="name-input"
+            placeholder="例如：小智、阿雅、小助手..."
+            maxlength="20"
+          >
+          <div class="name-hint">这个名字将在对话中显示，可以随时修改</div>
+        </div>
+      </div>
+
+      <!-- 配置摘要 -->
+      <div class="summary-section">
+        <h3 class="section-title">配置摘要</h3>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-icon">👤</div>
+            <div class="summary-content">
+              <div class="summary-label">形象</div>
+              <div class="summary-value" id="avatarSummary">-</div>
+            </div>
+            <a href="create-dh-step1.html" class="summary-edit">修改</a>
+          </div>
+
+          <div class="summary-item">
+            <div class="summary-icon">🎭</div>
+            <div class="summary-content">
+              <div class="summary-label">性格</div>
+              <div class="summary-value" id="personalitySummary">-</div>
+            </div>
+            <a href="create-dh-step2.html" class="summary-edit">修改</a>
+          </div>
+
+          <div class="summary-item">
+            <div class="summary-icon">🔊</div>
+            <div class="summary-content">
+              <div class="summary-label">声音</div>
+              <div class="summary-value" id="voiceSummary">-</div>
+            </div>
+            <a href="create-dh-step3.html" class="summary-edit">修改</a>
+          </div>
+
+          <div class="summary-item">
+            <div class="summary-icon">📚</div>
+            <div class="summary-content">
+              <div class="summary-label">知识库</div>
+              <div class="summary-value" id="knowledgeSummary">-</div>
+            </div>
+            <a href="create-dh-step4.html" class="summary-edit">修改</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <footer class="create-footer">
+      <div class="footer-left">
+        <button class="btn btn-text" onclick="saveDraft()">
+          💾 保存草稿
+        </button>
+      </div>
+      <div class="footer-right">
+        <button class="btn btn-secondary" onclick="window.location.href='create-dh-step4.html'">
+          上一步
+        </button>
+        <button class="btn btn-primary create-btn" id="createBtn" onclick="createDigitalHuman()">
+          🎉 创建数字人
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // 加载数据
+    let dhData = JSON.parse(sessionStorage.getItem('create_dh_data') || '{}');
+
+    // 性格名称映射
+    const personalityNames = {
+      gentle: '温柔体贴',
+      energetic: '活泼开朗',
+      intellectual: '知性理性',
+      humorous: '幽默风趣',
+      calm: '沉稳冷静',
+      creative: '富有创意'
+    };
+
+    // 声音名称映射
+    const voiceNames = {
+      xiaoya: '小雅（温柔甜美女声）',
+      xiaoqing: '小青（知性优雅女声）',
+      xiaoxin: '小欣（活泼元气女声）',
+      xiaoyu: '小宇（阳光温暖男声）',
+      xiaozhi: '小智（沉稳理性男声）',
+      xiaohao: '小浩（幽默风趣男声）'
+    };
+
+    // 初始化页面
+    function initPage() {
+      // 显示头像
+      if (dhData.avatarEmoji) {
+        document.getElementById('avatarPreview').textContent = dhData.avatarEmoji;
+      }
+
+      // 显示形象摘要
+      if (dhData.avatar) {
+        const avatarElement = document.querySelector(`[data-avatar="${dhData.avatar}"]`);
+        if (avatarElement) {
+          const avatarLabel = avatarElement.querySelector('.avatar-label')?.textContent || dhData.avatar;
+          document.getElementById('avatarSummary').textContent = avatarLabel;
+        }
+      }
+
+      // 显示性格摘要
+      if (dhData.personality) {
+        const personalityName = personalityNames[dhData.personality] || dhData.personality;
+        const traits = dhData.traits;
+        let summary = personalityName;
+
+        if (traits) {
+          const topTraits = Object.entries(traits)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 2)
+            .map(([key, value]) => {
+              const traitNames = {
+                liveliness: '活泼',
+                humor: '幽默',
+                empathy: '共情',
+                initiative: '主动',
+                creativity: '创意'
+              };
+              return traitNames[key];
+            })
+            .join('、');
+
+          if (topTraits) {
+            summary += ` · ${topTraits}`;
+          }
+        }
+
+        document.getElementById('personalitySummary').textContent = summary;
+      }
+
+      // 显示声音摘要
+      if (dhData.voice) {
+        const voiceName = voiceNames[dhData.voice] || dhData.voice;
+        let summary = voiceName;
+
+        if (dhData.voiceParams) {
+          const params = dhData.voiceParams;
+          if (params.speed && params.speed !== 1.0) {
+            summary += ` · ${params.speed}x语速`;
+          }
+        }
+
+        document.getElementById('voiceSummary').textContent = summary;
+      }
+
+      // 显示知识库摘要
+      if (dhData.knowledge) {
+        const fileCount = dhData.knowledge.files?.length || 0;
+        const urlCount = dhData.knowledge.urls?.length || 0;
+        const total = fileCount + urlCount;
+
+        if (total > 0) {
+          const parts = [];
+          if (fileCount > 0) parts.push(`${fileCount}个文档`);
+          if (urlCount > 0) parts.push(`${urlCount}个链接`);
+          document.getElementById('knowledgeSummary').textContent = parts.join('、');
+        } else {
+          document.getElementById('knowledgeSummary').textContent = '暂未添加（可后续添加）';
+        }
+      } else {
+        document.getElementById('knowledgeSummary').textContent = '暂未添加（可后续添加）';
+      }
+
+      // 恢复已保存的名字
+      if (dhData.name) {
+        document.getElementById('dhName').value = dhData.name;
+      }
+    }
+
+    // 实时保存名字
+    document.getElementById('dhName').addEventListener('input', function() {
+      dhData.name = this.value.trim();
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+    });
+
+    // 保存草稿
+    function saveDraft() {
+      dhData.isDraft = true;
+      dhData.lastSaved = new Date().toISOString();
+
+      const drafts = JSON.parse(localStorage.getItem('mindpal_dh_drafts') || '[]');
+      const existingIndex = drafts.findIndex(d => d.draftId === dhData.draftId);
+
+      if (existingIndex >= 0) {
+        drafts[existingIndex] = dhData;
+      } else {
+        dhData.draftId = dhData.draftId || Date.now();
+        drafts.push(dhData);
+      }
+
+      localStorage.setItem('mindpal_dh_drafts', JSON.stringify(drafts));
+      alert('草稿已保存！');
+    }
+
+    // 创建数字人
+    async function createDigitalHuman() {
+      const name = document.getElementById('dhName').value.trim();
+
+      // 验证名字
+      if (!name) {
+        alert('请给你的数字人起个名字');
+        document.getElementById('dhName').focus();
+        return;
+      }
+
+      // 验证必填项
+      if (!dhData.avatar) {
+        alert('请先选择形象');
+        window.location.href = 'create-dh-step1.html';
+        return;
+      }
+
+      if (!dhData.voice) {
+        alert('请先选择声音');
+        window.location.href = 'create-dh-step3.html';
+        return;
+      }
+
+      dhData.name = name;
+
+      const createBtn = document.getElementById('createBtn');
+      createBtn.classList.add('btn-loading');
+      createBtn.disabled = true;
+
+      try {
+        // 调用后端API创建数字人
+        const token = localStorage.getItem('mindpal_token');
+        if (!token) {
+          alert('请先登录');
+          window.location.href = 'index.html';
+          return;
+        }
+
+        const response = await fetch('http://localhost:5000/api/digital-humans', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: dhData.name,
+            avatar: dhData.avatar,
+            avatarEmoji: dhData.avatarEmoji,
+            avatarCustom: dhData.avatarCustom,
+            personality: dhData.personality,
+            traits: dhData.traits,
+            customPersonality: dhData.customPersonality,
+            voice: dhData.voice,
+            voiceParams: dhData.voiceParams
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '创建失败');
+        }
+
+        const digitalHuman = result.data;
+
+        // 同时保存到本地存储以便离线访问
+        const digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
+        digitalHumans.push(digitalHuman);
+        localStorage.setItem('mindpal_digital_humans', JSON.stringify(digitalHumans));
+
+        // 清除会话数据
+        sessionStorage.removeItem('create_dh_data');
+
+        // 从草稿中删除
+        if (dhData.draftId) {
+          const drafts = JSON.parse(localStorage.getItem('mindpal_dh_drafts') || '[]');
+          const filteredDrafts = drafts.filter(d => d.draftId !== dhData.draftId);
+          localStorage.setItem('mindpal_dh_drafts', JSON.stringify(filteredDrafts));
+        }
+
+        // 跳转到对话页面
+        window.location.href = `chat.html?id=${digitalHuman.id}`;
+
+      } catch (error) {
+        console.error('创建失败:', error);
+        alert(error.message || '创建失败，请稍后重试');
+        createBtn.classList.remove('btn-loading');
+        createBtn.disabled = false;
+      }
+    }
+
+    // 页面加载时初始化
+    window.addEventListener('load', initPage);
+  </script>
+</body>
+</html>

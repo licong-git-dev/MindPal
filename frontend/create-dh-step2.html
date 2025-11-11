@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>创建数字人 - 设置性格</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .create-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-md) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-size: var(--font-size-body-large);
+      transition: color var(--duration-fast) var(--ease-in-out);
+    }
+
+    .nav-back:hover {
+      color: var(--color-primary-1);
+    }
+
+    .nav-title {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .create-stepper {
+      padding: var(--spacing-xl) var(--spacing-2xl);
+      background: var(--color-bg-dark);
+    }
+
+    .create-content {
+      flex: 1;
+      padding: var(--spacing-2xl);
+      max-width: 1000px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .content-header {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .content-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .content-description {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+    }
+
+    /* 性格类型卡片 */
+    .personality-section {
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .section-title {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .personality-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .personality-card {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      position: relative;
+    }
+
+    .personality-card:hover {
+      border-color: var(--color-primary-1);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .personality-card.selected {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.1);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .personality-card.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 24px;
+      height: 24px;
+      background: var(--gradient-primary);
+      color: #FFFFFF;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: var(--font-weight-bold);
+      font-size: var(--font-size-body-small);
+    }
+
+    .personality-icon {
+      font-size: 40px;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .personality-name {
+      font-size: var(--font-size-body-large);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .personality-desc {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+      line-height: var(--line-height-body);
+    }
+
+    /* 性格特质调节 */
+    .traits-section {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .trait-item {
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .trait-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .trait-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .trait-label {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .trait-value {
+      font-size: var(--font-size-body);
+      color: var(--color-primary-1);
+      font-weight: var(--font-weight-semibold);
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .trait-slider {
+      width: 100%;
+      height: 8px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: var(--radius-full);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .trait-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      box-shadow: var(--shadow-glow);
+      transition: transform var(--duration-fast) var(--ease-out);
+    }
+
+    .trait-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .trait-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--gradient-primary);
+      border: none;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      box-shadow: var(--shadow-glow);
+      transition: transform var(--duration-fast) var(--ease-out);
+    }
+
+    .trait-slider::-moz-range-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .trait-description {
+      display: flex;
+      justify-content: space-between;
+      margin-top: var(--spacing-xs);
+    }
+
+    .trait-desc-left,
+    .trait-desc-right {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-disabled);
+    }
+
+    /* 自定义描述 */
+    .custom-section {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .custom-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px 16px;
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      resize: vertical;
+      font-family: inherit;
+      line-height: 1.6;
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .custom-textarea::placeholder {
+      color: var(--color-text-placeholder);
+    }
+
+    .custom-textarea:focus {
+      border-color: var(--color-primary-1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      outline: none;
+    }
+
+    .create-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      bottom: 0;
+    }
+
+    .footer-left {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .footer-right {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    @media (max-width: 768px) {
+      .top-nav,
+      .create-stepper,
+      .create-content,
+      .create-footer {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+      }
+
+      .personality-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .create-footer {
+        flex-direction: column;
+        gap: var(--spacing-md);
+      }
+
+      .footer-left,
+      .footer-right {
+        width: 100%;
+      }
+
+      .footer-right {
+        flex-direction: row-reverse;
+      }
+
+      .footer-right .btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="create-page page-transition">
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+      <a href="create-dh-step1.html" class="nav-back">
+        <span>←</span>
+        <span>返回</span>
+      </a>
+      <h2 class="nav-title">创建数字人</h2>
+      <div style="width: 60px;"></div>
+    </nav>
+
+    <!-- 步骤指示器 -->
+    <div class="create-stepper">
+      <div class="stepper">
+        <div class="step completed">
+          <div class="step-circle">1</div>
+          <div class="step-label">选择形象</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step active">
+          <div class="step-circle">2</div>
+          <div class="step-label">设置性格</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">3</div>
+          <div class="step-label">选择声音</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">4</div>
+          <div class="step-label">设置知识库</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">5</div>
+          <div class="step-label">确认创建</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="create-content">
+      <div class="content-header">
+        <h1 class="content-title gradient-text">设置数字人性格</h1>
+        <p class="content-description">选择一个性格类型，或自定义性格特质</p>
+      </div>
+
+      <!-- 性格类型选择 -->
+      <div class="personality-section">
+        <h3 class="section-title">选择性格类型</h3>
+        <div class="personality-grid">
+          <div class="personality-card" data-personality="gentle" onclick="selectPersonality(this)">
+            <div class="personality-icon">😊</div>
+            <div class="personality-name">温柔体贴</div>
+            <div class="personality-desc">善解人意，温暖细腻，总是给予关怀和支持</div>
+          </div>
+
+          <div class="personality-card" data-personality="energetic" onclick="selectPersonality(this)">
+            <div class="personality-icon">😄</div>
+            <div class="personality-name">活泼开朗</div>
+            <div class="personality-desc">热情洋溢，充满活力，能带来欢乐和正能量</div>
+          </div>
+
+          <div class="personality-card" data-personality="intellectual" onclick="selectPersonality(this)">
+            <div class="personality-icon">🤓</div>
+            <div class="personality-name">知性理性</div>
+            <div class="personality-desc">逻辑清晰，理性客观，善于分析和解决问题</div>
+          </div>
+
+          <div class="personality-card" data-personality="humorous" onclick="selectPersonality(this)">
+            <div class="personality-icon">😆</div>
+            <div class="personality-name">幽默风趣</div>
+            <div class="personality-desc">机智诙谐，妙语连珠，总能逗你开心</div>
+          </div>
+
+          <div class="personality-card" data-personality="calm" onclick="selectPersonality(this)">
+            <div class="personality-icon">😌</div>
+            <div class="personality-name">沉稳冷静</div>
+            <div class="personality-desc">成熟稳重，遇事不慌，给人安全感</div>
+          </div>
+
+          <div class="personality-card" data-personality="creative" onclick="selectPersonality(this)">
+            <div class="personality-icon">🎨</div>
+            <div class="personality-name">富有创意</div>
+            <div class="personality-desc">想象力丰富，思维跳跃，总有新奇想法</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 性格特质调节 -->
+      <div class="traits-section">
+        <h3 class="section-title">调整性格特质</h3>
+
+        <div class="trait-item">
+          <div class="trait-header">
+            <span class="trait-label">活泼度</span>
+            <span class="trait-value" id="livelinessValue">50</span>
+          </div>
+          <input type="range" class="trait-slider" id="liveliness" min="0" max="100" value="50" oninput="updateTrait('liveliness', this.value)">
+          <div class="trait-description">
+            <span class="trait-desc-left">沉稳内敛</span>
+            <span class="trait-desc-right">活泼外向</span>
+          </div>
+        </div>
+
+        <div class="trait-item">
+          <div class="trait-header">
+            <span class="trait-label">幽默感</span>
+            <span class="trait-value" id="humorValue">50</span>
+          </div>
+          <input type="range" class="trait-slider" id="humor" min="0" max="100" value="50" oninput="updateTrait('humor', this.value)">
+          <div class="trait-description">
+            <span class="trait-desc-left">严肃正经</span>
+            <span class="trait-desc-right">幽默搞笑</span>
+          </div>
+        </div>
+
+        <div class="trait-item">
+          <div class="trait-header">
+            <span class="trait-label">同理心</span>
+            <span class="trait-value" id="empathyValue">50</span>
+          </div>
+          <input type="range" class="trait-slider" id="empathy" min="0" max="100" value="50" oninput="updateTrait('empathy', this.value)">
+          <div class="trait-description">
+            <span class="trait-desc-left">理性客观</span>
+            <span class="trait-desc-right">感性共情</span>
+          </div>
+        </div>
+
+        <div class="trait-item">
+          <div class="trait-header">
+            <span class="trait-label">主动性</span>
+            <span class="trait-value" id="initiativeValue">50</span>
+          </div>
+          <input type="range" class="trait-slider" id="initiative" min="0" max="100" value="50" oninput="updateTrait('initiative', this.value)">
+          <div class="trait-description">
+            <span class="trait-desc-left">被动倾听</span>
+            <span class="trait-desc-right">主动交流</span>
+          </div>
+        </div>
+
+        <div class="trait-item">
+          <div class="trait-header">
+            <span class="trait-label">创造力</span>
+            <span class="trait-value" id="creativityValue">50</span>
+          </div>
+          <input type="range" class="trait-slider" id="creativity" min="0" max="100" value="50" oninput="updateTrait('creativity', this.value)">
+          <div class="trait-description">
+            <span class="trait-desc-left">传统保守</span>
+            <span class="trait-desc-right">创新大胆</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 自定义描述 -->
+      <div class="custom-section">
+        <h3 class="section-title">补充性格描述（可选）</h3>
+        <textarea
+          id="customPersonality"
+          class="custom-textarea"
+          placeholder="你可以在这里详细描述你期望的数字人性格特点，比如：希望Ta在我心情不好时能安慰我，在我需要建议时能给出专业意见..."
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <footer class="create-footer">
+      <div class="footer-left">
+        <button class="btn btn-text" onclick="saveDraft()">
+          💾 保存草稿
+        </button>
+      </div>
+      <div class="footer-right">
+        <button class="btn btn-secondary" onclick="window.location.href='create-dh-step1.html'">
+          上一步
+        </button>
+        <button class="btn btn-primary" id="nextBtn" onclick="goToNextStep()">
+          下一步
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // 加载数据
+    let dhData = JSON.parse(sessionStorage.getItem('create_dh_data') || '{}');
+
+    // 预设性格配置
+    const personalityPresets = {
+      gentle: { liveliness: 40, humor: 30, empathy: 90, initiative: 50, creativity: 40 },
+      energetic: { liveliness: 90, humor: 70, empathy: 60, initiative: 80, creativity: 70 },
+      intellectual: { liveliness: 30, humor: 40, empathy: 50, initiative: 60, creativity: 60 },
+      humorous: { liveliness: 70, humor: 90, empathy: 60, initiative: 70, creativity: 80 },
+      calm: { liveliness: 20, humor: 30, empathy: 70, initiative: 40, creativity: 40 },
+      creative: { liveliness: 60, humor: 60, empathy: 50, initiative: 70, creativity: 95 }
+    };
+
+    // 恢复已保存的数据
+    if (dhData.personality) {
+      const card = document.querySelector(`[data-personality="${dhData.personality}"]`);
+      if (card) {
+        card.classList.add('selected');
+      }
+    }
+
+    if (dhData.traits) {
+      Object.keys(dhData.traits).forEach(trait => {
+        const slider = document.getElementById(trait);
+        if (slider) {
+          slider.value = dhData.traits[trait];
+          document.getElementById(trait + 'Value').textContent = dhData.traits[trait];
+        }
+      });
+    }
+
+    if (dhData.customPersonality) {
+      document.getElementById('customPersonality').value = dhData.customPersonality;
+    }
+
+    // 选择性格类型
+    function selectPersonality(element) {
+      // 移除所有选中状态
+      document.querySelectorAll('.personality-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+
+      // 选中当前卡片
+      element.classList.add('selected');
+
+      // 获取性格类型
+      const personalityType = element.dataset.personality;
+      dhData.personality = personalityType;
+
+      // 应用预设特质
+      const preset = personalityPresets[personalityType];
+      if (preset) {
+        Object.keys(preset).forEach(trait => {
+          const slider = document.getElementById(trait);
+          if (slider) {
+            slider.value = preset[trait];
+            document.getElementById(trait + 'Value').textContent = preset[trait];
+          }
+        });
+
+        dhData.traits = { ...preset };
+      }
+
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+    }
+
+    // 更新特质值
+    function updateTrait(traitName, value) {
+      document.getElementById(traitName + 'Value').textContent = value;
+
+      if (!dhData.traits) {
+        dhData.traits = {};
+      }
+
+      dhData.traits[traitName] = parseInt(value);
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+    }
+
+    // 保存自定义描述
+    document.getElementById('customPersonality').addEventListener('input', function() {
+      dhData.customPersonality = this.value;
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+    });
+
+    // 保存草稿
+    function saveDraft() {
+      dhData.isDraft = true;
+      dhData.lastSaved = new Date().toISOString();
+
+      const drafts = JSON.parse(localStorage.getItem('mindpal_dh_drafts') || '[]');
+      const existingIndex = drafts.findIndex(d => d.draftId === dhData.draftId);
+
+      if (existingIndex >= 0) {
+        drafts[existingIndex] = dhData;
+      } else {
+        dhData.draftId = dhData.draftId || Date.now();
+        drafts.push(dhData);
+      }
+
+      localStorage.setItem('mindpal_dh_drafts', JSON.stringify(drafts));
+      alert('草稿已保存！');
+    }
+
+    // 下一步
+    function goToNextStep() {
+      // 收集当前特质值
+      if (!dhData.traits) {
+        dhData.traits = {
+          liveliness: parseInt(document.getElementById('liveliness').value),
+          humor: parseInt(document.getElementById('humor').value),
+          empathy: parseInt(document.getElementById('empathy').value),
+          initiative: parseInt(document.getElementById('initiative').value),
+          creativity: parseInt(document.getElementById('creativity').value)
+        };
+      }
+
+      dhData.customPersonality = document.getElementById('customPersonality').value;
+      dhData.currentStep = 3;
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+      window.location.href = 'create-dh-step3.html';
+    }
+  </script>
+</body>
+</html>

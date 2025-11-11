@@ -1,0 +1,115 @@
+/* ============================================
+   MindPal 设计Token - CSS变量
+   基于DESIGN_SPEC.md设计规范
+   ============================================ */
+
+:root {
+  /* ========== 主色调 - 渐变紫蓝 ========== */
+  --color-primary-1: #6366F1;
+  --color-primary-2: #8B5CF6;
+  --gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+
+  /* ========== 辅助色彩 ========== */
+  --color-secondary-pink: #F472B6;
+  --color-secondary-blue: #60A5FA;
+  --color-secondary-green: #34D399;
+  --color-secondary-orange: #FB923C;
+
+  /* ========== 中性色 - 深色模式 ========== */
+  --color-bg-dark: #0F172A;
+  --color-bg-light: #F8FAFC;
+  --color-bg-card: rgba(30, 41, 59, 0.7);
+  --color-bg-card-light: rgba(255, 255, 255, 0.8);
+
+  /* ========== 文字颜色 ========== */
+  --color-text-primary: #F1F5F9;
+  --color-text-primary-light: #0F172A;
+  --color-text-secondary: #94A3B8;
+  --color-text-disabled: #64748B;
+  --color-text-placeholder: #475569;
+
+  /* ========== 边框颜色 ========== */
+  --color-border: #334155;
+  --color-border-light: #E2E8F0;
+
+  /* ========== 功能色彩 ========== */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* ========== 情绪色彩 ========== */
+  --color-emotion-happy: #FBBF24;
+  --color-emotion-sad: #60A5FA;
+  --color-emotion-anxious: #F59E0B;
+  --color-emotion-calm: #34D399;
+  --color-emotion-excited: #F472B6;
+
+  /* ========== 间距系统（基于8px网格）========== */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* ========== 圆角系统 ========== */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* ========== 阴影系统 ========== */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.4);
+
+  /* ========== 字号系统 ========== */
+  --font-size-h1: 32px;
+  --font-size-h2: 24px;
+  --font-size-h3: 20px;
+  --font-size-h4: 18px;
+  --font-size-body-large: 16px;
+  --font-size-body: 14px;
+  --font-size-body-small: 12px;
+  --font-size-caption: 10px;
+
+  /* ========== 字重 ========== */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ========== 行高 ========== */
+  --line-height-h1: 40px;
+  --line-height-h2: 32px;
+  --line-height-h3: 28px;
+  --line-height-h4: 26px;
+  --line-height-body-large: 24px;
+  --line-height-body: 22px;
+  --line-height-body-small: 18px;
+  --line-height-caption: 16px;
+
+  /* ========== 动画时长 ========== */
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 400ms;
+
+  /* ========== 缓动函数 ========== */
+  --ease-in-out: ease-in-out;
+  --ease-out: ease-out;
+  --ease-custom: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ========== Z-index层级 ========== */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+  --z-tooltip: 400;
+}

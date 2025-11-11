@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>创建数字人 - 选择声音</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .create-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-md) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-size: var(--font-size-body-large);
+      transition: color var(--duration-fast) var(--ease-in-out);
+    }
+
+    .nav-back:hover {
+      color: var(--color-primary-1);
+    }
+
+    .nav-title {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .create-stepper {
+      padding: var(--spacing-xl) var(--spacing-2xl);
+      background: var(--color-bg-dark);
+    }
+
+    .create-content {
+      flex: 1;
+      padding: var(--spacing-2xl);
+      max-width: 1000px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .content-header {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .content-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .content-description {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+    }
+
+    /* 声音选择 */
+    .voice-section {
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .section-title {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .voice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .voice-card {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      position: relative;
+    }
+
+    .voice-card:hover {
+      border-color: var(--color-primary-1);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .voice-card.selected {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.1);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .voice-card.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 24px;
+      height: 24px;
+      background: var(--gradient-primary);
+      color: #FFFFFF;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: var(--font-weight-bold);
+      font-size: var(--font-size-body-small);
+    }
+
+    .voice-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .voice-info {
+      flex: 1;
+    }
+
+    .voice-name {
+      font-size: var(--font-size-body-large);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .voice-tags {
+      display: flex;
+      gap: var(--spacing-xs);
+      flex-wrap: wrap;
+    }
+
+    .voice-tag {
+      padding: 2px 8px;
+      font-size: var(--font-size-body-small);
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--color-primary-1);
+      border-radius: var(--radius-sm);
+    }
+
+    .voice-tag.female {
+      background: rgba(244, 114, 182, 0.2);
+      color: var(--color-secondary-pink);
+    }
+
+    .voice-tag.male {
+      background: rgba(96, 165, 250, 0.2);
+      color: var(--color-secondary-blue);
+    }
+
+    .voice-play {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+      font-size: 24px;
+      color: #FFFFFF;
+      cursor: pointer;
+      transition: transform var(--duration-fast) var(--ease-out);
+      box-shadow: var(--shadow);
+    }
+
+    .voice-play:hover {
+      transform: scale(1.1);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .voice-play.playing {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .voice-description {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+      line-height: var(--line-height-body);
+    }
+
+    /* 声音参数调节 */
+    .voice-params {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .param-item {
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .param-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .param-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .param-label {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .param-value {
+      font-size: var(--font-size-body);
+      color: var(--color-primary-1);
+      font-weight: var(--font-weight-semibold);
+      min-width: 50px;
+      text-align: right;
+    }
+
+    .param-slider {
+      width: 100%;
+      height: 8px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: var(--radius-full);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .param-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      box-shadow: var(--shadow-glow);
+      transition: transform var(--duration-fast) var(--ease-out);
+    }
+
+    .param-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .param-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--gradient-primary);
+      border: none;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      box-shadow: var(--shadow-glow);
+      transition: transform var(--duration-fast) var(--ease-out);
+    }
+
+    .param-slider::-moz-range-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .param-hint {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-disabled);
+      margin-top: var(--spacing-xs);
+    }
+
+    /* 试听区域 */
+    .preview-section {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-xl);
+      text-align: center;
+    }
+
+    .preview-text {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-lg);
+      padding: var(--spacing-lg);
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: var(--radius-md);
+      line-height: 1.8;
+    }
+
+    .preview-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .create-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      bottom: 0;
+    }
+
+    .footer-left {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .footer-right {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    @media (max-width: 768px) {
+      .top-nav,
+      .create-stepper,
+      .create-content,
+      .create-footer {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+      }
+
+      .voice-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .create-footer {
+        flex-direction: column;
+        gap: var(--spacing-md);
+      }
+
+      .footer-left,
+      .footer-right {
+        width: 100%;
+      }
+
+      .footer-right {
+        flex-direction: row-reverse;
+      }
+
+      .footer-right .btn {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="create-page page-transition">
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+      <a href="create-dh-step2.html" class="nav-back">
+        <span>←</span>
+        <span>返回</span>
+      </a>
+      <h2 class="nav-title">创建数字人</h2>
+      <div style="width: 60px;"></div>
+    </nav>
+
+    <!-- 步骤指示器 -->
+    <div class="create-stepper">
+      <div class="stepper">
+        <div class="step completed">
+          <div class="step-circle">1</div>
+          <div class="step-label">选择形象</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step completed">
+          <div class="step-circle">2</div>
+          <div class="step-label">设置性格</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step active">
+          <div class="step-circle">3</div>
+          <div class="step-label">选择声音</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">4</div>
+          <div class="step-label">设置知识库</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-circle">5</div>
+          <div class="step-label">确认创建</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="create-content">
+      <div class="content-header">
+        <h1 class="content-title gradient-text">选择数字人声音</h1>
+        <p class="content-description">选择一个你喜欢的声音，并调整音色参数</p>
+      </div>
+
+      <!-- 声音选择 -->
+      <div class="voice-section">
+        <h3 class="section-title">选择声音类型</h3>
+        <div class="voice-grid">
+          <!-- 女声 -->
+          <div class="voice-card" data-voice="xiaoya" onclick="selectVoice(this)">
+            <div class="voice-header">
+              <div class="voice-info">
+                <div class="voice-name">小雅</div>
+                <div class="voice-tags">
+                  <span class="voice-tag female">女声</span>
+                  <span class="voice-tag">温柔</span>
+                  <span class="voice-tag">甜美</span>
+                </div>
+              </div>
+              <div class="voice-play" onclick="playVoice(event, 'xiaoya')">▶</div>
+            </div>
+            <div class="voice-description">温柔甜美的女声，适合情感陪伴和日常对话</div>
+          </div>
+
+          <div class="voice-card" data-voice="xiaoqing" onclick="selectVoice(this)">
+            <div class="voice-header">
+              <div class="voice-info">
+                <div class="voice-name">小青</div>
+                <div class="voice-tags">
+                  <span class="voice-tag female">女声</span>
+                  <span class="voice-tag">知性</span>
+                  <span class="voice-tag">专业</span>
+                </div>
+              </div>
+              <div class="voice-play" onclick="playVoice(event, 'xiaoqing')">▶</div>
+            </div>
+            <div class="voice-description">知性优雅的女声，适合知识服务和专业咨询</div>
+          </div>
+
+          <div class="voice-card" data-voice="xiaoxin" onclick="selectVoice(this)">
+            <div class="voice-header">
+              <div class="voice-info">
+                <div class="voice-name">小欣</div>
+                <div class="voice-tags">
+                  <span class="voice-tag female">女声</span>
+                  <span class="voice-tag">活泼</span>
+                  <span class="voice-tag">元气</span>
+                </div>
+              </div>
+              <div class="voice-play" onclick="playVoice(event, 'xiaoxin')">▶</div>
+            </div>
+            <div class="voice-description">活泼元气的女声，充满青春朝气和正能量</div>
+          </div>
+
+          <!-- 男声 -->
+          <div class="voice-card" data-voice="xiaoyu" onclick="selectVoice(this)">
+            <div class="voice-header">
+              <div class="voice-info">
+                <div class="voice-name">小宇</div>
+                <div class="voice-tags">
+                  <span class="voice-tag male">男声</span>
+                  <span class="voice-tag">阳光</span>
+                  <span class="voice-tag">温暖</span>
+                </div>
+              </div>
+              <div class="voice-play" onclick="playVoice(event, 'xiaoyu')">▶</div>
+            </div>
+            <div class="voice-description">阳光温暖的男声，给人安全感和信赖感</div>
+          </div>
+
+          <div class="voice-card" data-voice="xiaozhi" onclick="selectVoice(this)">
+            <div class="voice-header">
+              <div class="voice-info">
+                <div class="voice-name">小智</div>
+                <div class="voice-tags">
+                  <span class="voice-tag male">男声</span>
+                  <span class="voice-tag">沉稳</span>
+                  <span class="voice-tag">理性</span>
+                </div>
+              </div>
+              <div class="voice-play" onclick="playVoice(event, 'xiaozhi')">▶</div>
+            </div>
+            <div class="voice-description">沉稳理性的男声，适合专业分析和决策建议</div>
+          </div>
+
+          <div class="voice-card" data-voice="xiaohao" onclick="selectVoice(this)">
+            <div class="voice-header">
+              <div class="voice-info">
+                <div class="voice-name">小浩</div>
+                <div class="voice-tags">
+                  <span class="voice-tag male">男声</span>
+                  <span class="voice-tag">幽默</span>
+                  <span class="voice-tag">风趣</span>
+                </div>
+              </div>
+              <div class="voice-play" onclick="playVoice(event, 'xiaohao')">▶</div>
+            </div>
+            <div class="voice-description">幽默风趣的男声，能带来轻松愉快的对话</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 声音参数 -->
+      <div class="voice-params">
+        <h3 class="section-title">调整声音参数</h3>
+
+        <div class="param-item">
+          <div class="param-header">
+            <span class="param-label">语速</span>
+            <span class="param-value" id="speedValue">1.0x</span>
+          </div>
+          <input type="range" class="param-slider" id="speed" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateParam('speed', this.value)">
+          <div class="param-hint">调整说话的快慢，0.5倍最慢，2倍最快</div>
+        </div>
+
+        <div class="param-item">
+          <div class="param-header">
+            <span class="param-label">音调</span>
+            <span class="param-value" id="pitchValue">0</span>
+          </div>
+          <input type="range" class="param-slider" id="pitch" min="-10" max="10" step="1" value="0" oninput="updateParam('pitch', this.value)">
+          <div class="param-hint">调整音调高低，-10最低沉，+10最尖锐</div>
+        </div>
+
+        <div class="param-item">
+          <div class="param-header">
+            <span class="param-label">音量</span>
+            <span class="param-value" id="volumeValue">80%</span>
+          </div>
+          <input type="range" class="param-slider" id="volume" min="0" max="100" step="5" value="80" oninput="updateParam('volume', this.value)">
+          <div class="param-hint">调整声音大小</div>
+        </div>
+      </div>
+
+      <!-- 试听区域 -->
+      <div class="preview-section">
+        <h3 class="section-title">试听效果</h3>
+        <div class="preview-text">
+          "你好！我是你的数字人伴侣。无论你开心还是难过，我都会陪伴在你身边，倾听你的心声，给你温暖和支持。"
+        </div>
+        <button class="btn btn-primary preview-btn" onclick="previewVoice()">
+          <span id="previewIcon">🔊</span>
+          <span id="previewText">试听当前设置</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <footer class="create-footer">
+      <div class="footer-left">
+        <button class="btn btn-text" onclick="saveDraft()">
+          💾 保存草稿
+        </button>
+      </div>
+      <div class="footer-right">
+        <button class="btn btn-secondary" onclick="window.location.href='create-dh-step2.html'">
+          上一步
+        </button>
+        <button class="btn btn-primary" id="nextBtn" onclick="goToNextStep()" disabled>
+          下一步
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // 加载数据
+    let dhData = JSON.parse(sessionStorage.getItem('create_dh_data') || '{}');
+    let currentPlayingVoice = null;
+
+    // 恢复已保存的数据
+    if (dhData.voice) {
+      const card = document.querySelector(`[data-voice="${dhData.voice}"]`);
+      if (card) {
+        card.classList.add('selected');
+        document.getElementById('nextBtn').disabled = false;
+      }
+    }
+
+    if (dhData.voiceParams) {
+      const params = dhData.voiceParams;
+      if (params.speed) {
+        document.getElementById('speed').value = params.speed;
+        document.getElementById('speedValue').textContent = params.speed + 'x';
+      }
+      if (params.pitch !== undefined) {
+        document.getElementById('pitch').value = params.pitch;
+        document.getElementById('pitchValue').textContent = params.pitch;
+      }
+      if (params.volume) {
+        document.getElementById('volume').value = params.volume;
+        document.getElementById('volumeValue').textContent = params.volume + '%';
+      }
+    }
+
+    // 选择声音
+    function selectVoice(element) {
+      document.querySelectorAll('.voice-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+
+      element.classList.add('selected');
+
+      const voiceType = element.dataset.voice;
+      dhData.voice = voiceType;
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+
+      document.getElementById('nextBtn').disabled = false;
+    }
+
+    // 播放声音示例
+    function playVoice(event, voiceId) {
+      event.stopPropagation();
+      const playBtn = event.currentTarget;
+
+      if (currentPlayingVoice === voiceId) {
+        // 停止播放
+        playBtn.textContent = '▶';
+        playBtn.classList.remove('playing');
+        currentPlayingVoice = null;
+      } else {
+        // 停止其他播放
+        document.querySelectorAll('.voice-play').forEach(btn => {
+          btn.textContent = '▶';
+          btn.classList.remove('playing');
+        });
+
+        // 开始播放
+        playBtn.textContent = '⏸';
+        playBtn.classList.add('playing');
+        currentPlayingVoice = voiceId;
+
+        // 模拟播放3秒
+        setTimeout(() => {
+          playBtn.textContent = '▶';
+          playBtn.classList.remove('playing');
+          currentPlayingVoice = null;
+        }, 3000);
+
+        // 实际项目中这里应该调用TTS API
+        console.log('播放声音:', voiceId);
+      }
+    }
+
+    // 更新参数
+    function updateParam(paramName, value) {
+      if (!dhData.voiceParams) {
+        dhData.voiceParams = {};
+      }
+
+      if (paramName === 'speed') {
+        document.getElementById('speedValue').textContent = value + 'x';
+        dhData.voiceParams.speed = parseFloat(value);
+      } else if (paramName === 'pitch') {
+        document.getElementById('pitchValue').textContent = value;
+        dhData.voiceParams.pitch = parseInt(value);
+      } else if (paramName === 'volume') {
+        document.getElementById('volumeValue').textContent = value + '%';
+        dhData.voiceParams.volume = parseInt(value);
+      }
+
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+    }
+
+    // 试听效果
+    function previewVoice() {
+      if (!dhData.voice) {
+        alert('请先选择一个声音');
+        return;
+      }
+
+      const previewBtn = document.querySelector('.preview-btn');
+      const previewIcon = document.getElementById('previewIcon');
+      const previewText = document.getElementById('previewText');
+
+      previewIcon.textContent = '🔊';
+      previewText.textContent = '播放中...';
+      previewBtn.disabled = true;
+
+      // 模拟播放5秒
+      setTimeout(() => {
+        previewIcon.textContent = '🔊';
+        previewText.textContent = '试听当前设置';
+        previewBtn.disabled = false;
+      }, 5000);
+
+      // 实际项目中这里应该调用TTS API
+      console.log('试听声音:', dhData.voice, dhData.voiceParams);
+    }
+
+    // 保存草稿
+    function saveDraft() {
+      dhData.isDraft = true;
+      dhData.lastSaved = new Date().toISOString();
+
+      const drafts = JSON.parse(localStorage.getItem('mindpal_dh_drafts') || '[]');
+      const existingIndex = drafts.findIndex(d => d.draftId === dhData.draftId);
+
+      if (existingIndex >= 0) {
+        drafts[existingIndex] = dhData;
+      } else {
+        dhData.draftId = dhData.draftId || Date.now();
+        drafts.push(dhData);
+      }
+
+      localStorage.setItem('mindpal_dh_drafts', JSON.stringify(drafts));
+      alert('草稿已保存！');
+    }
+
+    // 下一步
+    function goToNextStep() {
+      if (!dhData.voice) {
+        alert('请先选择一个声音');
+        return;
+      }
+
+      // 保存当前参数
+      if (!dhData.voiceParams) {
+        dhData.voiceParams = {
+          speed: parseFloat(document.getElementById('speed').value),
+          pitch: parseInt(document.getElementById('pitch').value),
+          volume: parseInt(document.getElementById('volume').value)
+        };
+      }
+
+      dhData.currentStep = 4;
+      sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+      window.location.href = 'create-dh-step4.html';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>欢迎使用 MindPal</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .onboarding-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 顶部进度条 */
+    .progress-bar {
+      height: 4px;
+      background: var(--color-border);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--gradient-primary);
+      width: 0%;
+      transition: width var(--duration-normal) var(--ease-out);
+    }
+
+    /* 主容器 */
+    .onboarding-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-2xl) var(--spacing-md);
+      position: relative;
+    }
+
+    /* 步骤容器 */
+    .step-container {
+      width: 100%;
+      max-width: 600px;
+      display: none;
+      animation: fadeIn var(--duration-normal) var(--ease-out);
+    }
+
+    .step-container.active {
+      display: block;
+    }
+
+    /* 步骤标题 */
+    .step-header {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .step-number {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-bold);
+      color: #FFFFFF;
+      line-height: 48px;
+      margin-bottom: var(--spacing-md);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .step-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .step-description {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+      line-height: var(--line-height-body-large);
+    }
+
+    /* 步骤内容 */
+    .step-content {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-2xl);
+      box-shadow: var(--shadow-lg);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    /* 选项卡片 */
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .option-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .option-card:hover {
+      border-color: var(--color-primary-1);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .option-card.selected {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.1);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .option-icon {
+      font-size: 48px;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .option-label {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-medium);
+    }
+
+    /* 表单组 */
+    .form-group {
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .form-label {
+      display: block;
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .form-input {
+      height: 48px;
+    }
+
+    .form-textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+      color: var(--color-text-placeholder);
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+      border-color: var(--color-primary-1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      outline: none;
+    }
+
+    /* 底部按钮 */
+    .step-actions {
+      display: flex;
+      gap: var(--spacing-md);
+      justify-content: space-between;
+    }
+
+    .btn-back {
+      flex: 1;
+      max-width: 120px;
+    }
+
+    .btn-next {
+      flex: 1;
+    }
+
+    .btn-skip {
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: none;
+      padding: 12px 24px;
+      cursor: pointer;
+      transition: color var(--duration-fast) var(--ease-in-out);
+    }
+
+    .btn-skip:hover {
+      color: var(--color-primary-1);
+    }
+
+    /* 欢迎页特殊样式 */
+    .welcome-illustration {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .welcome-icon {
+      font-size: 120px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: var(--spacing-xl) 0;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-sm);
+      background: rgba(30, 41, 59, 0.4);
+      border-radius: var(--radius-md);
+      animation: slideInFromLeft var(--duration-normal) var(--ease-custom);
+    }
+
+    .feature-item:nth-child(1) { animation-delay: 0ms; }
+    .feature-item:nth-child(2) { animation-delay: 100ms; }
+    .feature-item:nth-child(3) { animation-delay: 200ms; }
+    .feature-item:nth-child(4) { animation-delay: 300ms; }
+
+    .feature-icon {
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+
+    .feature-text h4 {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .feature-text p {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+      line-height: var(--line-height-body);
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .onboarding-container {
+        padding: var(--spacing-lg) var(--spacing-md);
+      }
+
+      .step-content {
+        padding: var(--spacing-lg);
+      }
+
+      .option-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .welcome-icon {
+        font-size: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="onboarding-page page-transition">
+    <!-- 进度条 -->
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="onboarding-container">
+      <!-- 步骤1: 欢迎 -->
+      <div class="step-container active" data-step="1">
+        <div class="step-header">
+          <div class="step-number">1</div>
+          <h2 class="step-title gradient-text">欢迎来到 MindPal</h2>
+          <p class="step-description">你的专属数字灵魂伴侣</p>
+        </div>
+
+        <div class="step-content">
+          <div class="welcome-illustration">
+            <div class="welcome-icon">🧠✨</div>
+          </div>
+
+          <ul class="feature-list">
+            <li class="feature-item">
+              <span class="feature-icon">💬</span>
+              <div class="feature-text">
+                <h4>智能对话</h4>
+                <p>24小时陪伴聊天，理解你的情绪，给予温暖回应</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">🧠</span>
+              <div class="feature-text">
+                <h4>知识服务</h4>
+                <p>上传文档资料，随时查询知识，提升学习效率</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">🛍️</span>
+              <div class="feature-text">
+                <h4>购物助手</h4>
+                <p>智能推荐商品，比价助手，让购物更轻松</p>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">🎭</span>
+              <div class="feature-text">
+                <h4>个性定制</h4>
+                <p>自定义数字人形象、性格、声音，打造专属伴侣</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-primary btn-next" onclick="nextStep()">
+            开始体验
+          </button>
+        </div>
+      </div>
+
+      <!-- 步骤2: 选择使用场景 -->
+      <div class="step-container" data-step="2">
+        <div class="step-header">
+          <div class="step-number">2</div>
+          <h2 class="step-title">你主要想用 MindPal 做什么？</h2>
+          <p class="step-description">可以选择多个选项</p>
+        </div>
+
+        <div class="step-content">
+          <div class="option-grid">
+            <div class="option-card" data-value="chat" onclick="toggleOption(this)">
+              <div class="option-icon">💬</div>
+              <div class="option-label">情感陪伴</div>
+            </div>
+            <div class="option-card" data-value="knowledge" onclick="toggleOption(this)">
+              <div class="option-icon">📚</div>
+              <div class="option-label">知识查询</div>
+            </div>
+            <div class="option-card" data-value="shopping" onclick="toggleOption(this)">
+              <div class="option-icon">🛒</div>
+              <div class="option-label">购物助手</div>
+            </div>
+            <div class="option-card" data-value="learning" onclick="toggleOption(this)">
+              <div class="option-icon">🎓</div>
+              <div class="option-label">学习辅导</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-secondary btn-back" onclick="prevStep()">
+            上一步
+          </button>
+          <button class="btn btn-primary btn-next" onclick="nextStep()">
+            下一步
+          </button>
+        </div>
+      </div>
+
+      <!-- 步骤3: 选择数字人类型 -->
+      <div class="step-container" data-step="3">
+        <div class="step-header">
+          <div class="step-number">3</div>
+          <h2 class="step-title">想要什么样的数字人陪伴你？</h2>
+          <p class="step-description">选择一个你喜欢的类型</p>
+        </div>
+
+        <div class="step-content">
+          <div class="option-grid">
+            <div class="option-card" data-value="gentle" onclick="selectSingleOption(this, 'personality')">
+              <div class="option-icon">😊</div>
+              <div class="option-label">温柔体贴</div>
+            </div>
+            <div class="option-card" data-value="energetic" onclick="selectSingleOption(this, 'personality')">
+              <div class="option-icon">😄</div>
+              <div class="option-label">活泼开朗</div>
+            </div>
+            <div class="option-card" data-value="intellectual" onclick="selectSingleOption(this, 'personality')">
+              <div class="option-icon">🤓</div>
+              <div class="option-label">知性理性</div>
+            </div>
+            <div class="option-card" data-value="humorous" onclick="selectSingleOption(this, 'personality')">
+              <div class="option-icon">😆</div>
+              <div class="option-label">幽默风趣</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-secondary btn-back" onclick="prevStep()">
+            上一步
+          </button>
+          <button class="btn btn-primary btn-next" onclick="nextStep()">
+            下一步
+          </button>
+        </div>
+      </div>
+
+      <!-- 步骤4: 个性化设置 -->
+      <div class="step-container" data-step="4">
+        <div class="step-header">
+          <div class="step-number">4</div>
+          <h2 class="step-title">给你的数字人起个名字吧</h2>
+          <p class="step-description">也可以告诉我们更多你的需求</p>
+        </div>
+
+        <div class="step-content">
+          <div class="form-group">
+            <label class="form-label" for="dhName">数字人昵称</label>
+            <input
+              type="text"
+              id="dhName"
+              class="form-input"
+              placeholder="例如：小智、小雅、阿星..."
+              maxlength="20"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="userNeeds">你的需求或期待（可选）</label>
+            <textarea
+              id="userNeeds"
+              class="form-textarea"
+              placeholder="告诉我们你希望数字人帮你做什么，或者你对它有什么期待..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-secondary btn-back" onclick="prevStep()">
+            上一步
+          </button>
+          <button class="btn btn-primary btn-next" onclick="completeOnboarding()">
+            完成设置
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    const totalSteps = 4;
+    let onboardingData = {
+      scenarios: [],
+      personality: '',
+      dhName: '',
+      userNeeds: ''
+    };
+
+    // 更新进度条
+    function updateProgress() {
+      const progress = (currentStep / totalSteps) * 100;
+      document.getElementById('progressFill').style.width = `${progress}%`;
+    }
+
+    // 显示指定步骤
+    function showStep(stepNumber) {
+      document.querySelectorAll('.step-container').forEach(container => {
+        container.classList.remove('active');
+      });
+
+      const targetStep = document.querySelector(`[data-step="${stepNumber}"]`);
+      if (targetStep) {
+        targetStep.classList.add('active');
+        currentStep = stepNumber;
+        updateProgress();
+      }
+    }
+
+    // 下一步
+    function nextStep() {
+      if (currentStep < totalSteps) {
+        // 验证当前步骤
+        if (!validateStep(currentStep)) {
+          return;
+        }
+
+        // 保存当前步骤数据
+        saveStepData(currentStep);
+
+        showStep(currentStep + 1);
+      }
+    }
+
+    // 上一步
+    function prevStep() {
+      if (currentStep > 1) {
+        showStep(currentStep - 1);
+      }
+    }
+
+    // 验证步骤
+    function validateStep(step) {
+      if (step === 2) {
+        const selected = document.querySelectorAll('[data-step="2"] .option-card.selected');
+        if (selected.length === 0) {
+          alert('请至少选择一个使用场景');
+          return false;
+        }
+      }
+
+      if (step === 3) {
+        const selected = document.querySelector('[data-step="3"] .option-card.selected');
+        if (!selected) {
+          alert('请选择一个数字人类型');
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    // 保存步骤数据
+    function saveStepData(step) {
+      if (step === 2) {
+        const selected = document.querySelectorAll('[data-step="2"] .option-card.selected');
+        onboardingData.scenarios = Array.from(selected).map(card => card.dataset.value);
+      }
+
+      if (step === 3) {
+        const selected = document.querySelector('[data-step="3"] .option-card.selected');
+        if (selected) {
+          onboardingData.personality = selected.dataset.value;
+        }
+      }
+
+      if (step === 4) {
+        onboardingData.dhName = document.getElementById('dhName').value.trim();
+        onboardingData.userNeeds = document.getElementById('userNeeds').value.trim();
+      }
+    }
+
+    // 切换选项（多选）
+    function toggleOption(element) {
+      element.classList.toggle('selected');
+    }
+
+    // 单选选项
+    function selectSingleOption(element, group) {
+      const stepContainer = element.closest('.step-container');
+      stepContainer.querySelectorAll('.option-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      element.classList.add('selected');
+    }
+
+    // 完成引导
+    async function completeOnboarding() {
+      // 保存最后一步数据
+      saveStepData(4);
+
+      const dhName = onboardingData.dhName;
+      if (!dhName) {
+        alert('请给你的数字人起个名字');
+        return;
+      }
+
+      // 模拟创建数字人
+      const btn = document.querySelector('[data-step="4"] .btn-next');
+      btn.classList.add('btn-loading');
+      btn.disabled = true;
+
+      try {
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // 创建默认数字人
+        const digitalHuman = {
+          id: Date.now(),
+          name: dhName,
+          avatar: '👤',
+          personality: onboardingData.personality || 'gentle',
+          scenarios: onboardingData.scenarios,
+          userNeeds: onboardingData.userNeeds,
+          createdAt: new Date().toISOString()
+        };
+
+        // 保存到本地存储
+        const digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
+        digitalHumans.push(digitalHuman);
+        localStorage.setItem('mindpal_digital_humans', JSON.stringify(digitalHumans));
+
+        // 标记已完成引导
+        localStorage.setItem('mindpal_onboarded', 'true');
+        localStorage.setItem('mindpal_onboarding_data', JSON.stringify(onboardingData));
+
+        // 跳转到数字人列表页
+        window.location.href = 'dh-list.html';
+
+      } catch (error) {
+        console.error('创建失败:', error);
+        alert('创建失败，请稍后重试');
+        btn.classList.remove('btn-loading');
+        btn.disabled = false;
+      }
+    }
+
+    // 初始化
+    window.addEventListener('load', function() {
+      updateProgress();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MindPal - 你的数字灵魂伴侣，智能对话，情感陪伴">
+  <meta name="keywords" content="AI伴侣,数字人,智能对话,情感陪伴">
+  <title>MindPal - 数字灵魂伴侣</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    /* 登录页专属样式 */
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-md);
+      background: var(--color-bg-dark);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 背景装饰 */
+    .bg-decoration {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-circle {
+      position: absolute;
+      border-radius: var(--radius-full);
+      background: var(--gradient-primary);
+      opacity: 0.1;
+      filter: blur(80px);
+    }
+
+    .bg-circle-1 {
+      width: 400px;
+      height: 400px;
+      top: -100px;
+      right: -100px;
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .bg-circle-2 {
+      width: 300px;
+      height: 300px;
+      bottom: -50px;
+      left: -50px;
+      animation: float 6s ease-in-out infinite reverse;
+    }
+
+    /* 登录容器 */
+    .login-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      animation: scaleIn var(--duration-slow) var(--ease-custom);
+    }
+
+    /* Logo区域 */
+    .login-logo {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .login-logo-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto var(--spacing-md);
+      background: var(--gradient-primary);
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      box-shadow: var(--shadow-glow);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .login-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .login-subtitle {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+    }
+
+    /* 登录表单 */
+    .login-form {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-2xl);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .form-group {
+      margin-bottom: var(--spacing-lg);
+      position: relative;
+    }
+
+    .form-label {
+      display: block;
+      font-size: var(--font-size-body);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .form-input-wrapper {
+      position: relative;
+    }
+
+    .form-input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: var(--color-text-secondary);
+    }
+
+    .form-input {
+      width: 100%;
+      height: 48px;
+      padding: 12px 16px 12px 48px;
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .form-input::placeholder {
+      color: var(--color-text-placeholder);
+    }
+
+    .form-input:focus {
+      border-color: var(--color-primary-1);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      outline: none;
+    }
+
+    .form-input.error {
+      border-color: var(--color-error);
+    }
+
+    .form-error {
+      display: none;
+      font-size: var(--font-size-body-small);
+      color: var(--color-error);
+      margin-top: var(--spacing-xs);
+    }
+
+    .form-error.show {
+      display: block;
+      animation: slideInFromBottom var(--duration-fast) var(--ease-out);
+    }
+
+    .form-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      cursor: pointer;
+    }
+
+    .form-checkbox input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .form-checkbox label {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+    }
+
+    .forgot-password {
+      font-size: var(--font-size-body-small);
+      color: var(--color-primary-1);
+      text-decoration: none;
+      transition: color var(--duration-fast) var(--ease-in-out);
+    }
+
+    .forgot-password:hover {
+      color: var(--color-primary-2);
+    }
+
+    .login-btn {
+      width: 100%;
+      height: 48px;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin: var(--spacing-lg) 0;
+    }
+
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--color-border);
+    }
+
+    .divider-text {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+    }
+
+    .social-login {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .social-btn {
+      flex: 1;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      font-size: var(--font-size-body-large);
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text-primary);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .social-btn:hover {
+      background: rgba(30, 41, 59, 0.9);
+      border-color: var(--color-primary-1);
+    }
+
+    .signup-prompt {
+      text-align: center;
+      margin-top: var(--spacing-lg);
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+    }
+
+    .signup-link {
+      color: var(--color-primary-1);
+      text-decoration: none;
+      font-weight: var(--font-weight-medium);
+      transition: color var(--duration-fast) var(--ease-in-out);
+    }
+
+    .signup-link:hover {
+      color: var(--color-primary-2);
+    }
+
+    /* 加载状态 */
+    .btn-loading {
+      position: relative;
+      color: transparent !important;
+      pointer-events: none;
+    }
+
+    .btn-loading::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      margin-left: -10px;
+      margin-top: -10px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #FFFFFF;
+      border-radius: var(--radius-full);
+      animation: spin 0.6s linear infinite;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .login-page {
+        padding: var(--spacing-md);
+      }
+
+      .login-form {
+        padding: var(--spacing-lg);
+      }
+
+      .bg-circle-1,
+      .bg-circle-2 {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-page page-transition">
+    <!-- 背景装饰 -->
+    <div class="bg-decoration">
+      <div class="bg-circle bg-circle-1"></div>
+      <div class="bg-circle bg-circle-2"></div>
+    </div>
+
+    <!-- 登录容器 -->
+    <div class="login-container">
+      <!-- Logo -->
+      <div class="login-logo">
+        <div class="login-logo-icon">🧠</div>
+        <h1 class="login-title gradient-text">MindPal</h1>
+        <p class="login-subtitle">你的数字灵魂伴侣</p>
+      </div>
+
+      <!-- 登录表单 -->
+      <form class="login-form" id="loginForm">
+        <!-- 手机号 -->
+        <div class="form-group">
+          <label class="form-label" for="phone">手机号</label>
+          <div class="form-input-wrapper">
+            <span class="form-input-icon">📱</span>
+            <input
+              type="tel"
+              id="phone"
+              class="form-input"
+              placeholder="请输入手机号"
+              maxlength="11"
+            >
+          </div>
+          <span class="form-error" id="phoneError">请输入正确的手机号</span>
+        </div>
+
+        <!-- 密码 -->
+        <div class="form-group">
+          <label class="form-label" for="password">密码</label>
+          <div class="form-input-wrapper">
+            <span class="form-input-icon">🔒</span>
+            <input
+              type="password"
+              id="password"
+              class="form-input"
+              placeholder="请输入密码"
+            >
+          </div>
+          <span class="form-error" id="passwordError">密码不能为空</span>
+        </div>
+
+        <!-- 选项 -->
+        <div class="form-options">
+          <div class="form-checkbox">
+            <input type="checkbox" id="remember">
+            <label for="remember">记住我</label>
+          </div>
+          <a href="#" class="forgot-password">忘记密码？</a>
+        </div>
+
+        <!-- 登录按钮 -->
+        <button type="submit" class="btn btn-primary login-btn">
+          登录
+        </button>
+
+        <!-- 分割线 -->
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span class="divider-text">或使用以下方式登录</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <!-- 第三方登录 -->
+        <div class="social-login">
+          <button type="button" class="social-btn" id="wechatLogin">
+            <span>💬</span>
+            <span>微信</span>
+          </button>
+          <button type="button" class="social-btn" id="qqLogin">
+            <span>🐧</span>
+            <span>QQ</span>
+          </button>
+        </div>
+
+        <!-- 注册提示 -->
+        <div class="signup-prompt">
+          还没有账号？<a href="onboarding.html" class="signup-link">立即注册</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 表单验证和提交
+    const loginForm = document.getElementById('loginForm');
+    const phoneInput = document.getElementById('phone');
+    const passwordInput = document.getElementById('password');
+    const phoneError = document.getElementById('phoneError');
+    const passwordError = document.getElementById('passwordError');
+    const rememberCheckbox = document.getElementById('remember');
+
+    // 手机号验证
+    function validatePhone(phone) {
+      const phoneRegex = /^1[3-9]\d{9}$/;
+      return phoneRegex.test(phone);
+    }
+
+    // 显示错误
+    function showError(input, errorElement) {
+      input.classList.add('error');
+      errorElement.classList.add('show');
+    }
+
+    // 隐藏错误
+    function hideError(input, errorElement) {
+      input.classList.remove('error');
+      errorElement.classList.remove('show');
+    }
+
+    // 实时验证手机号
+    phoneInput.addEventListener('input', function() {
+      const phone = this.value.trim();
+      if (phone && !validatePhone(phone)) {
+        showError(phoneInput, phoneError);
+      } else {
+        hideError(phoneInput, phoneError);
+      }
+    });
+
+    // 失去焦点验证
+    phoneInput.addEventListener('blur', function() {
+      const phone = this.value.trim();
+      if (!phone || !validatePhone(phone)) {
+        showError(phoneInput, phoneError);
+      }
+    });
+
+    passwordInput.addEventListener('blur', function() {
+      const password = this.value.trim();
+      if (!password) {
+        showError(passwordInput, passwordError);
+      }
+    });
+
+    // 获得焦点清除错误
+    phoneInput.addEventListener('focus', function() {
+      hideError(phoneInput, phoneError);
+    });
+
+    passwordInput.addEventListener('focus', function() {
+      hideError(passwordInput, passwordError);
+    });
+
+    // 表单提交
+    loginForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const phone = phoneInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      // 验证
+      let hasError = false;
+
+      if (!phone || !validatePhone(phone)) {
+        showError(phoneInput, phoneError);
+        hasError = true;
+      }
+
+      if (!password) {
+        showError(passwordInput, passwordError);
+        hasError = true;
+      }
+
+      if (hasError) {
+        return;
+      }
+
+      // 调用后端API登录
+      const submitBtn = loginForm.querySelector('.login-btn');
+      submitBtn.classList.add('btn-loading');
+
+      try {
+        // 调用登录API
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            phone: phone,
+            password: password
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '登录失败');
+        }
+
+        // 保存token和用户信息
+        localStorage.setItem('mindpal_token', result.data.token);
+        localStorage.setItem('mindpal_user', JSON.stringify(result.data.user));
+
+        if (rememberCheckbox.checked) {
+          localStorage.setItem('mindpal_remember', 'true');
+        }
+
+        // 跳转到引导页或主页
+        const hasOnboarded = localStorage.getItem('mindpal_onboarded');
+        if (hasOnboarded) {
+          window.location.href = 'dh-list.html';
+        } else {
+          window.location.href = 'onboarding.html';
+        }
+
+      } catch (error) {
+        console.error('登录失败:', error);
+        alert(error.message || '登录失败，请稍后重试');
+        submitBtn.classList.remove('btn-loading');
+      }
+    });
+
+    // 第三方登录
+    document.getElementById('wechatLogin').addEventListener('click', function() {
+      alert('微信登录功能开发中...');
+    });
+
+    document.getElementById('qqLogin').addEventListener('click', function() {
+      alert('QQ登录功能开发中...');
+    });
+
+    // 加载记住的用户信息
+    window.addEventListener('load', function() {
+      const remember = localStorage.getItem('mindpal_remember');
+      const userData = localStorage.getItem('mindpal_user');
+
+      if (remember && userData) {
+        const user = JSON.parse(userData);
+        phoneInput.value = user.phone;
+        rememberCheckbox.checked = true;
+      }
+    });
+  </script>
+</body>
+</html>
