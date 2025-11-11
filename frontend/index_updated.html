@@ -188,6 +188,9 @@
     </div>
   </div>
 
+  <!-- 认证管理 -->
+  <script src="js/auth.js"></script>
+
   <script>
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
@@ -201,14 +204,15 @@
         return;
       }
 
-      // 保存登录状态
+      // 使用统一认证系统保存登录状态
       const userData = {
-        phone: phone,
-        isLoggedIn: true,
-        loginTime: new Date().toISOString()
+        phone: phone
       };
 
-      localStorage.setItem('mindpal_user', JSON.stringify(userData));
+      // 生成临时token (生产环境应该从后端获取)
+      const tempToken = 'temp_token_' + phone + '_' + Date.now();
+
+      MindPalAuth.saveLogin(userData, tempToken);
 
       if (remember) {
         localStorage.setItem('mindpal_remember', 'true');
@@ -216,10 +220,21 @@
 
       alert('登录成功！即将跳转...');
 
-      // 跳转到数字人列表页
+      // 检查是否有返回URL
+      const returnUrl = MindPalAuth.getReturnUrl();
+
+      // 跳转到数字人列表页或返回页面
       setTimeout(() => {
-        window.location.href = 'dh-list.html';
+        window.location.href = returnUrl || 'dh-list.html';
       }, 500);
+    });
+
+    // 页面加载时检查是否已登录
+    window.addEventListener('load', function() {
+      if (MindPalAuth.isLoggedIn()) {
+        // 如果已登录,直接跳转
+        window.location.href = 'dh-list.html';
+      }
     });
   </script>
 </body>

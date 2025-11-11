@@ -496,7 +496,15 @@
     </footer>
   </div>
 
+  <!-- 认证管理 -->
+  <script src="js/auth.js"></script>
+
   <script>
+    // 页面加载时检查登录状态
+    if (!MindPalAuth.requireLogin(window.location.href)) {
+      throw new Error('需要登录');
+    }
+
     // 加载数据
     let dhData = JSON.parse(sessionStorage.getItem('create_dh_data') || '{}');
     if (!dhData.knowledge) {

@@ -288,7 +288,16 @@
     </nav>
   </div>
 
+  <!-- 认证管理 -->
+  <script src="js/auth.js"></script>
+
   <script>
+    // 页面加载时检查登录状态
+    if (!MindPalAuth.requireLogin(window.location.href)) {
+      // 如果未登录,requireLogin会自动跳转,这里不需要继续执行
+      throw new Error('需要登录');
+    }
+
     // 加载数字人列表
     function loadDigitalHumans() {
       const digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
