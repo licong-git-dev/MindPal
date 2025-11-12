@@ -35,6 +35,16 @@ const MindPalConfig = {
       UPLOAD: '/api/knowledge/upload',
       LIST: (dhId) => `/api/knowledge/${dhId}`,
       DELETE: (docId) => `/api/knowledge/${docId}`
+    },
+
+    // 订阅相关
+    SUBSCRIPTION: {
+      CREATE: '/api/subscription/create',
+      STATUS: '/api/subscription/status',
+      CANCEL: '/api/subscription/cancel',
+      QUOTA: '/api/subscription/quota',
+      HISTORY: '/api/subscription/history',
+      UPGRADE_PREVIEW: '/api/subscription/upgrade-preview'
     }
   },
 

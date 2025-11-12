@@ -45,11 +45,13 @@ from app.routes.auth import auth_bp
 from app.routes.digital_humans import dh_bp
 from app.routes.chat import chat_bp
 from app.routes.knowledge import kb_bp
+from app.routes.subscription import subscription_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(dh_bp, url_prefix='/api/digital-humans')
 app.register_blueprint(chat_bp, url_prefix='/api/chat')
 app.register_blueprint(kb_bp, url_prefix='/api/knowledge')
+app.register_blueprint(subscription_bp, url_prefix='/api/subscription')
 
 # 健康检查端点
 @app.route('/health', methods=['GET'])
@@ -72,7 +74,8 @@ def index():
             'auth': '/api/auth',
             'digital_humans': '/api/digital-humans',
             'chat': '/api/chat',
-            'knowledge': '/api/knowledge'
+            'knowledge': '/api/knowledge',
+            'subscription': '/api/subscription'
         }
     })
 

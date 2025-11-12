@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会员套餐 - MindPal</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .pricing-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      padding-bottom: var(--spacing-2xl);
+    }
+
+    /* 顶部导航 */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .logo-text {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-bold);
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* 主内容 */
+    .main-content {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: var(--spacing-2xl);
+    }
+
+    /* 页面头部 */
+    .page-header {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .page-title {
+      font-size: var(--font-size-h1);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .page-subtitle {
+      font-size: var(--font-size-h4);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .billing-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-sm);
+      background: var(--color-bg-card);
+      border-radius: var(--radius-full);
+      margin-top: var(--spacing-lg);
+    }
+
+    .billing-option {
+      padding: var(--spacing-sm) var(--spacing-lg);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-in-out);
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+    }
+
+    .billing-option.active {
+      background: var(--gradient-primary);
+      color: #FFFFFF;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .save-badge {
+      padding: 4px 12px;
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-body-small);
+      font-weight: var(--font-weight-medium);
+    }
+
+    /* 套餐卡片 */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .pricing-card {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-2xl);
+      transition: all var(--duration-fast) var(--ease-in-out);
+      position: relative;
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .pricing-card.popular {
+      border-color: var(--color-primary-1);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 20px;
+      background: var(--gradient-primary);
+      color: #FFFFFF;
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-body-small);
+      font-weight: var(--font-weight-bold);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .plan-name {
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .plan-description {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-lg);
+      min-height: 48px;
+    }
+
+    .plan-price {
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .price-amount {
+      font-size: 48px;
+      font-weight: var(--font-weight-bold);
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .price-unit {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+      margin-left: var(--spacing-xs);
+    }
+
+    .price-original {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-disabled);
+      text-decoration: line-through;
+      margin-top: var(--spacing-xs);
+    }
+
+    .plan-features {
+      list-style: none;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) 0;
+      font-size: var(--font-size-body);
+      color: var(--color-text-primary);
+    }
+
+    .feature-icon {
+      font-size: 20px;
+      color: var(--color-primary-1);
+      flex-shrink: 0;
+    }
+
+    .feature-icon.disabled {
+      color: var(--color-text-disabled);
+    }
+
+    .plan-cta {
+      width: 100%;
+      height: 48px;
+      font-size: var(--font-size-body-large);
+    }
+
+    /* 功能对比表 */
+    .comparison-section {
+      margin-top: var(--spacing-2xl);
+    }
+
+    .section-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      text-align: center;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .comparison-table {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: var(--spacing-md);
+      padding: var(--spacing-lg);
+      background: rgba(30, 41, 59, 0.6);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: var(--spacing-md);
+      padding: var(--spacing-lg);
+      border-top: 1px solid rgba(148, 163, 184, 0.1);
+      align-items: center;
+    }
+
+    .table-row:hover {
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .feature-name {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+    }
+
+    .feature-value {
+      text-align: center;
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+    }
+
+    .check-icon {
+      color: var(--color-primary-1);
+      font-size: 24px;
+    }
+
+    .cross-icon {
+      color: var(--color-text-disabled);
+      font-size: 24px;
+    }
+
+    /* FAQ */
+    .faq-section {
+      margin-top: var(--spacing-2xl);
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .faq-item {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .faq-question {
+      font-size: var(--font-size-body-large);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .faq-answer {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* 响应式 */
+    @media (max-width: 968px) {
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .table-header,
+      .table-row {
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        font-size: var(--font-size-body-small);
+      }
+
+      .price-amount {
+        font-size: 36px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        padding: var(--spacing-md);
+      }
+
+      .comparison-table {
+        overflow-x: auto;
+      }
+
+      .table-header,
+      .table-row {
+        min-width: 600px;
+      }
+    }
+  </style>
+
+  <!-- JS Dependencies -->
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+</head>
+<body>
+  <div class="pricing-page page-transition">
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+      <a href="dh-list.html" class="logo">
+        <div class="logo-icon">🧠</div>
+        <div class="logo-text">MindPal</div>
+      </a>
+      <div class="top-actions">
+        <button class="btn btn-secondary" onclick="window.location.href='dh-list.html'">
+          返回首页
+        </button>
+      </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+      <!-- 页面头部 -->
+      <div class="page-header">
+        <h1 class="page-title gradient-text">选择适合你的套餐</h1>
+        <p class="page-subtitle">开启你的数字人伴侣之旅</p>
+
+        <!-- 付费周期切换 -->
+        <div class="billing-toggle">
+          <div class="billing-option active" id="monthlyBtn" onclick="switchBilling('monthly')">
+            按月付费
+          </div>
+          <div class="billing-option" id="yearlyBtn" onclick="switchBilling('yearly')">
+            按年付费
+            <span class="save-badge">省¥40</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 套餐卡片 -->
+      <div class="pricing-grid">
+        <!-- 免费版 -->
+        <div class="pricing-card">
+          <h2 class="plan-name">免费版</h2>
+          <p class="plan-description">体验基础功能，感受数字人魅力</p>
+
+          <div class="plan-price">
+            <span class="price-amount">¥0</span>
+            <span class="price-unit">永久免费</span>
+          </div>
+
+          <ul class="plan-features">
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>5个数字人</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>知识库50MB</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>每天100次对话</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>每天10次语音</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>2D头像</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon disabled">✗</span>
+              <span style="color: var(--color-text-disabled);">3D写实形象</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon disabled">✗</span>
+              <span style="color: var(--color-text-disabled);">202种方言</span>
+            </li>
+          </ul>
+
+          <button class="btn btn-secondary plan-cta" onclick="window.location.href='dh-list.html'">
+            立即使用
+          </button>
+        </div>
+
+        <!-- 会员版 (推荐) -->
+        <div class="pricing-card popular">
+          <div class="popular-badge">最受欢迎</div>
+          <h2 class="plan-name">会员版</h2>
+          <p class="plan-description">解锁全部功能，享受极致体验</p>
+
+          <div class="plan-price">
+            <span class="price-amount" id="memberPrice">¥19.9</span>
+            <span class="price-unit" id="memberUnit">/月</span>
+            <div class="price-original" id="memberOriginal" style="display: none;">
+              原价 ¥239/年
+            </div>
+          </div>
+
+          <ul class="plan-features">
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>10个数字人</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>知识库500MB</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>无限对话</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>无限语音</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>3D写实形象</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>202种方言支持</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>深度情绪分析</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>优先体验新功能</span>
+            </li>
+          </ul>
+
+          <button class="btn btn-primary plan-cta" onclick="subscribePlan('member')" id="memberCTA">
+            立即订阅
+          </button>
+        </div>
+
+        <!-- 企业版 -->
+        <div class="pricing-card">
+          <h2 class="plan-name">企业版</h2>
+          <p class="plan-description">定制化服务，满足企业级需求</p>
+
+          <div class="plan-price">
+            <span class="price-amount" style="font-size: 36px;">定制报价</span>
+          </div>
+
+          <ul class="plan-features">
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>不限数字人</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>私有化部署</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>定制开发</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>SLA保障</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>专属技术支持</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>数据安全保障</span>
+            </li>
+            <li class="feature-item">
+              <span class="feature-icon">✓</span>
+              <span>API接口定制</span>
+            </li>
+          </ul>
+
+          <button class="btn btn-secondary plan-cta" onclick="contactSales()">
+            联系销售
+          </button>
+        </div>
+      </div>
+
+      <!-- 功能对比表 -->
+      <div class="comparison-section">
+        <h2 class="section-title">功能详细对比</h2>
+        <div class="comparison-table">
+          <div class="table-header">
+            <div>功能</div>
+            <div style="text-align: center;">免费版</div>
+            <div style="text-align: center;">会员版</div>
+            <div style="text-align: center;">企业版</div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">数字人数量</div>
+            <div class="feature-value">5个</div>
+            <div class="feature-value">10个</div>
+            <div class="feature-value">不限</div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">知识库容量</div>
+            <div class="feature-value">50MB</div>
+            <div class="feature-value">500MB</div>
+            <div class="feature-value">不限</div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">每日对话次数</div>
+            <div class="feature-value">100次</div>
+            <div class="feature-value">无限</div>
+            <div class="feature-value">无限</div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">每日语音次数</div>
+            <div class="feature-value">10次</div>
+            <div class="feature-value">无限</div>
+            <div class="feature-value">无限</div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">数字人形象</div>
+            <div class="feature-value">2D头像</div>
+            <div class="feature-value">3D写实</div>
+            <div class="feature-value">3D写实</div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">方言支持</div>
+            <div class="feature-value"><span class="cross-icon">✗</span></div>
+            <div class="feature-value">202种</div>
+            <div class="feature-value">202种</div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">情绪分析</div>
+            <div class="feature-value">基础</div>
+            <div class="feature-value">深度</div>
+            <div class="feature-value">深度</div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">优先新功能</div>
+            <div class="feature-value"><span class="cross-icon">✗</span></div>
+            <div class="feature-value"><span class="check-icon">✓</span></div>
+            <div class="feature-value"><span class="check-icon">✓</span></div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">私有化部署</div>
+            <div class="feature-value"><span class="cross-icon">✗</span></div>
+            <div class="feature-value"><span class="cross-icon">✗</span></div>
+            <div class="feature-value"><span class="check-icon">✓</span></div>
+          </div>
+
+          <div class="table-row">
+            <div class="feature-name">技术支持</div>
+            <div class="feature-value">社区</div>
+            <div class="feature-value">邮件</div>
+            <div class="feature-value">专属</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ -->
+      <div class="faq-section">
+        <h2 class="section-title">常见问题</h2>
+
+        <div class="faq-item">
+          <div class="faq-question">Q: 如何取消订阅？</div>
+          <div class="faq-answer">
+            A: 您可以随时在会员中心取消订阅，取消后将在当前订阅周期结束后停止续费，已付费用不退还。
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Q: 年付和月付有什么区别？</div>
+          <div class="faq-answer">
+            A: 年付可享受优惠价¥199/年(相当于¥16.6/月)，相比月付¥19.9/月节省¥40。年付一次性扣费，月付每月自动续费。
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Q: 免费版和会员版的主要区别是什么？</div>
+          <div class="faq-answer">
+            A: 会员版解锁3D写实形象、202种方言支持、无限对话次数、深度情绪分析等高级功能。免费版有每日对话次数限制，且仅支持2D头像。
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Q: 支持哪些支付方式？</div>
+          <div class="faq-answer">
+            A: 目前支持支付宝和微信支付。企业版支持对公转账。
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Q: 我的数据安全吗？</div>
+          <div class="faq-answer">
+            A: 我们采用端到端加密，您的对话记录和个人信息都经过加密存储，仅您本人可访问。我们承诺不将您的数据用于训练AI模型或分享给第三方。
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Q: 企业版如何联系？</div>
+          <div class="faq-answer">
+            A: 请发送邮件至 enterprise@mindpal.ai 或拨打企业热线 400-XXX-XXXX，我们的企业服务团队将在24小时内与您联系。
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // 当前付费周期 ('monthly' 或 'yearly')
+    let currentBilling = 'monthly';
+
+    // 切换付费周期
+    function switchBilling(type) {
+      currentBilling = type;
+
+      // 更新按钮状态
+      const monthlyBtn = document.getElementById('monthlyBtn');
+      const yearlyBtn = document.getElementById('yearlyBtn');
+
+      if (type === 'monthly') {
+        monthlyBtn.classList.add('active');
+        yearlyBtn.classList.remove('active');
+
+        // 更新价格显示
+        document.getElementById('memberPrice').textContent = '¥19.9';
+        document.getElementById('memberUnit').textContent = '/月';
+        document.getElementById('memberOriginal').style.display = 'none';
+        document.getElementById('memberCTA').textContent = '立即订阅';
+      } else {
+        monthlyBtn.classList.remove('active');
+        yearlyBtn.classList.add('active');
+
+        // 更新价格显示
+        document.getElementById('memberPrice').textContent = '¥199';
+        document.getElementById('memberUnit').textContent = '/年';
+        document.getElementById('memberOriginal').style.display = 'block';
+        document.getElementById('memberCTA').textContent = '立即订阅 (省¥40)';
+      }
+    }
+
+    // 订阅套餐
+    async function subscribePlan(planType) {
+      // 检查登录状态
+      if (!MindPalAuth.isLoggedIn()) {
+        alert('请先登录');
+        window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+        return;
+      }
+
+      // 确定订阅类型
+      const subscriptionType = currentBilling === 'monthly' ? 'monthly' : 'yearly';
+      const price = subscriptionType === 'monthly' ? 19.9 : 199;
+
+      // 确认订阅
+      const confirmed = confirm(
+        `确认订阅会员版 (${subscriptionType === 'monthly' ? '月付' : '年付'})?\n` +
+        `价格: ¥${price}\n\n` +
+        `点击确定后将跳转到支付页面。`
+      );
+
+      if (!confirmed) return;
+
+      try {
+        // TODO: 调用订阅API
+        // const result = await MindPalAPI.subscription.create({
+        //   plan: 'member',
+        //   billing: subscriptionType
+        // });
+
+        // 暂时跳转到会员中心(订阅功能开发中)
+        alert('订阅功能开发中，敬请期待！');
+        // window.location.href = 'subscription.html';
+
+      } catch (error) {
+        console.error('订阅失败:', error);
+        alert('订阅失败: ' + error.message);
+      }
+    }
+
+    // 联系销售
+    function contactSales() {
+      alert('企业版咨询\n\n邮箱: enterprise@mindpal.ai\n电话: 400-XXX-XXXX\n\n我们的企业服务团队将在24小时内与您联系。');
+    }
+
+    // 页面加载时检查URL参数
+    window.addEventListener('load', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const billing = urlParams.get('billing');
+
+      if (billing === 'yearly') {
+        switchBilling('yearly');
+      }
+    });
+  </script>
+</body>
+</html>

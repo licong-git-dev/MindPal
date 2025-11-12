@@ -3,8 +3,9 @@
 """
 
 from flask import Blueprint, request, jsonify
-from app.models import db, User
+from app.models import db, User, UserQuota
 from datetime import datetime, timedelta
+from functools import wraps
 import jwt
 import os
 
@@ -30,6 +31,29 @@ def verify_token(token):
         return None
     except jwt.InvalidTokenError:
         return None
+
+
+def token_required(f):
+    """Token验证装饰器"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return jsonify({'error': '缺少Authorization header'}), 401
+
+        token = auth_header.replace('Bearer ', '')
+        user_id = verify_token(token)
+
+        if not user_id:
+            return jsonify({'error': 'Token无效或已过期'}), 401
+
+        current_user = User.query.get(user_id)
+        if not current_user:
+            return jsonify({'error': '用户不存在'}), 404
+
+        return f(current_user, *args, **kwargs)
+
+    return decorated
 
 
 @auth_bp.route('/register', methods=['POST'])
@@ -76,6 +100,18 @@ def register():
         user.set_password(password)
 
         db.session.add(user)
+        db.session.flush()  # 获取user.id
+
+        # 创建默认免费版配额
+        quota = UserQuota(
+            user_id=user.id,
+            dh_limit=5,  # 免费版5个数字人
+            kb_size_limit=50,  # 免费版50MB知识库
+            daily_chat_limit=100,  # 免费版每天100次对话
+            daily_voice_limit=10  # 免费版每天10次语音
+        )
+        db.session.add(quota)
+
         db.session.commit()
 
         return jsonify({

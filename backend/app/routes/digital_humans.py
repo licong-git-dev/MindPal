@@ -5,6 +5,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, DigitalHuman, User
 from app.routes.auth import verify_token
+from app.utils.quota_checker import check_dh_limit
 from datetime import datetime
 
 dh_bp = Blueprint('digital_humans', __name__)
@@ -71,6 +72,11 @@ def create_digital_human():
         user = get_current_user()
         if not user:
             return jsonify({'success': False, 'error': '未授权'}), 401
+
+        # 检查数字人数量限制
+        can_create, error_info = check_dh_limit(user.id)
+        if not can_create:
+            return jsonify({'success': False, **error_info}), 403
 
         data = request.get_json()
 

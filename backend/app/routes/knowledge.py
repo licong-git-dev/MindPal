@@ -7,6 +7,7 @@ from app.models import db, DigitalHuman, KnowledgeDoc, User
 from app.routes.auth import verify_token
 from app.services.rag_service import get_rag_service
 from app.services.file_parser import FileParser
+from app.utils.quota_checker import check_kb_size_limit
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
@@ -103,6 +104,16 @@ def upload_document():
                 'error': f'不支持的文件格式,仅支持: {", ".join(ALLOWED_EXTENSIONS)}'
             }), 400
 
+        # 检查文件大小(先不保存,获取大小)
+        file.seek(0, os.SEEK_END)  # 移到文件末尾
+        file_size = file.tell()  # 获取文件大小
+        file.seek(0)  # 重置指针到开头
+
+        # 检查知识库容量限制
+        can_upload, error_info = check_kb_size_limit(user.id, file_size)
+        if not can_upload:
+            return jsonify({'success': False, **error_info}), 403
+
         # 保存文件
         filename = secure_filename(file.filename)
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
@@ -112,7 +123,6 @@ def upload_document():
         file.save(file_path)
 
         # 获取文件信息
-        file_size = os.path.getsize(file_path)
         file_type = FileParser.get_file_type(filename)
 
         # 创建数据库记录

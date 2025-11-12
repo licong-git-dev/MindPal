@@ -232,6 +232,61 @@ const MindPalAPI = {
         method: 'DELETE'
       });
     }
+  },
+
+  /**
+   * 订阅系统API
+   */
+  subscription: {
+    /**
+     * 创建订阅
+     */
+    async create(planType, paymentId) {
+      return await MindPalAPI.request(MindPalConfig.API.SUBSCRIPTION.CREATE, {
+        method: 'POST',
+        body: JSON.stringify({ planType, paymentId })
+      });
+    },
+
+    /**
+     * 获取订阅状态
+     */
+    async getStatus() {
+      return await MindPalAPI.request(MindPalConfig.API.SUBSCRIPTION.STATUS);
+    },
+
+    /**
+     * 取消订阅
+     */
+    async cancel() {
+      return await MindPalAPI.request(MindPalConfig.API.SUBSCRIPTION.CANCEL, {
+        method: 'POST'
+      });
+    },
+
+    /**
+     * 获取配额信息
+     */
+    async getQuota() {
+      return await MindPalAPI.request(MindPalConfig.API.SUBSCRIPTION.QUOTA);
+    },
+
+    /**
+     * 获取订阅历史
+     */
+    async getHistory() {
+      return await MindPalAPI.request(MindPalConfig.API.SUBSCRIPTION.HISTORY);
+    },
+
+    /**
+     * 升级预览
+     */
+    async upgradePreview(planType) {
+      return await MindPalAPI.request(MindPalConfig.API.SUBSCRIPTION.UPGRADE_PREVIEW, {
+        method: 'POST',
+        body: JSON.stringify({ planType })
+      });
+    }
   }
 };
 
