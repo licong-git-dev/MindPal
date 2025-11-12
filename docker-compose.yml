@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # 后端服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: mindpal-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/data:/app/backend/data
+      - ./backend/uploads:/app/backend/uploads
+      - ./.env:/app/.env
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    networks:
+      - mindpal-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 前端服务
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: mindpal-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - mindpal-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  mindpal-network:
+    driver: bridge
+
+volumes:
+  backend-data:
+  backend-uploads:
