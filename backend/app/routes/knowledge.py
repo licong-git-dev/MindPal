@@ -5,9 +5,21 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, DigitalHuman, KnowledgeDoc, User
 from app.routes.auth import verify_token
+from app.services.rag_service import get_rag_service
+from app.services.file_parser import FileParser
+from werkzeug.utils import secure_filename
 import os
+from datetime import datetime
 
 kb_bp = Blueprint('knowledge', __name__)
+
+# 上传配置
+UPLOAD_FOLDER = os.path.join('backend', 'uploads')
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt', 'md'}
+
+# 确保上传目录存在
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 def get_current_user():
@@ -53,29 +65,105 @@ def list_documents(dh_id):
 @kb_bp.route('/upload', methods=['POST'])
 def upload_document():
     """
-    上传文档（P1阶段实现）
+    上传文档并处理RAG向量化
 
-    当前返回模拟数据
+    Form data:
+        - dhId: 数字人ID
+        - file: 文件
     """
     try:
         user = get_current_user()
         if not user:
             return jsonify({'success': False, 'error': '未授权'}), 401
 
-        # TODO: 实现文件上传、解析、向量化
-        # 当前返回成功响应
-        return jsonify({
-            'success': True,
-            'message': '文档上传功能将在P1阶段实现'
-        })
+        # 获取参数
+        dh_id = request.form.get('dhId')
+        if not dh_id:
+            return jsonify({'success': False, 'error': '缺少数字人ID'}), 400
+
+        dh_id = int(dh_id)
+
+        # 验证数字人所有权
+        dh = DigitalHuman.query.filter_by(id=dh_id, user_id=user.id).first()
+        if not dh:
+            return jsonify({'success': False, 'error': '数字人不存在或无权限'}), 403
+
+        # 检查文件
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': '未上传文件'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': '文件名为空'}), 400
+
+        # 验证文件类型
+        if not FileParser.is_supported(file.filename):
+            return jsonify({
+                'success': False,
+                'error': f'不支持的文件格式,仅支持: {", ".join(ALLOWED_EXTENSIONS)}'
+            }), 400
+
+        # 保存文件
+        filename = secure_filename(file.filename)
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        unique_filename = f"{timestamp}_{filename}"
+        file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+
+        file.save(file_path)
+
+        # 获取文件信息
+        file_size = os.path.getsize(file_path)
+        file_type = FileParser.get_file_type(filename)
+
+        # 创建数据库记录
+        doc = KnowledgeDoc(
+            dh_id=dh_id,
+            filename=filename,
+            file_type=file_type,
+            file_size=file_size,
+            file_url=file_path,
+            status='processing'
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        # 异步处理RAG
+        rag_service = get_rag_service(dh_id)
+        result = rag_service.process_document(doc.id, file_path, filename)
+
+        if result['success']:
+            # 更新状态
+            doc.status = 'completed'
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'data': {
+                    'doc': doc.to_dict(),
+                    'chunks_count': result.get('chunks_count', 0),
+                    'words': result.get('words', 0)
+                },
+                'message': '文档上传并处理成功'
+            }), 201
+        else:
+            # 处理失败
+            doc.status = 'failed'
+            db.session.commit()
+
+            return jsonify({
+                'success': False,
+                'error': result.get('error', '文档处理失败')
+            }), 500
 
     except Exception as e:
+        db.session.rollback()
+        print(f"[Knowledge] 上传文档失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @kb_bp.route('/<int:doc_id>', methods=['DELETE'])
 def delete_document(doc_id):
-    """删除文档"""
+    """删除文档及其向量数据"""
     try:
         user = get_current_user()
         if not user:
@@ -91,6 +179,18 @@ def delete_document(doc_id):
         if not dh:
             return jsonify({'success': False, 'error': '无权限'}), 403
 
+        # 删除向量数据
+        rag_service = get_rag_service(doc.dh_id)
+        rag_service.delete_document(doc_id)
+
+        # 删除文件
+        if doc.file_url and os.path.exists(doc.file_url):
+            try:
+                os.remove(doc.file_url)
+            except Exception as e:
+                print(f"[Knowledge] 删除文件失败: {e}")
+
+        # 删除数据库记录
         db.session.delete(doc)
         db.session.commit()
 
@@ -101,4 +201,5 @@ def delete_document(doc_id):
 
     except Exception as e:
         db.session.rollback()
+        print(f"[Knowledge] 删除文档失败: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
