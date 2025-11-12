@@ -254,3 +254,48 @@ class UserQuota(db.Model):
         """增加语音计数"""
         self.reset_daily_quota()
         self.daily_voice_used += 1
+
+
+class Analytics(db.Model):
+    """数据埋点表"""
+    __tablename__ = 'analytics'
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_name = db.Column(db.String(50), nullable=False, index=True)  # 事件名称
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))  # 用户ID (可为空,匿名事件)
+    session_id = db.Column(db.String(100))  # 会话ID
+
+    # 事件元数据
+    metadata = db.Column(db.Text)  # JSON string
+
+    # 环境信息
+    user_agent = db.Column(db.String(255))  # 用户代理
+    ip_address = db.Column(db.String(50))  # IP地址
+    referrer = db.Column(db.String(255))  # 来源页面
+
+    # 时间戳
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    # 关系
+    user = db.relationship('User', backref='analytics')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'eventName': self.event_name,
+            'userId': self.user_id,
+            'sessionId': self.session_id,
+            'metadata': json.loads(self.metadata) if self.metadata else {},
+            'userAgent': self.user_agent,
+            'ipAddress': self.ip_address,
+            'referrer': self.referrer,
+            'createdAt': self.created_at.isoformat() if self.created_at else None
+        }
+
+    def set_metadata(self, metadata_dict):
+        """设置元数据"""
+        self.metadata = json.dumps(metadata_dict, ensure_ascii=False)
+
+    def get_metadata(self):
+        """获取元数据（字典）"""
+        return json.loads(self.metadata) if self.metadata else {}

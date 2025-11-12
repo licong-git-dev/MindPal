@@ -287,6 +287,56 @@ const MindPalAPI = {
         body: JSON.stringify({ planType })
       });
     }
+  },
+
+  /**
+   * 数据埋点API
+   */
+  analytics: {
+    /**
+     * 追踪事件
+     */
+    async track(eventName, metadata = {}) {
+      return await MindPalAPI.request(MindPalConfig.API.ANALYTICS.TRACK, {
+        method: 'POST',
+        body: JSON.stringify({ eventName, metadata })
+      });
+    },
+
+    /**
+     * 批量追踪事件
+     */
+    async batch(events) {
+      return await MindPalAPI.request(MindPalConfig.API.ANALYTICS.BATCH, {
+        method: 'POST',
+        body: JSON.stringify({ events })
+      });
+    },
+
+    /**
+     * 获取面板数据
+     */
+    async getDashboard(range = 7) {
+      return await MindPalAPI.request(`${MindPalConfig.API.ANALYTICS.DASHBOARD}?range=${range}`);
+    },
+
+    /**
+     * 获取事件列表
+     */
+    async getEvents(eventName, limit = 100, offset = 0) {
+      let url = `${MindPalConfig.API.ANALYTICS.EVENTS}?limit=${limit}&offset=${offset}`;
+      if (eventName) {
+        url += `&event=${eventName}`;
+      }
+      return await MindPalAPI.request(url);
+    },
+
+    /**
+     * 获取转化漏斗
+     */
+    async getFunnel(range = 30) {
+      return await MindPalAPI.request(`${MindPalConfig.API.ANALYTICS.FUNNEL}?range=${range}`);
+    }
   }
 };
 

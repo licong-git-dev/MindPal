@@ -45,6 +45,15 @@ const MindPalConfig = {
       QUOTA: '/api/subscription/quota',
       HISTORY: '/api/subscription/history',
       UPGRADE_PREVIEW: '/api/subscription/upgrade-preview'
+    },
+
+    // 数据埋点相关
+    ANALYTICS: {
+      TRACK: '/api/analytics/track',
+      BATCH: '/api/analytics/batch',
+      DASHBOARD: '/api/analytics/dashboard',
+      EVENTS: '/api/analytics/events',
+      FUNNEL: '/api/analytics/funnel'
     }
   },
 
