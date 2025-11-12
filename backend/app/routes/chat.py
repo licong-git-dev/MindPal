@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify, Response, current_app
 from app.models import db, DigitalHuman, Message, User
 from app.routes.auth import verify_token
 from app.services.qianwen_service import chat_with_qianwen, analyze_emotion
+from app.services.rag_service import get_rag_service
 from datetime import datetime
 import json
 
@@ -77,10 +78,26 @@ def chat():
                 'content': msg.content
             })
 
-        # 添加当前消息
+        # 【RAG增强】检索相关知识
+        rag_context = ""
+        try:
+            rag_service = get_rag_service(dh_id)
+            rag_context = rag_service.build_context(user_message, top_k=3, max_tokens=1000)
+
+            if rag_context:
+                print(f"[Chat] RAG检索到知识, 长度: {len(rag_context)}")
+        except Exception as e:
+            print(f"[Chat] RAG检索失败(继续对话): {e}")
+
+        # 添加当前消息（如果有RAG上下文，将其注入）
+        current_message = user_message
+        if rag_context:
+            # 在用户消息中注入相关知识
+            current_message = f"{rag_context}\n\n【用户问题】\n{user_message}\n\n请基于上述相关知识回答用户问题。如果知识库中没有相关信息，请根据你的理解正常回答。"
+
         messages.append({
             'role': 'user',
-            'content': user_message
+            'content': current_message
         })
 
         # 获取app实例用于生成器中的数据库操作
