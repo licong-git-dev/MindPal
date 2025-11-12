@@ -326,6 +326,7 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/analytics.js"></script>
 </head>
 <body>
   <div class="knowledge-page page-transition">
@@ -600,6 +601,9 @@
 
         progressFill.style.width = '100%';
         progressText.textContent = '完成!';
+
+        // 追踪知识库上传事件
+        MindPalAnalytics.trackKBUpload(currentDHId, file.name, file.size);
 
         // 刷新列表
         setTimeout(() => {

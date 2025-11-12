@@ -372,6 +372,7 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/analytics.js"></script>
 </head>
 <body>
   <div class="pricing-page page-transition">
@@ -691,6 +692,18 @@
     // 当前付费周期 ('monthly' 或 'yearly')
     let currentBilling = 'monthly';
 
+    // 页面加载时追踪查看订阅页面事件
+    window.addEventListener('load', function() {
+      MindPalAnalytics.trackSubscriptionView();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const billing = urlParams.get('billing');
+
+      if (billing === 'yearly') {
+        switchBilling('yearly');
+      }
+    });
+
     // 切换付费周期
     function switchBilling(type) {
       currentBilling = type;
@@ -733,6 +746,9 @@
       const subscriptionType = currentBilling === 'monthly' ? 'monthly' : 'yearly';
       const price = subscriptionType === 'monthly' ? 19.9 : 199;
 
+      // 追踪点击付费按钮事件
+      MindPalAnalytics.trackPaymentClick(subscriptionType, price);
+
       // 确认订阅
       const confirmed = confirm(
         `确认订阅会员版 (${subscriptionType === 'monthly' ? '月付' : '年付'})?\n` +
@@ -764,15 +780,6 @@
       alert('企业版咨询\n\n邮箱: enterprise@mindpal.ai\n电话: 400-XXX-XXXX\n\n我们的企业服务团队将在24小时内与您联系。');
     }
 
-    // 页面加载时检查URL参数
-    window.addEventListener('load', function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const billing = urlParams.get('billing');
-
-      if (billing === 'yearly') {
-        switchBilling('yearly');
-      }
-    });
   </script>
 </body>
 </html>

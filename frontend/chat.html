@@ -320,6 +320,7 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/analytics.js"></script>
 </head>
 <body>
   <div class="chat-page page-transition">
@@ -575,6 +576,9 @@
             emotion: data.emotion || 'neutral'
           });
           saveMessages();
+
+          // 追踪对话发送事件
+          MindPalAnalytics.trackChatSend(parseInt(dhId), userMessage.length);
         },
         // onError: 错误处理
         (error) => {
