@@ -412,7 +412,9 @@
   </div>
 
   <!-- 认证管理 -->
+  <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
 
   <script>
     // 页面加载时检查登录状态
@@ -584,45 +586,24 @@
       createBtn.disabled = true;
 
       try {
-        // 调用后端API创建数字人
-        const token = MindPalAuth.getAuthToken();
-        if (!token) {
-          alert('请先登录');
-          window.location.href = 'index.html';
-          return;
-        }
-
-        const response = await fetch('http://localhost:5000/api/digital-humans', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: dhData.name,
-            avatar: dhData.avatar,
-            avatarEmoji: dhData.avatarEmoji,
-            avatarCustom: dhData.avatarCustom,
-            personality: dhData.personality,
-            traits: dhData.traits,
-            customPersonality: dhData.customPersonality,
-            voice: dhData.voice,
-            voiceParams: dhData.voiceParams
-          })
+        // 调用API创建数字人
+        const result = await MindPalAPI.digitalHumans.create({
+          name: dhData.name,
+          avatar: dhData.avatar,
+          avatarEmoji: dhData.avatarEmoji,
+          avatarCustom: dhData.avatarCustom,
+          personality: dhData.personality,
+          traits: dhData.traits,
+          customPersonality: dhData.customPersonality,
+          voice: dhData.voice,
+          voiceParams: dhData.voiceParams
         });
 
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
+        if (!result.success) {
           throw new Error(result.error || '创建失败');
         }
 
         const digitalHuman = result.data;
-
-        // 同时保存到本地存储以便离线访问
-        const digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
-        digitalHumans.push(digitalHuman);
-        localStorage.setItem('mindpal_digital_humans', JSON.stringify(digitalHumans));
 
         // 清除会话数据
         sessionStorage.removeItem('create_dh_data');

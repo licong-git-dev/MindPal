@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>知识库管理 - MindPal</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .knowledge-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 80px;
+    }
+
+    /* 顶部栏 */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      cursor: pointer;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .logo-text {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-bold);
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* 主内容 */
+    .main-content {
+      flex: 1;
+      padding: var(--spacing-2xl);
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .page-title {
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .page-subtitle {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+    }
+
+    /* 上传区域 */
+    .upload-section {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-2xl);
+      text-align: center;
+      margin-bottom: var(--spacing-2xl);
+      transition: all var(--duration-fast) var(--ease-in-out);
+      cursor: pointer;
+    }
+
+    .upload-section:hover {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .upload-section.dragover {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.1);
+      border-style: solid;
+    }
+
+    .upload-icon {
+      font-size: 60px;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .upload-title {
+      font-size: var(--font-size-h3);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .upload-hint {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .upload-progress {
+      display: none;
+      margin-top: var(--spacing-lg);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--gradient-primary);
+      width: 0%;
+      transition: width var(--duration-fast) var(--ease-out);
+    }
+
+    .progress-text {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+    }
+
+    /* 文档列表 */
+    .docs-list {
+      display: grid;
+      gap: var(--spacing-md);
+    }
+
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md) var(--spacing-lg);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-lg);
+      transition: all var(--duration-fast) var(--ease-in-out);
+    }
+
+    .doc-item:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .doc-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-md);
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .doc-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .doc-name {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-medium);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .doc-meta {
+      display: flex;
+      gap: var(--spacing-md);
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-disabled);
+    }
+
+    .doc-status {
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-body-small);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .doc-status.completed {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .doc-status.processing {
+      background: rgba(251, 146, 60, 0.2);
+      color: #fb923c;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .doc-status.failed {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .doc-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-2xl);
+    }
+
+    .empty-icon {
+      font-size: 80px;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .empty-title {
+      font-size: var(--font-size-h3);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .empty-description {
+      font-size: var(--font-size-body-large);
+      color: var(--color-text-secondary);
+    }
+
+    /* 底部导航 */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: var(--z-dropdown);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: var(--spacing-sm) var(--spacing-lg);
+      color: var(--color-text-disabled);
+      text-decoration: none;
+      transition: color var(--duration-fast) var(--ease-in-out);
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      color: var(--color-primary-1);
+    }
+
+    .nav-icon {
+      font-size: 24px;
+    }
+
+    .nav-label {
+      font-size: var(--font-size-body-small);
+    }
+
+    @media (max-width: 768px) {
+      .top-bar,
+      .main-content {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+      }
+
+      .logo-text {
+        display: none;
+      }
+
+      .doc-meta {
+        flex-direction: column;
+        gap: 4px;
+      }
+    }
+  </style>
+
+  <!-- JS Dependencies -->
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+</head>
+<body>
+  <div class="knowledge-page page-transition">
+    <!-- 顶部栏 -->
+    <header class="top-bar">
+      <div class="logo" onclick="window.location.href='dh-list.html'">
+        <div class="logo-icon">🧠</div>
+        <div class="logo-text">MindPal</div>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-icon" onclick="window.location.reload()" title="刷新">
+          🔄
+        </button>
+      </div>
+    </header>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title gradient-text">知识库管理</h1>
+        <p class="page-subtitle" id="docCount">加载中...</p>
+      </div>
+
+      <!-- 上传区域 -->
+      <div class="upload-section" id="uploadSection">
+        <div class="upload-icon">📄</div>
+        <h2 class="upload-title">上传文档</h2>
+        <p class="upload-hint">点击选择文件或拖拽文件到这里<br>支持 PDF, DOCX, TXT, MD 格式</p>
+        <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" style="display: none;">
+        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+          选择文件
+        </button>
+
+        <!-- 上传进度 -->
+        <div class="upload-progress" id="uploadProgress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText">处理中...</div>
+        </div>
+      </div>
+
+      <!-- 文档列表 -->
+      <div class="docs-list" id="docsList">
+        <!-- 文档项将动态添加 -->
+      </div>
+
+      <!-- 空状态 -->
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="empty-icon">📚</div>
+        <h2 class="empty-title">还没有文档</h2>
+        <p class="empty-description">上传文档来扩展数字人的知识库</p>
+      </div>
+    </main>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav">
+      <a href="dh-list.html" class="nav-item">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">数字人</span>
+      </a>
+      <a href="knowledge.html" class="nav-item active">
+        <span class="nav-icon">📚</span>
+        <span class="nav-label">知识库</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">我的</span>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    // 页面加载时检查登录状态
+    if (!MindPalAuth.requireLogin(window.location.href)) {
+      throw new Error('需要登录');
+    }
+
+    // 当前选中的数字人ID (从URL参数获取,或默认选第一个)
+    let currentDHId = null;
+
+    // 加载文档列表
+    async function loadDocuments() {
+      if (!currentDHId) {
+        // 先获取数字人列表
+        try {
+          const result = await MindPalAPI.digitalHumans.list();
+          if (result.success && result.data && result.data.length > 0) {
+            currentDHId = result.data[0].id;
+          } else {
+            document.getElementById('docCount').textContent = '请先创建数字人';
+            document.getElementById('emptyState').style.display = 'block';
+            return;
+          }
+        } catch (error) {
+          console.error('加载数字人列表失败:', error);
+          document.getElementById('docCount').textContent = '加载失败';
+          return;
+        }
+      }
+
+      try {
+        const result = await MindPalAPI.knowledge.list(currentDHId);
+
+        if (!result.success) {
+          throw new Error(result.error || '加载失败');
+        }
+
+        const docs = result.data.docs || [];
+
+        // 更新计数
+        document.getElementById('docCount').textContent =
+          docs.length > 0 ? `共 ${docs.length} 个文档` : '还没有文档';
+
+        const docsList = document.getElementById('docsList');
+        const emptyState = document.getElementById('emptyState');
+
+        if (docs.length === 0) {
+          emptyState.style.display = 'block';
+          docsList.innerHTML = '';
+          return;
+        }
+
+        emptyState.style.display = 'none';
+        docsList.innerHTML = '';
+
+        docs.forEach(doc => {
+          const docItem = createDocItem(doc);
+          docsList.appendChild(docItem);
+        });
+
+      } catch (error) {
+        console.error('加载文档列表失败:', error);
+        alert('加载文档列表失败: ' + error.message);
+      }
+    }
+
+    // 创建文档项
+    function createDocItem(doc) {
+      const item = document.createElement('div');
+      item.className = 'doc-item';
+
+      // 文件类型图标
+      const icons = {
+        'pdf': '📕',
+        'docx': '📘',
+        'txt': '📄',
+        'md': '📝'
+      };
+      const icon = icons[doc.fileType] || '📄';
+
+      // 格式化文件大小
+      const sizeKB = Math.round(doc.fileSize / 1024);
+      const sizeText = sizeKB < 1024 ? `${sizeKB} KB` : `${(sizeKB / 1024).toFixed(1)} MB`;
+
+      // 格式化时间
+      const createdAt = new Date(doc.createdAt);
+      const timeText = createdAt.toLocaleDateString('zh-CN');
+
+      // 状态文本
+      const statusText = {
+        'completed': '已完成',
+        'processing': '处理中',
+        'failed': '失败'
+      }[doc.status] || doc.status;
+
+      item.innerHTML = `
+        <div class="doc-icon">${icon}</div>
+        <div class="doc-info">
+          <div class="doc-name">${doc.filename}</div>
+          <div class="doc-meta">
+            <span>${sizeText}</span>
+            <span>${timeText}</span>
+          </div>
+        </div>
+        <div class="doc-status ${doc.status}">${statusText}</div>
+        <div class="doc-actions">
+          <button class="btn btn-small btn-danger" onclick="deleteDoc(${doc.id}, '${doc.filename}')">
+            删除
+          </button>
+        </div>
+      `;
+
+      return item;
+    }
+
+    // 文件选择
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        uploadFile(file);
+      }
+    });
+
+    // 拖拽上传
+    const uploadSection = document.getElementById('uploadSection');
+
+    uploadSection.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.classList.add('dragover');
+    });
+
+    uploadSection.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+    });
+
+    uploadSection.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        uploadFile(file);
+      }
+    });
+
+    // 上传文件
+    async function uploadFile(file) {
+      if (!currentDHId) {
+        alert('请先创建数字人');
+        return;
+      }
+
+      // 验证文件类型
+      const allowedTypes = ['pdf', 'docx', 'txt', 'md'];
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      if (!allowedTypes.includes(fileExt)) {
+        alert('不支持的文件格式,仅支持: ' + allowedTypes.join(', '));
+        return;
+      }
+
+      // 验证文件大小 (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('文件大小不能超过10MB');
+        return;
+      }
+
+      // 显示进度
+      const uploadProgress = document.getElementById('uploadProgress');
+      const progressFill = document.getElementById('progressFill');
+      const progressText = document.getElementById('progressText');
+
+      uploadProgress.style.display = 'block';
+      progressFill.style.width = '30%';
+      progressText.textContent = '上传中...';
+
+      try {
+        // 构建FormData
+        const formData = new FormData();
+        formData.append('dhId', currentDHId);
+        formData.append('file', file);
+
+        // 调用API
+        const token = MindPalAuth.getAuthToken();
+        const response = await fetch(`${MindPalConfig.API_BASE_URL}/api/knowledge/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': token && !token.startsWith('temp_') ? `Bearer ${token}` : ''
+          },
+          body: formData
+        });
+
+        progressFill.style.width = '60%';
+        progressText.textContent = '处理中...';
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || '上传失败');
+        }
+
+        progressFill.style.width = '100%';
+        progressText.textContent = '完成!';
+
+        // 刷新列表
+        setTimeout(() => {
+          uploadProgress.style.display = 'none';
+          progressFill.style.width = '0%';
+          document.getElementById('fileInput').value = '';
+          loadDocuments();
+        }, 1000);
+
+      } catch (error) {
+        console.error('上传失败:', error);
+        alert('上传失败: ' + error.message);
+        uploadProgress.style.display = 'none';
+        progressFill.style.width = '0%';
+      }
+    }
+
+    // 删除文档
+    async function deleteDoc(docId, filename) {
+      if (!confirm(`确定要删除文档 "${filename}" 吗?`)) {
+        return;
+      }
+
+      try {
+        const result = await MindPalAPI.knowledge.delete(docId);
+
+        if (!result.success) {
+          throw new Error(result.error || '删除失败');
+        }
+
+        alert('删除成功');
+        loadDocuments();
+
+      } catch (error) {
+        console.error('删除失败:', error);
+        alert('删除失败: ' + error.message);
+      }
+    }
+
+    // 页面加载
+    window.addEventListener('load', loadDocuments);
+  </script>
+</body>
+</html>

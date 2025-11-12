@@ -289,7 +289,9 @@
   </div>
 
   <!-- 认证管理 -->
+  <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
 
   <script>
     // 页面加载时检查登录状态
@@ -299,36 +301,53 @@
     }
 
     // 加载数字人列表
-    function loadDigitalHumans() {
-      const digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
+    async function loadDigitalHumans() {
       const dhGrid = document.getElementById('dhGrid');
       const emptyState = document.getElementById('emptyState');
       const dhCount = document.getElementById('dhCount');
 
-      // 更新计数
-      dhCount.textContent = digitalHumans.length > 0
-        ? `共 ${digitalHumans.length} 个数字人`
-        : '还没有数字人';
+      try {
+        // 调用API获取数字人列表
+        const result = await MindPalAPI.digitalHumans.list();
 
-      if (digitalHumans.length === 0) {
+        if (!result.success) {
+          throw new Error(result.error || '获取数字人列表失败');
+        }
+
+        const digitalHumans = result.data || [];
+
+        // 更新计数
+        dhCount.textContent = digitalHumans.length > 0
+          ? `共 ${digitalHumans.length} 个数字人`
+          : '还没有数字人';
+
+        if (digitalHumans.length === 0) {
+          // 显示空状态
+          emptyState.style.display = 'block';
+          dhGrid.innerHTML = '';
+          return;
+        }
+
+        // 隐藏空状态
+        emptyState.style.display = 'none';
+
+        // 渲染数字人卡片
+        const createCard = dhGrid.querySelector('.create-dh-card');
+        dhGrid.innerHTML = '';
+        dhGrid.appendChild(createCard);
+
+        digitalHumans.forEach(dh => {
+          const card = createDHCard(dh);
+          dhGrid.appendChild(card);
+        });
+
+      } catch (error) {
+        console.error('加载数字人列表失败:', error);
+        alert('加载数字人列表失败: ' + error.message);
         // 显示空状态
         emptyState.style.display = 'block';
         dhGrid.innerHTML = '';
-        return;
       }
-
-      // 隐藏空状态
-      emptyState.style.display = 'none';
-
-      // 渲染数字人卡片
-      const createCard = dhGrid.querySelector('.create-dh-card');
-      dhGrid.innerHTML = '';
-      dhGrid.appendChild(createCard);
-
-      digitalHumans.forEach(dh => {
-        const card = createDHCard(dh);
-        dhGrid.appendChild(card);
-      });
     }
 
     // 创建数字人卡片
@@ -388,16 +407,26 @@
     }
 
     // 删除数字人
-    function deleteDH(id) {
+    async function deleteDH(id) {
       if (!confirm('确定要删除这个数字人吗？所有对话记录将被清除。')) {
         return;
       }
 
-      let digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
-      digitalHumans = digitalHumans.filter(dh => dh.id !== id);
-      localStorage.setItem('mindpal_digital_humans', JSON.stringify(digitalHumans));
+      try {
+        const result = await MindPalAPI.digitalHumans.delete(id);
 
-      loadDigitalHumans();
+        if (!result.success) {
+          throw new Error(result.error || '删除失败');
+        }
+
+        alert('删除成功');
+        // 重新加载列表
+        loadDigitalHumans();
+
+      } catch (error) {
+        console.error('删除数字人失败:', error);
+        alert('删除失败: ' + error.message);
+      }
     }
 
     // 页面加载时加载列表
