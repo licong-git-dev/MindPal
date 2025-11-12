@@ -67,6 +67,49 @@
       gap: var(--spacing-md);
     }
 
+    /* 配额警告横幅 */
+    .quota-warning {
+      display: none;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);
+      border: 2px solid #f59e0b;
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .quota-warning.show {
+      display: block;
+    }
+
+    .warning-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-md);
+    }
+
+    .warning-info {
+      flex: 1;
+    }
+
+    .warning-title {
+      font-size: var(--font-size-body-large);
+      font-weight: var(--font-weight-bold);
+      color: #f59e0b;
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .warning-text {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+    }
+
+    .warning-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+
     /* 主内容 */
     .main-content {
       flex: 1;
@@ -236,6 +279,9 @@
         <div class="logo-text">MindPal</div>
       </div>
       <div class="top-actions">
+        <button class="btn btn-secondary" onclick="window.location.href='subscription.html'" title="会员中心">
+          💎 会员中心
+        </button>
         <button class="btn btn-icon" onclick="window.location.reload()" title="刷新">
           🔄
         </button>
@@ -247,6 +293,24 @@
       <div class="page-header">
         <h1 class="page-title gradient-text">我的数字人</h1>
         <p class="page-subtitle" id="dhCount">-</p>
+      </div>
+
+      <!-- 配额警告横幅 -->
+      <div id="quotaWarning" class="quota-warning">
+        <div class="warning-content">
+          <div class="warning-info">
+            <div class="warning-title" id="warningTitle">配额即将用尽</div>
+            <div class="warning-text" id="warningText">您的数字人数量已接近上限</div>
+          </div>
+          <div class="warning-actions">
+            <button class="btn btn-primary" onclick="window.location.href='pricing.html'">
+              升级会员
+            </button>
+            <button class="btn btn-icon" onclick="document.getElementById('quotaWarning').classList.remove('show')">
+              ✕
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- 数字人网格 -->
@@ -350,6 +414,45 @@
       }
     }
 
+    // 检查配额并显示警告
+    async function checkQuota() {
+      try {
+        const response = await MindPalAPI.subscription.getStatus();
+
+        if (response.success === false) {
+          console.error('获取配额失败:', response.error);
+          return;
+        }
+
+        const usage = response.usage;
+        const quotaWarning = document.getElementById('quotaWarning');
+        const warningTitle = document.getElementById('warningTitle');
+        const warningText = document.getElementById('warningText');
+
+        // 检查各项配额是否接近上限（80%以上）
+        if (usage.dhPercent >= 80 && usage.dhLimit > 0) {
+          warningTitle.textContent = '数字人配额即将用尽';
+          warningText.textContent = `您已使用 ${usage.dhCount}/${usage.dhLimit} 个数字人，升级会员可创建更多数字人`;
+          quotaWarning.classList.add('show');
+        } else if (usage.kbPercent >= 80 && usage.kbSizeLimit > 0) {
+          warningTitle.textContent = '知识库容量即将用尽';
+          warningText.textContent = `您已使用 ${usage.kbSizeMB.toFixed(1)}MB/${usage.kbSizeLimit}MB，升级会员可获得500MB空间`;
+          quotaWarning.classList.add('show');
+        } else if (usage.dailyChatPercent >= 80 && usage.dailyChatLimit > 0) {
+          warningTitle.textContent = '今日对话次数即将用尽';
+          warningText.textContent = `您今日已使用 ${usage.dailyChatUsed}/${usage.dailyChatLimit} 次对话，升级会员可无限对话`;
+          quotaWarning.classList.add('show');
+        } else if (usage.dailyVoicePercent >= 80 && usage.dailyVoiceLimit > 0) {
+          warningTitle.textContent = '今日语音次数即将用尽';
+          warningText.textContent = `您今日已使用 ${usage.dailyVoiceUsed}/${usage.dailyVoiceLimit} 次语音，升级会员可无限语音`;
+          quotaWarning.classList.add('show');
+        }
+
+      } catch (error) {
+        console.error('检查配额失败:', error);
+      }
+    }
+
     // 创建数字人卡片
     function createDHCard(dh) {
       const card = document.createElement('div');
@@ -429,8 +532,11 @@
       }
     }
 
-    // 页面加载时加载列表
-    window.addEventListener('load', loadDigitalHumans);
+    // 页面加载时加载列表和检查配额
+    window.addEventListener('load', async function() {
+      await loadDigitalHumans();
+      await checkQuota();
+    });
   </script>
 </body>
 </html>

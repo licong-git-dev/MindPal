@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会员中心 - MindPal</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .subscription-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      padding-bottom: var(--spacing-2xl);
+    }
+
+    /* 顶部导航 */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-dropdown);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .logo-text {
+      font-size: var(--font-size-h4);
+      font-weight: var(--font-weight-bold);
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* 主内容 */
+    .main-content {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: var(--spacing-2xl);
+    }
+
+    /* 页面头部 */
+    .page-header {
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .page-title {
+      font-size: var(--font-size-h1);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    /* 订阅状态卡片 */
+    .subscription-card {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-2xl);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .subscription-card.premium {
+      border-color: var(--color-primary-1);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .subscription-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .subscription-info {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-lg);
+    }
+
+    .plan-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-lg);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-body-large);
+      font-weight: var(--font-weight-bold);
+    }
+
+    .plan-badge.free {
+      background: rgba(148, 163, 184, 0.2);
+      color: var(--color-text-secondary);
+    }
+
+    .plan-badge.premium {
+      background: var(--gradient-primary);
+      color: #FFFFFF;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .plan-details h2 {
+      font-size: var(--font-size-h2);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .plan-details p {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+    }
+
+    .subscription-actions {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    /* 配额使用卡片 */
+    .quota-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .quota-item {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+    }
+
+    .quota-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .quota-title {
+      font-size: var(--font-size-body-large);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .quota-icon {
+      font-size: 20px;
+    }
+
+    .quota-value {
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-bold);
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .quota-progress {
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+      transition: width 0.3s ease;
+    }
+
+    .progress-fill.warning {
+      background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    }
+
+    .quota-text {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* 订阅详情 */
+    .subscription-details {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .details-title {
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-lg);
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+    }
+
+    .detail-label {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+    }
+
+    .detail-value {
+      font-size: var(--font-size-body-large);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    /* 订阅历史 */
+    .subscription-history {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+    }
+
+    .history-title {
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-md);
+      background: rgba(30, 41, 59, 0.3);
+      border-radius: var(--radius-md);
+    }
+
+    .history-info {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+    }
+
+    .history-plan {
+      font-size: var(--font-size-body-large);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .history-date {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+    }
+
+    .history-status {
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-body-small);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .history-status.active {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .history-status.expired {
+      background: rgba(148, 163, 184, 0.2);
+      color: var(--color-text-disabled);
+    }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-2xl);
+      color: var(--color-text-secondary);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: var(--spacing-md);
+      opacity: 0.5;
+    }
+
+    /* 升级提示 */
+    .upgrade-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+      border: 2px solid var(--color-primary-1);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .upgrade-content {
+      flex: 1;
+    }
+
+    .upgrade-title {
+      font-size: var(--font-size-h3);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .upgrade-text {
+      font-size: var(--font-size-body);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .upgrade-features {
+      display: flex;
+      gap: var(--spacing-lg);
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-secondary);
+    }
+
+    .upgrade-feature {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .main-content {
+        padding: var(--spacing-md);
+      }
+
+      .quota-grid,
+      .details-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .subscription-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+      }
+
+      .subscription-actions {
+        width: 100%;
+      }
+
+      .subscription-actions .btn {
+        flex: 1;
+      }
+
+      .upgrade-banner {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .upgrade-features {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+    }
+
+    /* 加载状态 */
+    .loading-skeleton {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+  </style>
+
+  <!-- JS Dependencies -->
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+</head>
+<body>
+  <div class="subscription-page page-transition">
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+      <a href="dh-list.html" class="logo">
+        <div class="logo-icon">🧠</div>
+        <div class="logo-text">MindPal</div>
+      </a>
+      <div class="top-actions">
+        <button class="btn btn-secondary" onclick="window.location.href='dh-list.html'">
+          返回首页
+        </button>
+      </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+      <!-- 页面头部 -->
+      <div class="page-header">
+        <h1 class="page-title gradient-text">会员中心</h1>
+      </div>
+
+      <!-- 升级提示（免费用户显示） -->
+      <div id="upgradeBanner" class="upgrade-banner" style="display: none;">
+        <div class="upgrade-content">
+          <h2 class="upgrade-title">升级会员，解锁全部功能</h2>
+          <p class="upgrade-text">享受无限对话、3D写实形象、202种方言支持等高级功能</p>
+          <div class="upgrade-features">
+            <div class="upgrade-feature">
+              <span>✓</span>
+              <span>无限对话和语音</span>
+            </div>
+            <div class="upgrade-feature">
+              <span>✓</span>
+              <span>10个数字人</span>
+            </div>
+            <div class="upgrade-feature">
+              <span>✓</span>
+              <span>500MB知识库</span>
+            </div>
+            <div class="upgrade-feature">
+              <span>✓</span>
+              <span>3D写实形象</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="window.location.href='pricing.html'">
+          立即升级
+        </button>
+      </div>
+
+      <!-- 订阅状态卡片 -->
+      <div id="subscriptionCard" class="subscription-card">
+        <div class="subscription-header">
+          <div class="subscription-info">
+            <div class="plan-details">
+              <h2 id="planName">加载中...</h2>
+              <p id="planDescription">正在获取订阅信息</p>
+            </div>
+          </div>
+          <div class="subscription-actions">
+            <button id="upgradeBtn" class="btn btn-primary" onclick="window.location.href='pricing.html'" style="display: none;">
+              升级会员
+            </button>
+            <button id="cancelBtn" class="btn btn-secondary" onclick="cancelSubscription()" style="display: none;">
+              取消自动续费
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 配额使用情况 -->
+      <div class="quota-grid">
+        <!-- 数字人数量 -->
+        <div class="quota-item">
+          <div class="quota-header">
+            <div class="quota-title">
+              <span class="quota-icon">👥</span>
+              数字人数量
+            </div>
+            <div class="quota-value" id="dhQuotaValue">-/-</div>
+          </div>
+          <div class="quota-progress">
+            <div class="progress-bar">
+              <div id="dhProgress" class="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="quota-text">
+            <span id="dhQuotaText">加载中...</span>
+            <span id="dhQuotaPercent">0%</span>
+          </div>
+        </div>
+
+        <!-- 知识库容量 -->
+        <div class="quota-item">
+          <div class="quota-header">
+            <div class="quota-title">
+              <span class="quota-icon">📚</span>
+              知识库容量
+            </div>
+            <div class="quota-value" id="kbQuotaValue">-/-</div>
+          </div>
+          <div class="quota-progress">
+            <div class="progress-bar">
+              <div id="kbProgress" class="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="quota-text">
+            <span id="kbQuotaText">加载中...</span>
+            <span id="kbQuotaPercent">0%</span>
+          </div>
+        </div>
+
+        <!-- 今日对话次数 -->
+        <div class="quota-item">
+          <div class="quota-header">
+            <div class="quota-title">
+              <span class="quota-icon">💬</span>
+              今日对话次数
+            </div>
+            <div class="quota-value" id="chatQuotaValue">-/-</div>
+          </div>
+          <div class="quota-progress">
+            <div class="progress-bar">
+              <div id="chatProgress" class="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="quota-text">
+            <span id="chatQuotaText">加载中...</span>
+            <span id="chatQuotaPercent">0%</span>
+          </div>
+        </div>
+
+        <!-- 今日语音次数 -->
+        <div class="quota-item">
+          <div class="quota-header">
+            <div class="quota-title">
+              <span class="quota-icon">🎤</span>
+              今日语音次数
+            </div>
+            <div class="quota-value" id="voiceQuotaValue">-/-</div>
+          </div>
+          <div class="quota-progress">
+            <div class="progress-bar">
+              <div id="voiceProgress" class="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="quota-text">
+            <span id="voiceQuotaText">加载中...</span>
+            <span id="voiceQuotaPercent">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 订阅详情 -->
+      <div id="subscriptionDetails" class="subscription-details" style="display: none;">
+        <h3 class="details-title">订阅详情</h3>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="detail-label">开始日期</span>
+            <span class="detail-value" id="startDate">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">结束日期</span>
+            <span class="detail-value" id="endDate">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">订阅状态</span>
+            <span class="detail-value" id="subscriptionStatus">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">自动续费</span>
+            <span class="detail-value" id="autoRenew">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 订阅历史 -->
+      <div class="subscription-history">
+        <h3 class="history-title">订阅历史</h3>
+        <div id="historyList" class="history-list">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>加载中...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let currentSubscription = null;
+
+    // 页面加载时获取订阅信息
+    window.addEventListener('load', async function() {
+      // 检查登录状态
+      if (!MindPalAuth.isLoggedIn()) {
+        alert('请先登录');
+        window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+        return;
+      }
+
+      await loadSubscriptionStatus();
+      await loadSubscriptionHistory();
+    });
+
+    // 加载订阅状态
+    async function loadSubscriptionStatus() {
+      try {
+        const response = await MindPalAPI.subscription.getStatus();
+
+        if (response.success === false) {
+          throw new Error(response.error || '获取订阅信息失败');
+        }
+
+        currentSubscription = response.subscription;
+        const quota = response.quota;
+        const usage = response.usage;
+
+        // 更新订阅状态卡片
+        updateSubscriptionCard(currentSubscription, quota);
+
+        // 更新配额使用情况
+        updateQuotaUsage(usage);
+
+        // 更新订阅详情
+        if (currentSubscription) {
+          updateSubscriptionDetails(currentSubscription);
+        }
+
+      } catch (error) {
+        console.error('加载订阅状态失败:', error);
+        alert('加载订阅信息失败: ' + error.message);
+      }
+    }
+
+    // 更新订阅状态卡片
+    function updateSubscriptionCard(subscription, quota) {
+      const planName = document.getElementById('planName');
+      const planDescription = document.getElementById('planDescription');
+      const subscriptionCard = document.getElementById('subscriptionCard');
+      const upgradeBtn = document.getElementById('upgradeBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const upgradeBanner = document.getElementById('upgradeBanner');
+
+      if (!subscription || subscription.planType === 'free') {
+        // 免费版
+        planName.textContent = '免费版';
+        planDescription.textContent = '体验基础功能，感受数字人魅力';
+        subscriptionCard.classList.remove('premium');
+        upgradeBtn.style.display = 'block';
+        cancelBtn.style.display = 'none';
+        upgradeBanner.style.display = 'flex';
+      } else {
+        // 会员版
+        const planTypeText = subscription.planType === 'monthly' ? '月付' : '年付';
+        planName.textContent = `会员版 (${planTypeText})`;
+        planDescription.textContent = '享受全部高级功能和无限配额';
+        subscriptionCard.classList.add('premium');
+        upgradeBtn.style.display = 'none';
+        cancelBtn.style.display = subscription.autoRenew ? 'block' : 'none';
+        upgradeBanner.style.display = 'none';
+      }
+    }
+
+    // 更新配额使用情况
+    function updateQuotaUsage(usage) {
+      // 数字人数量
+      updateQuotaItem('dh', usage.dhCount, usage.dhLimit, usage.dhPercent);
+
+      // 知识库容量
+      updateQuotaItem('kb', usage.kbSizeMB, usage.kbSizeLimit, usage.kbPercent, 'MB');
+
+      // 今日对话次数
+      const chatLimit = usage.dailyChatLimit === -1 ? '无限' : usage.dailyChatLimit;
+      updateQuotaItem('chat', usage.dailyChatUsed, chatLimit, usage.dailyChatPercent, '次');
+
+      // 今日语音次数
+      const voiceLimit = usage.dailyVoiceLimit === -1 ? '无限' : usage.dailyVoiceLimit;
+      updateQuotaItem('voice', usage.dailyVoiceUsed, voiceLimit, usage.dailyVoicePercent, '次');
+    }
+
+    // 更新单个配额项
+    function updateQuotaItem(type, used, limit, percent, unit = '') {
+      const valueEl = document.getElementById(`${type}QuotaValue`);
+      const textEl = document.getElementById(`${type}QuotaText`);
+      const percentEl = document.getElementById(`${type}QuotaPercent`);
+      const progressEl = document.getElementById(`${type}Progress`);
+
+      valueEl.textContent = `${used}${unit}/${limit === '无限' ? '∞' : limit + unit}`;
+      textEl.textContent = limit === '无限' ? '无限制' : `已使用 ${used}${unit}`;
+      percentEl.textContent = limit === '无限' ? '' : `${percent.toFixed(1)}%`;
+
+      if (limit !== '无限') {
+        progressEl.style.width = `${Math.min(percent, 100)}%`;
+        progressEl.classList.toggle('warning', percent >= 80);
+      } else {
+        progressEl.style.width = '0%';
+      }
+    }
+
+    // 更新订阅详情
+    function updateSubscriptionDetails(subscription) {
+      const detailsSection = document.getElementById('subscriptionDetails');
+      const startDateEl = document.getElementById('startDate');
+      const endDateEl = document.getElementById('endDate');
+      const statusEl = document.getElementById('subscriptionStatus');
+      const autoRenewEl = document.getElementById('autoRenew');
+
+      if (subscription && subscription.planType !== 'free') {
+        detailsSection.style.display = 'block';
+
+        startDateEl.textContent = new Date(subscription.startDate).toLocaleDateString('zh-CN');
+        endDateEl.textContent = subscription.endDate ? new Date(subscription.endDate).toLocaleDateString('zh-CN') : '永久';
+        statusEl.textContent = subscription.status === 'active' ? '活跃' : '已过期';
+        autoRenewEl.textContent = subscription.autoRenew ? '已开启' : '已关闭';
+      } else {
+        detailsSection.style.display = 'none';
+      }
+    }
+
+    // 加载订阅历史
+    async function loadSubscriptionHistory() {
+      try {
+        const response = await MindPalAPI.subscription.getHistory();
+
+        if (response.success === false) {
+          throw new Error(response.error || '获取订阅历史失败');
+        }
+
+        const historyList = document.getElementById('historyList');
+        const subscriptions = response.subscriptions || [];
+
+        if (subscriptions.length === 0) {
+          historyList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <p>暂无订阅历史</p>
+            </div>
+          `;
+          return;
+        }
+
+        historyList.innerHTML = subscriptions.map(sub => {
+          const planTypeMap = {
+            'free': '免费版',
+            'monthly': '会员版(月付)',
+            'yearly': '会员版(年付)'
+          };
+
+          const statusClass = sub.status === 'active' ? 'active' : 'expired';
+          const statusText = sub.status === 'active' ? '活跃' : '已过期';
+
+          return `
+            <div class="history-item">
+              <div class="history-info">
+                <div class="history-plan">${planTypeMap[sub.planType] || sub.planType}</div>
+                <div class="history-date">${new Date(sub.createdAt).toLocaleDateString('zh-CN')} - ${sub.endDate ? new Date(sub.endDate).toLocaleDateString('zh-CN') : '永久'}</div>
+              </div>
+              <div class="history-status ${statusClass}">${statusText}</div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('加载订阅历史失败:', error);
+      }
+    }
+
+    // 取消订阅
+    async function cancelSubscription() {
+      if (!confirm('确定要取消自动续费吗？\n\n取消后将在当前订阅周期结束后停止续费，已付费用不退还。')) {
+        return;
+      }
+
+      try {
+        const response = await MindPalAPI.subscription.cancel();
+
+        if (response.success === false) {
+          throw new Error(response.error || '取消订阅失败');
+        }
+
+        alert('已成功取消自动续费\n\n将在当前订阅周期结束后停止续费');
+
+        // 重新加载订阅信息
+        await loadSubscriptionStatus();
+
+      } catch (error) {
+        console.error('取消订阅失败:', error);
+        alert('取消订阅失败: ' + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
