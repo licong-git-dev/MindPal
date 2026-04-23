@@ -25,10 +25,13 @@
 
 | 文档 | 用途 |
 |------|------|
-| [DEVELOPMENT_ROADMAP.md](roadmap/DEVELOPMENT_ROADMAP.md) | 4 阶段产品路线图 |
-| [BUSINESS_ROADMAP_V2.md](roadmap/BUSINESS_ROADMAP_V2.md) | 商业化路线图 V2 |
+| ⭐ [PRODUCT_STRATEGY_V3.md](roadmap/PRODUCT_STRATEGY_V3.md) | **战略过滤器**：三车道验证/差异化/规模化 + Kill Criteria + 不做清单 |
+| [DEVELOPMENT_ROADMAP.md](roadmap/DEVELOPMENT_ROADMAP.md) | 4 阶段产品路线图（执行层）|
+| [BUSINESS_ROADMAP_V2.md](roadmap/BUSINESS_ROADMAP_V2.md) | 商业化路线图 V2（执行层）|
 | [TODO_DEVELOPMENT.md](roadmap/TODO_DEVELOPMENT.md) | 细化任务清单 |
 | [SUMMARY.md](roadmap/SUMMARY.md) | Phase 0 交付总结 |
+
+> 📌 **阅读顺序**：先读 V3 战略，再看 V1/V2 执行细节。V3 定义"做什么、不做什么"；V1/V2 定义"做的那些事怎么做"。
 
 ### 🚀 [ops/](ops/) · 部署与测试
 

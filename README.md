@@ -330,8 +330,9 @@ docker compose up -d
 | 技术 | [docs/technical/TECHNICAL_STRATEGY.md](docs/technical/TECHNICAL_STRATEGY.md) | 深度技术方案 |
 | 技术 | [docs/technical/BACKEND_IMPLEMENTATION_PLAN.md](docs/technical/BACKEND_IMPLEMENTATION_PLAN.md) | 后端实施计划 |
 | 技术 | [docs/technical/HUNYUAN_INTEGRATION_PLAN.md](docs/technical/HUNYUAN_INTEGRATION_PLAN.md) | 混元 3D 整合方案 |
-| 路线 | [docs/roadmap/DEVELOPMENT_ROADMAP.md](docs/roadmap/DEVELOPMENT_ROADMAP.md) | 4 阶段开发路线图 |
-| 路线 | [docs/roadmap/BUSINESS_ROADMAP_V2.md](docs/roadmap/BUSINESS_ROADMAP_V2.md) | 商业化路线图 V2 |
+| 路线 ⭐ | [docs/roadmap/PRODUCT_STRATEGY_V3.md](docs/roadmap/PRODUCT_STRATEGY_V3.md) | **战略过滤器**：三车道 + Kill Criteria + 不做清单 |
+| 路线 | [docs/roadmap/DEVELOPMENT_ROADMAP.md](docs/roadmap/DEVELOPMENT_ROADMAP.md) | 4 阶段开发路线图（执行层） |
+| 路线 | [docs/roadmap/BUSINESS_ROADMAP_V2.md](docs/roadmap/BUSINESS_ROADMAP_V2.md) | 商业化路线图 V2（执行层） |
 | 路线 | [docs/roadmap/TODO_DEVELOPMENT.md](docs/roadmap/TODO_DEVELOPMENT.md) | 细化任务清单 |
 | 路线 | [docs/roadmap/SUMMARY.md](docs/roadmap/SUMMARY.md) | Phase 0 交付总结 |
 | 运维 | [docs/ops/DEPLOYMENT.md](docs/ops/DEPLOYMENT.md) | 部署指南 |
