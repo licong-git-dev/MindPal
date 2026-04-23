@@ -1,4 +1,12 @@
-# MindPal Backend API
+# MindPal Backend API [LEGACY · Flask MVP]
+
+> ⚠️ **遗留版本说明**：本目录是最早的 Flask MVP 实现，用于 P0 阶段快速验证。
+> **下一代主线已迁移到 [`backend_v2/`](../backend_v2/)（FastAPI + async SQLAlchemy）**。
+> 路线图「波次 1」会将本目录所有能力迁完后**归档/删除**，新开发请直接在 `backend_v2/` 进行。
+>
+> 保留原因：MVP 阶段有稳定代码，`docs/roadmap/SUMMARY.md` 中的功能描述基于这版。
+
+---
 
 > 基于Flask + 阿里云通义千问的数字人对话平台后端服务
 
@@ -489,7 +497,8 @@ cat .env
 - [阿里云DashScope文档](https://help.aliyun.com/zh/dashscope/)
 - [Flask文档](https://flask.palletsprojects.com/)
 - [前端项目文档](../frontend/README.md)
-- [后端实施方案](../BACKEND_IMPLEMENTATION_PLAN.md)
+- [后端实施方案](../docs/technical/BACKEND_IMPLEMENTATION_PLAN.md)
+- [主线 backend_v2/ FastAPI 版本](../backend_v2/README.md)
 
 ---
 

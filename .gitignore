@@ -62,6 +62,11 @@ backend_v2/test_result.json
 *.pkl
 *.faiss
 
+# 测试产物
+backend_v2/test_result.json
+*.coverage.xml
+test-results/
+
 # ============================================================
 # IDE / Editor
 # ============================================================

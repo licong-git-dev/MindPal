@@ -230,7 +230,7 @@ python -m http.server 8000
 ## 📖 相关文档
 
 - [PRD产品需求文档](../PRD.md)
-- [DESIGN_SPEC设计规范](../DESIGN_SPEC.md)
+- [DESIGN_SPEC设计规范](../docs/product/DESIGN_SPEC.md)
 - [后端API文档](../backend/README.md)（待创建）
 
 ## 🤝 贡献指南

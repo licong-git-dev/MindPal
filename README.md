@@ -10,7 +10,7 @@
 [![Flask](https://img.shields.io/badge/flask-3.0-lightgrey.svg)](https://flask.palletsprojects.com/)
 [![Docker](https://img.shields.io/badge/docker-compose-2496ED.svg)](https://www.docker.com/)
 
-[在线演示](http://43.98.170.184) · [商业计划](Business_Plan/MindPal_深度解读.md) · [技术方案](TECHNICAL_STRATEGY.md) · [路线图](DEVELOPMENT_ROADMAP.md)
+[在线演示](http://43.98.170.184) · [文档中心](docs/README.md) · [商业计划](docs/business/MindPal_深度解读.md) · [技术方案](docs/technical/TECHNICAL_STRATEGY.md) · [路线图](docs/roadmap/DEVELOPMENT_ROADMAP.md)
 
 </div>
 
@@ -139,7 +139,7 @@
 - React Native 移动端（iOS / Android 原生推送）
 - 开放 API + SDK，做 PaaS（企业定制数字人）
 - 3D 虚拟形象（口型同步）
-- HunyuanWorld 3D 场景接入（参见 [docs/HUNYUAN_INTEGRATION_PLAN.md](docs/HUNYUAN_INTEGRATION_PLAN.md)）
+- HunyuanWorld 3D 场景接入（参见 [docs/technical/HUNYUAN_INTEGRATION_PLAN.md](docs/technical/HUNYUAN_INTEGRATION_PLAN.md)）
 - Marketplace 数字人交易 + 元宇宙中央大厅
 
 ---
@@ -204,34 +204,55 @@
 
 ## 📂 项目结构
 
+经过深度归纳，**根目录只保留代码/部署/入口文档**，所有深度文档集中在 `docs/`。
+
 ```
 MindPal/
-├── frontend/                       # 前端（13 页面 + 4 JS 模块 + 4 CSS）
-│   ├── index.html … subscription.html
-│   ├── js/           { api.js, auth.js, config.js, analytics.js }
-│   ├── css/          { variables, base, components, animations }
-│   └── assets/       # 图片、头像素材
-├── backend/                        # [遗留] Flask MVP 版本
-│   ├── app/          { models, routes, services, utils }
+├── README.md  CLAUDE.md              # 项目入口 + 团队协作规范
+├── .gitignore  .ccb-config.json
+│
+├── frontend/                         # 前端（13 页面 + 4 JS + 4 CSS）
+│   ├── *.html                        # index / dh-list / chat / knowledge / ...
+│   ├── js/   { api.js, auth.js, config.js, analytics.js }
+│   ├── css/  { variables, base, components, animations }
+│   └── assets/
+│
+├── backend/                          # [遗留·Flask MVP] 波次 1 将归档
+│   ├── app/  { models, routes, services, utils }
 │   └── requirements.txt
-├── backend_v2/                     # [主线] FastAPI 新架构
+│
+├── backend_v2/                       # [主线·FastAPI] 新开发集中于此
 │   ├── app/
-│   │   ├── api/v1/   # 20+ 路由：auth/chat/voice/payment/memory/...
-│   │   ├── models/   # 9 个 ORM 模型
-│   │   ├── services/ # ai / crisis / dialogue / emotion / llm / memory / npc / payment / three_keys / voice
-│   │   ├── schemas/  # Pydantic 输入输出
-│   │   └── core/     # security / websocket
-│   ├── alembic/      # 数据库迁移
-│   └── tests/        # pytest
-├── scripts/                        # mp-ai 多 AI 协作工具
-├── Business_Plan/                  # 商业计划与深度解读
-├── docs/                           # 技术整合计划、竞品分析、TODO
-├── PRD.md DESIGN_SPEC.md …         # 产品/设计/技术方案（8000+ 行）
-├── deploy.sh                       # 云服务器一键部署
-├── docker-compose.yml              # 容器编排
-├── Dockerfile.backend / .frontend
-└── nginx.conf
+│   │   ├── api/v1/        # 20+ 路由
+│   │   ├── models/        # 9 个 ORM 模型
+│   │   ├── services/      # ai / crisis / dialogue / emotion / llm /
+│   │   │                  # memory / npc / payment / three_keys / voice
+│   │   ├── schemas/       # Pydantic 输入输出
+│   │   └── core/          # security / websocket
+│   ├── alembic/           # 数据库迁移
+│   ├── scripts/           # init_db / create_dh_tables / test_api
+│   └── tests/             # pytest
+│
+├── scripts/                          # 多 AI（Claude+Codex+Gemini）协作工具
+│   └── mp-ai.py  mp-multi-ai.py  ...
+│
+├── docs/                             # 🗂️ 所有深度文档集中地
+│   ├── README.md                     # 文档导航索引
+│   ├── product/                      # PRD + 设计规范
+│   ├── technical/                    # 技术方案 + 后端实施 + 混元集成
+│   ├── roadmap/                      # 开发/商业路线图 + TODO + 交付总结
+│   ├── ops/                          # 部署指南 + 集成测试
+│   ├── business/                     # 商业计划 + 14 份细化 PRD
+│   ├── research/                     # 华为/字节/腾讯 外部调研
+│   └── guides/                       # 多 AI 协作指南
+│
+├── deploy.sh                         # 云服务器一键部署
+├── docker-compose.yml                # 容器编排（根级，context=当前目录）
+├── Dockerfile.backend  Dockerfile.frontend
+└── nginx.conf                        # 反向代理 + SSE 兼容
 ```
+
+> ⚙️ 部署文件（Dockerfile / docker-compose / nginx.conf / deploy.sh）**必须保留在根目录**，因为 `docker-compose.yml` 使用 `context: .` 引用前端构建上下文。
 
 ---
 
@@ -298,21 +319,26 @@ docker compose up -d
 
 ## 📖 文档导航
 
-| 文档 | 说明 |
-|------|------|
-| [README.md](README.md) | 本文档（项目总览 + 战略方向）|
-| [PRD.md](PRD.md) | 产品需求文档（1500+ 行） |
-| [DESIGN_SPEC.md](DESIGN_SPEC.md) | UI/UX 设计规范（2300+ 行）|
-| [TECHNICAL_STRATEGY.md](TECHNICAL_STRATEGY.md) | 深度技术方案（AI 选型、架构设计） |
-| [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) | 4 阶段开发路线图 |
-| [BUSINESS_ROADMAP_V2.md](BUSINESS_ROADMAP_V2.md) | 商业化路线图 V2 |
-| [BACKEND_IMPLEMENTATION_PLAN.md](BACKEND_IMPLEMENTATION_PLAN.md) | 后端详细实现计划 |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | 部署指南 |
-| [INTEGRATION_TEST_GUIDE.md](INTEGRATION_TEST_GUIDE.md) | 集成测试指南 |
-| [SUMMARY.md](SUMMARY.md) | Phase 0 交付总结 |
-| [docs/HUNYUAN_INTEGRATION_PLAN.md](docs/HUNYUAN_INTEGRATION_PLAN.md) | 腾讯混元 3D 世界整合计划 |
-| [docs/TODO_DEVELOPMENT.md](docs/TODO_DEVELOPMENT.md) | 细化任务清单 |
-| [Business_Plan/MindPal_深度解读.md](Business_Plan/MindPal_深度解读.md) | 商业计划解读 |
+> 完整索引见 **[docs/README.md](docs/README.md)**。以下是高频入口：
+
+| 类别 | 文档 | 说明 |
+|------|------|------|
+| 入口 | [README.md](README.md) | 本文档（项目总览 + 战略方向）|
+| 入口 | [docs/README.md](docs/README.md) | 文档中心导航 |
+| 产品 | [docs/product/PRD.md](docs/product/PRD.md) | 产品需求（1500+ 行）|
+| 产品 | [docs/product/DESIGN_SPEC.md](docs/product/DESIGN_SPEC.md) | UI/UX 设计规范（2300+ 行）|
+| 技术 | [docs/technical/TECHNICAL_STRATEGY.md](docs/technical/TECHNICAL_STRATEGY.md) | 深度技术方案 |
+| 技术 | [docs/technical/BACKEND_IMPLEMENTATION_PLAN.md](docs/technical/BACKEND_IMPLEMENTATION_PLAN.md) | 后端实施计划 |
+| 技术 | [docs/technical/HUNYUAN_INTEGRATION_PLAN.md](docs/technical/HUNYUAN_INTEGRATION_PLAN.md) | 混元 3D 整合方案 |
+| 路线 | [docs/roadmap/DEVELOPMENT_ROADMAP.md](docs/roadmap/DEVELOPMENT_ROADMAP.md) | 4 阶段开发路线图 |
+| 路线 | [docs/roadmap/BUSINESS_ROADMAP_V2.md](docs/roadmap/BUSINESS_ROADMAP_V2.md) | 商业化路线图 V2 |
+| 路线 | [docs/roadmap/TODO_DEVELOPMENT.md](docs/roadmap/TODO_DEVELOPMENT.md) | 细化任务清单 |
+| 路线 | [docs/roadmap/SUMMARY.md](docs/roadmap/SUMMARY.md) | Phase 0 交付总结 |
+| 运维 | [docs/ops/DEPLOYMENT.md](docs/ops/DEPLOYMENT.md) | 部署指南 |
+| 运维 | [docs/ops/INTEGRATION_TEST_GUIDE.md](docs/ops/INTEGRATION_TEST_GUIDE.md) | 集成测试指南 |
+| 商业 | [docs/business/MindPal_深度解读.md](docs/business/MindPal_深度解读.md) | 商业计划解读 |
+| 商业 | [docs/business/MindPaL.pdf](docs/business/MindPaL.pdf) | 完整商业计划书 PDF |
+| 指南 | [docs/guides/MULTI_AI_GUIDE.md](docs/guides/MULTI_AI_GUIDE.md) | 多 AI 协作指南 |
 
 ---
 

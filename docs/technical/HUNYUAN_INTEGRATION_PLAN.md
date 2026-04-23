@@ -467,7 +467,7 @@ class MindPal3DViewer {
 
 ### 3.5 Phase 4-5: PaaS + 元宇宙
 
-详见 `DEVELOPMENT_ROADMAP.md`
+详见 [`../roadmap/DEVELOPMENT_ROADMAP.md`](../roadmap/DEVELOPMENT_ROADMAP.md)
 
 ---
 
@@ -795,7 +795,7 @@ Response:
 - [HunyuanWorld 官方文档](https://3d-models.hunyuan.tencent.com/world/)
 - [Three.js 官方文档](https://threejs.org/docs/)
 - [MindPal PRD文档](../PRD.md)
-- [MindPal 开发路线图](../DEVELOPMENT_ROADMAP.md)
+- [MindPal 开发路线图](../roadmap/DEVELOPMENT_ROADMAP.md)
 
 ### B. 术语表
 
