@@ -240,7 +240,7 @@ services:
 ✅ 容器启动成功
 ✅ 健康检查通过
 ✅ 前端访问: http://localhost
-✅ 后端API: http://localhost:5000/api/health
+✅ 后端API: http://localhost:8000/health
 ```
 
 ---

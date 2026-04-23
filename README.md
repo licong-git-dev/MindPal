@@ -1,261 +1,204 @@
-# MindPal - 面向元宇宙的智能体数字人交互平台
+# MindPal — 面向元宇宙的智能体数字人交互平台
 
 <div align="center">
 
-![MindPal Logo](https://via.placeholder.com/150?text=MindPal)
-
-**你的智慧伙伴，陪伴你探索数字世界**
+**你的智慧伙伴 · 陪伴 · 学习 · 服务**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.6%2B-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/flask-2.0.3-green.svg)](https://flask.palletsprojects.com/)
-[![Vue](https://img.shields.io/badge/vue-3.0-brightgreen.svg)](https://vuejs.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/fastapi-0.109%2B-009688.svg)](https://fastapi.tiangolo.com/)
+[![Flask](https://img.shields.io/badge/flask-3.0-lightgrey.svg)](https://flask.palletsprojects.com/)
+[![Docker](https://img.shields.io/badge/docker-compose-2496ED.svg)](https://www.docker.com/)
 
-[在线演示](http://43.98.170.184) | [技术文档](TECHNICAL_STRATEGY.md) | [开发路线图](DEVELOPMENT_ROADMAP.md) | [商业计划](Business_Plan/MindPaL.pdf)
+[在线演示](http://43.98.170.184) · [商业计划](Business_Plan/MindPal_深度解读.md) · [技术方案](TECHNICAL_STRATEGY.md) · [路线图](DEVELOPMENT_ROADMAP.md)
 
 </div>
 
 ---
 
-## 🌟 项目简介
+## 📌 一句话概括
 
-MindPal 是一个**面向元宇宙的智能体数字人交互平台**，致力于打造集**智能、陪伴、服务**于一体的个性化AI伙伴。
-
-### 三大核心价值
-
-- **智能 (Intelligence)**: 基于大语言模型的深度理解与推理能力
-- **陪伴 (Companionship)**: 提供全天候、无条件的情感支持
-- **服务 (Service)**: 知识服务 + 购物辅助的实用价值
-
-### 产品愿景
-
-从SaaS平台演进为元宇宙基础设施，成为连接所有虚拟世界的智能体服务枢纽。
+**MindPal** 是一个通过"深度个性化塑造"+"长期记忆"+"多场景服务"来打造专属 AI 伙伴的平台，以 SaaS 模式起步，最终演进为元宇宙基础设施。
 
 ---
 
-## ✨ 核心功能
+## 🌟 三大核心价值
 
-### 已实现功能
+| 价值维度 | 核心能力 | 当前实现状态 |
+|---------|---------|-------------|
+| **智能 (Intelligence)** | LLM + RAG + Agent | ✅ 通义千问 + FAISS 向量检索已落地 |
+| **陪伴 (Companionship)** | 全天候情感倾听、共情 | ✅ 基础对话 / 🚧 长期记忆与情感引擎 |
+| **服务 (Service)**      | 知识学习辅助 + 购物辅助 | ✅ 知识库 / 📋 购物助手（规划中）|
 
-- ✅ **用户认证系统**: 注册/登录/会话管理
-- ✅ **个性化数字人塑造**: 6种性格模板 + 5维特质调整
-  - 选择形象（8种预设 + 自定义上传）
-  - 设置性格（温柔体贴/活泼开朗/知性理性/幽默风趣/沉稳冷静/富有创意）
-  - 选择声音（6种预设音色）
-  - 设置知识库（文档上传）
-- ✅ **多终端适配**: 响应式Web设计（手机/平板/桌面）
-- ✅ **数据持久化**: PostgreSQL数据库 + LocalStorage
+---
 
-### 开发中功能（阶段1 MVP）
+## ✅ 已落地能力（可跑通端到端）
 
-- 🚧 **基础对话能力**: 集成阿里云通义千问LLM
-- 🚧 **对话历史**: 存储和展示历史对话
-- 🚧 **长期记忆**: 记住用户重要信息
+### 前端（13 个页面，响应式）
 
-### 规划中功能（阶段2+）
+| 模块 | 页面 |
+|------|------|
+| 注册登录 | `index.html` |
+| 新手引导 | `onboarding.html` |
+| 数字人列表 | `dh-list.html` |
+| 5 步创建流程 | `create-dh-step1~5.html`（形象/性格/声音/知识库/确认）|
+| 对话界面 | `chat.html`（SSE 流式打字机效果）|
+| 知识库管理 | `knowledge.html`（拖拽上传，多格式解析）|
+| 定价与会员 | `pricing.html` / `subscription.html` |
 
-- 📋 **多模态交互**: 语音对话（ASR + TTS）
-- 📋 **知识服务**: RAG知识库检索
-- 📋 **购物辅助**: 智能推荐与下单
-- 📋 **元宇宙场景**: 智能体小家 + 中央社交大厅
+### 后端（双后端并存，详见「技术债」）
+
+- `backend/`（Flask 3.0，MVP 版本）：认证 / 数字人 CRUD / 对话 / 知识库 / 订阅 / 埋点
+- `backend_v2/`（FastAPI 0.109，下一代架构）：增加了情绪分析 / 危机检测 / 多 LLM 路由 / 语音 / 微信&支付宝 / 记忆引擎等模块骨架
+
+### AI 能力
+
+- 🤖 LLM：阿里云通义千问（qwen-turbo/plus），可切换 Claude
+- 📚 Embedding + RAG：`text-embedding-v2` + FAISS `IndexFlatL2`
+- 📄 文档解析：PDF / DOCX / TXT / MD 全支持
+- 🔄 流式对话：Server-Sent Events + 情绪分析 + 对话历史
+
+### 商业化骨架（已搭好，未闭环）
+
+- 💳 订阅模型（`Subscription` + `UserQuota`）—— 免费版 / ¥19.9/月 / ¥199/年
+- 📊 埋点系统（13 个关键事件，覆盖注册→创建→对话→付费全漏斗）
+- 📈 会员中心与配额展示
+
+### 部署
+
+- 🐳 Docker Compose 一键部署（前端 Nginx + 后端 Gunicorn）
+- 📜 `deploy.sh` 云服务器一键脚本
+
+---
+
+## 🧭 战略方向（基于商业与技术瓶颈的深度分析）
+
+> 文档已经堆了 8000+ 行，代码双后端并存，愿景铺得从 AI 伴侣一路到元宇宙。**现在需要做的不是继续加功能，而是收敛到一个能赚钱的单点闭环。**
+
+### 📉 当前关键瓶颈
+
+#### 🔴 商业瓶颈（按阻塞程度排序）
+
+1. **变现闭环未闭合** —— 订阅模型建好了，但支付集成卡在沙箱，**一分钱都没收到过**。这是比任何新功能都紧迫的事。
+2. **赛道拥挤且同质化** —— Replika / Character.AI / MiniMax 星野 / Talkie / 豆包 已经占领情感陪伴心智，靠"功能多"打不赢，需要一个**别人没有的记忆点**。
+3. **获客成本未验证** —— 未做过一次真实投放，CAC / LTV / 留存漏斗全部是计划书里的假设。
+4. **LLM 成本吃利润** —— 免费用户的对话调用直接吃掉毛利，没有缓存层、没有 token 上限策略。
+
+#### 🔴 技术瓶颈（按维护负担排序）
+
+1. **双后端架构债** —— `backend/` 和 `backend_v2/` 同时在维护，API、数据模型、依赖包都分叉了。**必须砍掉一个。**
+2. **SQLite 单机 + 无 Redis** —— 百级并发就会掉请求，而且每次对话都重复调 LLM。
+3. **无异步队列** —— 文档上传/向量化直接阻塞 HTTP 请求，大文件必超时。
+4. **无可观测性** —— 没有 Prometheus / ELK / Sentry，线上出问题只能翻 `server.log`。
+5. **测试覆盖率极低** —— 仅有 3 个 smoke test 文件，重构靠勇气。
+6. **无 CI/CD** —— 每次部署都要手动 SSH 跑 `deploy.sh`，人肉流程易错。
+7. **愿景铺得过宽** —— 元宇宙 / 3D 世界 / 购物助手 / 游戏化经济系统都在规划，**资源严重稀释**。
+
+### 🎯 接下来做什么：分 4 个波次，先闭环再扩张
+
+#### 🌊 波次 1 ｜ 商业闭环（接下来 2 周，P0）
+
+**目标：拿到第一笔真实收入，把假设变成数据**
+
+- [ ] **统一后端架构**：把 `backend/` 的能力迁完到 `backend_v2/`，然后删 / 归档 Flask 版本（避免再分叉）
+- [ ] **支付宝沙箱 → 生产闭环**：端到端跑通「下单 → 扫码 → 回调验签 → 订阅生效 → 配额升级」
+- [ ] **硬性配额拦截**：免费用户达到 100 次/天、50MB 知识库后**真实阻断**并弹升级提示
+- [ ] **埋点数据面板**：DAU / WACU / 注册→付费漏斗在 Grafana 或简易 dashboard 上可见
+- [ ] **招 20 个种子用户跑 2 周**，拿到留存和付费意愿的真数据
+
+**成功标准**：MRR ≥ ¥500，至少 10 个真实付费用户，每日数据可观测。
+
+#### 🌊 波次 2 ｜ 差异化尖刀（4-8 周，P1）
+
+**目标：建立「别人抄不走」的产品记忆点**
+
+当下市面上的 AI 伴侣产品，最大的问题是**「每次对话像第一次见面」**。我们应该把"**有记忆、懂你、会成长的 AI 伙伴**"做到极致，而不是追着对手堆功能。
+
+- [ ] **可视化长期记忆**：把 `backend_v2/services/memory/` 的记忆图谱做成用户能看见、能编辑的时间线（这是 Replika 和 Character.AI 都没有的）
+- [ ] **真实语音对话**：接入阿里云 ASR/TTS + WebRTC，实现 < 2s 延迟的全双工语音
+- [ ] **微信小程序**：国内分发成本最低的入口，直接基于已有 H5 快速复用
+- [ ] **情感引擎 v1**：基于 `backend_v2/services/emotion/` 做"主动发消息 + 情绪适配回复"
+
+**成功标准**：次日留存 ≥ 30%、7 日留存 ≥ 15%，微信小程序 DAU ≥ 500。
+
+#### 🌊 波次 3 ｜ 规模化地基（2-6 个月，P2）
+
+**目标：支撑 1 万 DAU、日千万 Token 调用**
+
+- [ ] **PostgreSQL 迁移** + 连接池 + 索引优化
+- [ ] **Redis 缓存层**（LLM 响应 / 会话 / 热点 embedding）——预期降 LLM 成本 30%+
+- [ ] **Celery 异步队列**（文档处理 / TTS 生成 / 邮件推送）
+- [ ] **Prometheus + Grafana 监控** + Sentry 报错 + 结构化日志
+- [ ] **pytest 单元测试 + pytest-asyncio 集成测试**，覆盖率 ≥ 60%
+- [ ] **GitHub Actions CI/CD**，自动 lint / 测试 / 构建镜像 / 蓝绿部署
+
+#### 🌊 波次 4 ｜ 生态与愿景（6 个月后，P3，视数据决定）
+
+> 只有在波次 1-3 跑通，且 MRR ≥ ¥10 万 的前提下再启动。不要在没有收入的时候先建虚拟世界。
+
+- React Native 移动端（iOS / Android 原生推送）
+- 开放 API + SDK，做 PaaS（企业定制数字人）
+- 3D 虚拟形象（口型同步）
+- HunyuanWorld 3D 场景接入（参见 [docs/HUNYUAN_INTEGRATION_PLAN.md](docs/HUNYUAN_INTEGRATION_PLAN.md)）
+- Marketplace 数字人交易 + 元宇宙中央大厅
 
 ---
 
 ## 🏗️ 技术架构
 
-### 技术栈
-
-#### 前端
-- **框架**: 原生 HTML5 + CSS3 + JavaScript
-- **设计**: Glassmorphism + 渐变色
-- **存储**: LocalStorage + SessionStorage
-- **部署**: Nginx静态托管
-
-#### 后端
-- **语言**: Python 3.6+
-- **框架**: Flask 2.0.3
-- **数据库**: PostgreSQL (生产) / SQLite (开发)
-- **API**: RESTful API
-- **部署**: Gunicorn + Nginx + Systemd
-
-#### AI能力
-- **LLM**: 阿里云通义千问（qwen-turbo/plus）
-- **Embedding**: text-embedding-v2
-- **ASR**: 科大讯飞语音听写（规划中）
-- **TTS**: 阿里云智能语音（规划中）
-- **向量数据库**: Milvus（规划中）
-
-### 系统架构图
+### 架构现状（双后端并存）
 
 ```
-┌─────────────────────────────────────────────────┐
-│              Frontend（多终端）                  │
-│  ┌───────┐  ┌───────┐  ┌───────┐  ┌───────┐   │
-│  │ Web   │  │ 手机  │  │ 平板  │  │小程序 │   │
-│  └───────┘  └───────┘  └───────┘  └───────┘   │
-└──────────────────┬──────────────────────────────┘
-                   │ HTTPS/WSS
-┌──────────────────▼──────────────────────────────┐
-│              Nginx (反向代理)                    │
-└──────────────────┬──────────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────────┐
-│          Gunicorn (WSGI Server)                 │
-│  ┌─────────────────────────────────────────┐   │
-│  │         Flask Application                │   │
-│  │  ┌────────┐  ┌────────┐  ┌──────────┐  │   │
-│  │  │ Auth   │  │ DH API │  │ Chat API │  │   │
-│  │  └────────┘  └────────┘  └──────────┘  │   │
-│  └─────────────────────────────────────────┘   │
-└──────────────────┬──────────────────────────────┘
-                   │
-        ┌──────────┴──────────┐
-        │                     │
-┌───────▼────────┐   ┌────────▼────────┐
-│  PostgreSQL    │   │  第三方AI服务   │
-│  (用户/数字人) │   │  - 通义千问     │
-│                │   │  - 科大讯飞     │
-└────────────────┘   │  - 阿里云TTS    │
-                     └─────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│               Frontend (HTML5 + Vanilla JS)              │
+│     13 pages │ api.js 封装 │ analytics.js 埋点           │
+└────────────────────────┬────────────────────────────────┘
+                         │ REST / SSE
+            ┌────────────┴────────────┐
+            │                         │
+    ┌───────▼────────┐       ┌────────▼─────────┐
+    │  backend/       │       │  backend_v2/     │
+    │  Flask 3.0      │       │  FastAPI 0.109   │
+    │  (MVP 现役)     │       │  (下一代, 在建)  │
+    │                 │       │                  │
+    │ • auth          │       │ • auth + JWT     │
+    │ • digital_humans│       │ • dialogue/LLM   │
+    │ • chat (SSE)    │       │ • memory 引擎    │
+    │ • knowledge+RAG │       │ • emotion 分析   │
+    │ • subscription  │       │ • crisis 检测    │
+    │ • analytics     │       │ • voice (ASR/TTS)│
+    │                 │       │ • payment (WX/支付宝)│
+    │                 │       │ • three_keys 挑战│
+    └───────┬─────────┘       └────────┬─────────┘
+            │                          │
+            └──────────┬───────────────┘
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+   ┌────▼────┐  ┌──────▼──────┐  ┌───▼────────┐
+   │ SQLite  │  │ 阿里云       │  │ FAISS      │
+   │ (开发)  │  │ DashScope    │  │ Vector     │
+   │  → PG   │  │ (qwen/embed) │  │ Store      │
+   └─────────┘  └──────────────┘  └────────────┘
 ```
 
----
+> ⚠️ **技术债提醒**：两套后端不是设计，是演进中未合并的遗留。详见「战略方向 · 波次 1」。
 
-## 🚀 快速开始
+### 技术栈清单
 
-### 前置要求
-
-- Python 3.6+
-- PostgreSQL 12+ (可选，开发环境可用SQLite)
-- Git
-- 阿里云DashScope API Key
-
-### 本地开发环境搭建
-
-#### 1. 克隆项目
-
-```bash
-git clone https://github.com/licong-git-dev/MindPal.git
-cd MindPal
-```
-
-#### 2. 后端配置
-
-```bash
-cd backend
-
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，填入你的API密钥
-```
-
-**.env 配置示例**:
-```bash
-# 阿里云配置
-DASHSCOPE_API_KEY=your_dashscope_api_key
-
-# 模型配置
-LLM_MODEL=qwen-turbo
-EMBEDDING_MODEL=text-embedding-v2
-
-# 应用配置
-FLASK_ENV=development
-FLASK_DEBUG=True
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=sqlite:///mindpal.db
-
-# CORS配置
-ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-```
-
-#### 3. 初始化数据库
-
-```bash
-python
->>> from app import db
->>> db.create_all()
->>> exit()
-```
-
-#### 4. 启动后端服务
-
-```bash
-# 开发模式
-python app.py
-
-# 生产模式
-gunicorn --workers 2 --bind 0.0.0.0:5000 app:app
-```
-
-后端服务将在 `http://localhost:5000` 启动
-
-#### 5. 前端配置
-
-```bash
-cd ../frontend
-
-# 直接用浏览器打开 index.html
-# 或者使用HTTP服务器
-python -m http.server 3000
-```
-
-前端将在 `http://localhost:3000` 可访问
-
-#### 6. 访问应用
-
-打开浏览器访问 `http://localhost:3000`
-
-**测试账号**:
-- 手机号: `13800138000`
-- 密码: `123456`
-
----
-
-## 🌐 生产环境部署
-
-### 阿里云服务器部署
-
-我们提供了一键部署脚本 `deploy.sh`
-
-#### 1. 准备服务器
-
-- 操作系统: Ubuntu 20.04/22.04 LTS
-- 配置: 2核4G (最低)
-- 公网IP: 已配置
-
-#### 2. 执行部署
-
-```bash
-# SSH登录服务器
-ssh root@your_server_ip
-
-# 下载部署脚本
-curl -O https://raw.githubusercontent.com/licong-git-dev/MindPal/master/deploy.sh
-
-# 执行部署
-sudo bash deploy.sh
-```
-
-#### 3. 部署完成
-
-脚本将自动完成：
-- ✅ 系统更新和依赖安装
-- ✅ 代码克隆
-- ✅ Python环境配置
-- ✅ 数据库初始化
-- ✅ Gunicorn服务配置
-- ✅ Nginx反向代理配置
-
-部署完成后访问 `http://your_server_ip`
-
-**当前演示环境**: http://43.98.170.184
+| 层级 | 技术选型 |
+|------|---------|
+| 前端 | HTML5 + CSS3 + Vanilla JS（ES6+）、Glassmorphism UI |
+| Web 服务器 | Nginx（反向代理 + 静态托管 + SSE 兼容）|
+| 后端框架 | FastAPI（主线） / Flask（遗留） |
+| ORM | SQLAlchemy 2.0（async）|
+| 数据库 | SQLite（开发） → PostgreSQL（生产）|
+| 缓存 | Redis（规划中）|
+| 向量库 | FAISS → Qdrant（规划中）|
+| LLM | 通义千问（主） + Claude（备） |
+| ASR/TTS | 阿里云智能语音（规划中）|
+| 部署 | Docker Compose + Gunicorn |
+| 监控 | Prometheus + Grafana（规划中）|
 
 ---
 
@@ -263,301 +206,190 @@ sudo bash deploy.sh
 
 ```
 MindPal/
-├── frontend/                   # 前端代码
-│   ├── index.html             # 登录页
-│   ├── dh-list.html           # 数字人列表
-│   ├── create-dh-step1-5.html # 创建数字人流程（5步）
-│   ├── chat.html              # 对话界面
-│   ├── css/                   # 样式文件
-│   │   ├── variables.css      # CSS变量定义
-│   │   ├── base.css           # 基础样式
-│   │   ├── components.css     # 组件样式
-│   │   └── animations.css     # 动画效果
-│   └── js/                    # JavaScript文件
-│       └── auth.js            # 认证管理模块
-├── backend/                    # 后端代码
-│   ├── app.py                 # Flask应用入口
-│   ├── models.py              # 数据库模型
-│   ├── requirements.txt       # Python依赖
-│   ├── .env                   # 环境变量（gitignored）
-│   └── services/              # 业务逻辑服务（规划中）
-│       ├── llm_service.py     # LLM调用服务
-│       ├── memory_service.py  # 记忆管理服务
-│       └── rag_service.py     # RAG检索服务
-├── Business_Plan/              # 商业计划
-│   └── MindPaL.pdf            # 详细商业计划书
-├── deploy.sh                   # 一键部署脚本
-├── .gitignore                 # Git忽略配置
-├── README.md                   # 本文档
-├── TECHNICAL_STRATEGY.md       # 技术方案文档
-├── DEVELOPMENT_ROADMAP.md      # 开发路线图
-└── BACKEND_IMPLEMENTATION_PLAN.md  # 后端实现计划
+├── frontend/                       # 前端（13 页面 + 4 JS 模块 + 4 CSS）
+│   ├── index.html … subscription.html
+│   ├── js/           { api.js, auth.js, config.js, analytics.js }
+│   ├── css/          { variables, base, components, animations }
+│   └── assets/       # 图片、头像素材
+├── backend/                        # [遗留] Flask MVP 版本
+│   ├── app/          { models, routes, services, utils }
+│   └── requirements.txt
+├── backend_v2/                     # [主线] FastAPI 新架构
+│   ├── app/
+│   │   ├── api/v1/   # 20+ 路由：auth/chat/voice/payment/memory/...
+│   │   ├── models/   # 9 个 ORM 模型
+│   │   ├── services/ # ai / crisis / dialogue / emotion / llm / memory / npc / payment / three_keys / voice
+│   │   ├── schemas/  # Pydantic 输入输出
+│   │   └── core/     # security / websocket
+│   ├── alembic/      # 数据库迁移
+│   └── tests/        # pytest
+├── scripts/                        # mp-ai 多 AI 协作工具
+├── Business_Plan/                  # 商业计划与深度解读
+├── docs/                           # 技术整合计划、竞品分析、TODO
+├── PRD.md DESIGN_SPEC.md …         # 产品/设计/技术方案（8000+ 行）
+├── deploy.sh                       # 云服务器一键部署
+├── docker-compose.yml              # 容器编排
+├── Dockerfile.backend / .frontend
+└── nginx.conf
 ```
 
 ---
 
-## 🛣️ 开发路线图
+## 🚀 本地开发
 
-### 阶段1: MVP验证 (第1-4周) - **当前阶段**
+### 先决条件
 
-**目标**: 验证核心价值假设
+- Python 3.10+
+- Git
+- 阿里云 DashScope API Key（[申请地址](https://dashscope.aliyun.com/)，新用户免费 100 万 tokens）
+- Docker（可选，用于一键部署）
 
-- [x] 用户认证系统
-- [x] 数字人创建流程（UI）
-- [ ] 基础对话能力（LLM集成）
-- [ ] 个性化塑造系统（后端）
-- [ ] 对话历史存储
+### 启动 backend_v2（主线，推荐）
 
-**里程碑**: 100个用户，次日留存率 ≥ 30%
+```bash
+cd backend_v2
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
 
-### 阶段2: SaaS平台完善 (第5-12周)
+cp .env.example .env       # 填入 DASHSCOPE_API_KEY
+uvicorn app.main:app --reload --port 8000
+```
 
-- [ ] 多模态交互（语音对话）
-- [ ] 知识服务（RAG系统）
-- [ ] 长期记忆优化
-- [ ] 多终端优化（小程序）
-- [ ] 订阅付费系统
+验证：
+```bash
+curl http://localhost:8000/health
+# 访问 http://localhost:8000/docs 查看 Swagger
+```
 
-**里程碑**: 1000付费用户，MRR ≥ 5万元
+### 启动前端
 
-### 阶段3: PaaS平台开放 (第13-24周)
+```bash
+cd frontend
+python -m http.server 3000
+# 浏览器打开 http://localhost:3000
+```
 
-- [ ] RESTful API开放
-- [ ] Python/JS SDK发布
-- [ ] 开发者控制台
-- [ ] 企业级功能
-- [ ] Marketplace建设
+### 测试账号
 
-**里程碑**: 50家企业客户，API调用量 ≥ 100万次/月
-
-### 阶段4: 元宇宙布局 (2026+)
-
-- [ ] 3D虚拟空间（智能体小家）
-- [ ] 多人在线（中央社交大厅）
-- [ ] VR/AR支持
-- [ ] 跨平台智能体协议
-- [ ] 世界模型接入
-
-**里程碑**: 100万MAU，接入5+虚拟世界
-
-详见 [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md)
+- 手机号：`13800138000`
+- 密码：`仅本地测试用示例密码，请勿用于生产环境`
 
 ---
 
-## 📋 当前待办事项
+## 🌐 生产部署
 
-### 🎯 Phase 1: 商业化基础设施（已完成 6/6）
+一键部署到阿里云 ECS（Ubuntu 20.04+）：
 
-- [x] 设计会员套餐页面（pricing.html）- 3档对比、价格展示、购买按钮
-- [x] 创建Subscription和UserQuota模型，实现订阅CRUD API
-- [x] 实现免费/付费用户配额检查中间件
-- [x] 实现会员中心（subscription.html）- 配额展示、升级提示
-- [x] 创建Analytics模型，实现埋点API，开发数据分析面板
-- [x] 在所有关键页面添加analytics.js和埋点调用
+```bash
+ssh root@your_server_ip
+curl -O https://raw.githubusercontent.com/licong-git-dev/MindPal/master/deploy.sh
+sudo bash deploy.sh
+```
 
-### 🔜 Phase 2: 支付系统集成
+或使用 Docker Compose：
 
-**优先级**: 🔥 高
+```bash
+docker compose up -d
+```
 
-- [ ] **Task 7**: 注册支付宝商户，集成SDK，实现支付API和回调
-  - 注册支付宝企业/个人开发者账号
-  - 获取AppID、商户密钥
-  - 集成支付宝Python SDK (alipay-sdk-python)
-  - 实现支付创建API (`/api/payment/create`)
-  - 实现支付回调处理 (`/api/payment/notify`)
-  - 添加`payment_success`埋点追踪
-
-- [ ] **Task 8**: 完整支付流程测试（沙箱环境）
-  - 配置支付宝沙箱环境
-  - 测试下单→支付→回调完整流程
-  - 异常情况测试（超时、取消、失败）
-  - 订阅自动续费逻辑测试
-
-### 🎤 Phase 3: 语音交互系统
-
-**优先级**: 🔥 高
-
-- [ ] **Task 9**: 集成阿里云ASR和TTS，实现WebRTC实时语音
-  - 申请阿里云智能语音服务
-  - 集成ASR语音识别API
-  - 集成TTS语音合成API
-  - 前端WebRTC录音和播放
-  - 实时语音对话流式处理
-  - 方言支持（202种）
-
-### 📱 Phase 4: 移动端开发
-
-**优先级**: 🔶 中
-
-- [ ] **Task 10**: React Native搭建，核心功能移植，iOS/Android打包
-  - 搭建React Native开发环境
-  - 移植核心页面（登录、数字人列表、对话、创建）
-  - 原生模块集成（相机、语音、推送）
-  - iOS TestFlight测试
-  - Android Google Play测试
-
-### ⚙️ Phase 5: 性能优化
-
-**优先级**: 🔶 中
-
-- [ ] **Task 11**: SQLite迁移到PostgreSQL，提升并发性能
-  - PostgreSQL数据库安装配置
-  - 数据迁移脚本编写
-  - 连接池优化
-  - 索引优化
-  - 生产环境部署
-
-- [ ] **Task 12**: 集成Redis，优化LLM调用缓存
-  - Redis安装配置
-  - 实现LLM响应缓存策略
-  - 实现会话管理缓存
-  - 实现热点数据缓存
-  - 缓存过期策略优化
-
-### 📢 Phase 6: 内容营销
-
-**优先级**: 🟡 低
-
-- [ ] **Task 13**: 小红书/抖音/B站内容发布，用户故事分享
-  - 小红书账号运营（产品介绍、使用教程）
-  - 抖音短视频制作（功能演示、用户案例）
-  - B站视频教程（完整开发过程、技术分享）
-  - 用户故事收集和分享
-  - KOL合作推广
-
-### 📊 进度统计
-
-- ✅ 已完成: 6个任务
-- 🔜 进行中: 0个任务
-- ⏳ 待开始: 7个任务
-- 📈 总体进度: **46%** (6/13)
-
-### 🎯 下一步行动
-
-**本周重点**:
-1. 集成支付宝支付接口（Task 7）
-2. 支付流程沙箱测试（Task 8）
-
-**下周计划**:
-1. 开始语音交互系统开发（Task 9）
-2. 规划移动端App架构（Task 10）
+当前演示环境：**http://43.98.170.184**
 
 ---
 
 ## 📖 文档导航
 
 | 文档 | 说明 |
-|-----|------|
-| [README.md](README.md) | 项目概览和快速开始（本文档）|
-| [TECHNICAL_STRATEGY.md](TECHNICAL_STRATEGY.md) | 深度技术方案（AI选型、架构设计）|
-| [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) | 4阶段开发路线图 |
+|------|------|
+| [README.md](README.md) | 本文档（项目总览 + 战略方向）|
+| [PRD.md](PRD.md) | 产品需求文档（1500+ 行） |
+| [DESIGN_SPEC.md](DESIGN_SPEC.md) | UI/UX 设计规范（2300+ 行）|
+| [TECHNICAL_STRATEGY.md](TECHNICAL_STRATEGY.md) | 深度技术方案（AI 选型、架构设计） |
+| [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) | 4 阶段开发路线图 |
+| [BUSINESS_ROADMAP_V2.md](BUSINESS_ROADMAP_V2.md) | 商业化路线图 V2 |
 | [BACKEND_IMPLEMENTATION_PLAN.md](BACKEND_IMPLEMENTATION_PLAN.md) | 后端详细实现计划 |
-| [Business_Plan/MindPaL.pdf](Business_Plan/MindPaL.pdf) | 完整商业计划书 |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | 部署指南 |
+| [INTEGRATION_TEST_GUIDE.md](INTEGRATION_TEST_GUIDE.md) | 集成测试指南 |
+| [SUMMARY.md](SUMMARY.md) | Phase 0 交付总结 |
+| [docs/HUNYUAN_INTEGRATION_PLAN.md](docs/HUNYUAN_INTEGRATION_PLAN.md) | 腾讯混元 3D 世界整合计划 |
+| [docs/TODO_DEVELOPMENT.md](docs/TODO_DEVELOPMENT.md) | 细化任务清单 |
+| [Business_Plan/MindPal_深度解读.md](Business_Plan/MindPal_深度解读.md) | 商业计划解读 |
 
 ---
 
-## 🔑 API密钥申请
+## 🎯 当前迭代焦点（Sprint）
 
-### 1. 阿里云DashScope（必需）
+**本周（P0 · 商业闭环）**
 
-**申请地址**: https://dashscope.aliyun.com/
+- [ ] 统一后端：将 `backend/` 特有路由迁移到 `backend_v2/`
+- [ ] 支付宝沙箱联调：`/api/v1/payment/create` → 支付页 → 回调 `/notify` → 订阅激活
+- [ ] 配额硬性拦截：对话接口、知识库上传接口上 quota middleware
+- [ ] Grafana 面板：DAU / 新增注册 / 付费转化率
 
-**免费额度**: 新用户赠送100万tokens
+**下周（P0 · 数据验证）**
 
-**用途**:
-- 通义千问LLM（对话生成）
-- text-embedding-v2（知识库向量化）
+- [ ] 20 个种子用户内测计划（付费入口开放）
+- [ ] 支付成功率监控 + 异常处理（超时/取消/失败）
+- [ ] 关键事件告警（支付失败、LLM 异常、配额超限）
 
-### 2. 科大讯飞（可选，阶段2）
+---
 
-**申请地址**: https://www.xfyun.cn/
+## 🔑 API 密钥申请
 
-**免费额度**: 500万字符/年
-
-**用途**: 语音识别（ASR）
-
-### 3. 阿里云智能语音（可选，阶段2）
-
-**申请地址**: https://nls.aliyun.com/
-
-**免费额度**: 100万字符
-
-**用途**: 语音合成（TTS）
+| 服务 | 申请地址 | 免费额度 | 用途 | 必需？ |
+|------|---------|---------|------|-------|
+| 阿里云 DashScope | https://dashscope.aliyun.com/ | 100 万 tokens | LLM + Embedding | ✅ 必需 |
+| 阿里云智能语音 | https://nls.aliyun.com/ | 100 万字符 | TTS/ASR | ⏳ 波次 2 |
+| 支付宝开放平台 | https://open.alipay.com/ | 沙箱免费 | 订阅支付 | ✅ 波次 1 |
+| 微信支付 | https://pay.weixin.qq.com/ | 商户费率 | 订阅支付 | ⏳ 波次 2 |
 
 ---
 
 ## 🤝 贡献指南
 
-欢迎贡献！请遵循以下流程：
+1. Fork 项目 → 创建特性分支 `feature/XXX`
+2. 提交改动（使用 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/)）
+3. 确保 `cd backend_v2 && pytest` 通过
+4. 发起 Pull Request，关联对应 Issue
 
-1. Fork 本项目
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的改动 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启一个Pull Request
+**代码规范**
 
-### 开发规范
-
-- **代码风格**: 遵循 PEP 8 (Python) / StandardJS (JavaScript)
-- **提交信息**: 使用语义化提交（Conventional Commits）
-- **分支策略**: Git Flow
-- **测试**: 所有新功能必须包含测试用例
+- Python：`ruff` + `mypy`，遵循 PEP 8
+- JavaScript：StandardJS
+- Git：`feat / fix / docs / refactor / test / chore(scope): 简述`
 
 ---
 
 ## 🐛 问题反馈
 
-遇到问题？请在 [GitHub Issues](https://github.com/licong-git-dev/MindPal/issues) 提交
+在 [GitHub Issues](https://github.com/licong-git-dev/MindPal/issues) 提交，提供：
 
-提交前请确认：
-- 搜索已有Issue，避免重复
-- 提供详细的复现步骤
-- 附上错误日志和截图
+- 复现步骤 + 环境信息（OS、Python 版本、后端版本）
+- 错误日志 / 截图
+- 已搜索过确认不是重复 Issue
 
 ---
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+MIT License，详见 [LICENSE](LICENSE)。
 
 ---
 
-## 👥 团队
+## 👥 团队与致谢
 
-**MindPal开发团队**
+**MindPal Team**
 
-- 产品负责人: Licong
-- 技术负责人: Licong
-- AI顾问: Claude (Anthropic)
+- 产品 & 技术负责人：[@licong-git-dev](https://github.com/licong-git-dev)
+- AI 协同：Claude (Anthropic) · 通义千问 (阿里云)
 
----
-
-## 🙏 致谢
-
-感谢以下开源项目和服务：
-
-- [Flask](https://flask.palletsprojects.com/) - Python Web框架
-- [阿里云DashScope](https://dashscope.aliyun.com/) - 大语言模型API
-- [科大讯飞](https://www.xfyun.cn/) - 语音识别技术
-- [Milvus](https://milvus.io/) - 向量数据库
-
----
-
-## 📞 联系我们
-
-- **项目主页**: https://github.com/licong-git-dev/MindPal
-- **在线演示**: http://43.98.170.184
-- **技术博客**: (待补充)
-- **微信公众号**: (待补充)
+感谢开源生态：FastAPI · SQLAlchemy · FAISS · Nginx · Docker · HunyuanWorld。
 
 ---
 
 <div align="center">
 
-**用AI重新定义陪伴，用技术连接未来世界**
+**用 AI 重新定义陪伴，用技术连接未来世界**
 
-Made with ❤️ by MindPal Team
-
-⭐ 如果这个项目对你有帮助，请给我们一个Star！
+⭐ 如果这个项目对你有启发，点个 Star 再走 —— 这是对我们最实在的鼓励。
 
 </div>

@@ -389,14 +389,32 @@
     // 加载数字人数据
     let currentDH = null;
     let messages = [];
+    let sessionId = null;  // 会话ID
     let isRecording = false;
 
+    // 性格图标映射
+    const personalityIcons = {
+      'gentle': '🌸',
+      'energetic': '⚡',
+      'wise': '🦉',
+      'humorous': '😄',
+      'caring': '💝',
+      'creative': '🎨'
+    };
+
     async function loadDigitalHuman() {
+      if (!dhId) {
+        alert('请选择一个数字人');
+        window.location.href = 'dh-list.html';
+        return;
+      }
+
       try {
         const result = await MindPalAPI.digitalHumans.get(dhId);
 
-        if (!result.success) {
-          throw new Error(result.error || '获取数字人信息失败');
+        // 处理APIResponse格式
+        if (result.code !== 0) {
+          throw new Error(result.message || '获取数字人信息失败');
         }
 
         currentDH = result.data;
@@ -407,13 +425,17 @@
           return;
         }
 
+        // 获取性格图标
+        const avatarIcon = personalityIcons[currentDH.personality] || '🤖';
+
         // 更新UI
         document.getElementById('dhNameHeader').textContent = currentDH.name;
-        document.getElementById('dhAvatarSmall').textContent = currentDH.avatarEmoji || '👤';
-        document.getElementById('dhAvatarLarge').textContent = currentDH.avatarEmoji || '👤';
+        document.getElementById('dhAvatarSmall').textContent = avatarIcon;
+        document.getElementById('dhAvatarLarge').textContent = avatarIcon;
+        document.title = `与${currentDH.name}对话 - MindPal`;
 
         // 加载历史消息
-        loadMessages();
+        await loadMessages();
 
       } catch (error) {
         console.error('加载数字人失败:', error);
@@ -422,16 +444,37 @@
       }
     }
 
-    // 加载消息
-    function loadMessages() {
-      const messagesKey = `mindpal_messages_${dhId}`;
-      messages = JSON.parse(localStorage.getItem(messagesKey) || '[]');
+    // 从服务器加载历史消息
+    async function loadMessages() {
+      try {
+        const result = await MindPalAPI.digitalHumans.getHistory(dhId, 50);
+
+        if (result.code === 0 && result.data && result.data.messages) {
+          messages = result.data.messages.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.created_at
+          }));
+          sessionId = result.data.session_id;
+        }
+      } catch (error) {
+        console.warn('加载历史消息失败，使用本地缓存:', error);
+        // 尝试从本地存储加载
+        const messagesKey = `mindpal_messages_${dhId}`;
+        messages = JSON.parse(localStorage.getItem(messagesKey) || '[]');
+      }
 
       renderMessages();
 
       if (messages.length === 0) {
         // 添加欢迎消息
-        addMessage('assistant', `你好！我是${currentDH.name}，很高兴认识你。有什么我可以帮你的吗？`);
+        const welcomeMsg = {
+          role: 'assistant',
+          content: `你好！我是${currentDH.name}，很高兴认识你。有什么我可以帮你的吗？`,
+          timestamp: new Date().toISOString()
+        };
+        messages.push(welcomeMsg);
+        renderMessages();
       }
     }
 
@@ -446,6 +489,12 @@
       });
 
       // 滚动到底部
+      scrollToBottom();
+    }
+
+    // 滚动到底部
+    function scrollToBottom() {
+      const container = document.getElementById('messagesContainer');
       container.scrollTop = container.scrollHeight;
     }
 
@@ -462,8 +511,8 @@
       return messageDiv;
     }
 
-    // 添加消息
-    function addMessage(role, content) {
+    // 添加消息到UI
+    function addMessageToUI(role, content) {
       const message = {
         role: role,
         content: content,
@@ -471,35 +520,17 @@
       };
 
       messages.push(message);
-      saveMessages();
+      saveMessagesLocal();
 
       const messageEl = createMessageElement(message);
       document.getElementById('messagesContainer').appendChild(messageEl);
-
-      // 滚动到底部
-      const container = document.getElementById('messagesContainer');
-      container.scrollTop = container.scrollHeight;
-
-      // 更新数字人统计
-      updateDHStats();
+      scrollToBottom();
     }
 
-    // 保存消息
-    function saveMessages() {
+    // 本地保存消息
+    function saveMessagesLocal() {
       const messagesKey = `mindpal_messages_${dhId}`;
       localStorage.setItem(messagesKey, JSON.stringify(messages));
-    }
-
-    // 更新数字人统计
-    function updateDHStats() {
-      const digitalHumans = JSON.parse(localStorage.getItem('mindpal_digital_humans') || '[]');
-      const dhIndex = digitalHumans.findIndex(dh => dh.id === dhId);
-
-      if (dhIndex >= 0) {
-        digitalHumans[dhIndex].lastChatAt = new Date().toISOString();
-        digitalHumans[dhIndex].messageCount = messages.length;
-        localStorage.setItem('mindpal_digital_humans', JSON.stringify(digitalHumans));
-      }
     }
 
     // 发送消息
@@ -509,8 +540,8 @@
 
       if (!content) return;
 
-      // 添加用户消息
-      addMessage('user', content);
+      // 添加用户消息到UI
+      addMessageToUI('user', content);
       input.value = '';
       adjustTextareaHeight();
       document.getElementById('sendBtn').disabled = true;
@@ -520,45 +551,43 @@
       status.textContent = '正在输入...';
       status.classList.add('speaking');
 
-      // 调用后端API获取AI回复
+      // 调用数字人对话API
       try {
         await generateReply(content);
-        status.textContent = '在线';
-        status.classList.remove('speaking');
-        document.getElementById('sendBtn').disabled = false;
       } catch (error) {
         console.error('发送消息失败:', error);
-        addMessage('assistant', '抱歉，我遇到了一些问题。请稍后再试。');
+        addMessageToUI('assistant', '抱歉，我遇到了一些问题。请稍后再试。');
+      } finally {
         status.textContent = '在线';
         status.classList.remove('speaking');
         document.getElementById('sendBtn').disabled = false;
       }
     }
 
-    // 生成AI回复（调用后端API）
+    // 生成AI回复（调用数字人对话API）
     async function generateReply(userMessage) {
       let aiMessage = '';
       let messageElement = null;
 
-      // 使用API封装层的流式对话
-      await MindPalAPI.chat.sendMessage(
-        parseInt(dhId),
+      // 使用数字人专用的流式对话API
+      await MindPalAPI.digitalHumans.chat(
+        dhId,
         userMessage,
+        sessionId,
         // onChunk: 处理每个文本片段
-        (chunk) => {
-          aiMessage += chunk;
+        (chunk, fullText) => {
+          aiMessage = fullText;
 
           // 如果还没有创建消息元素，创建一个
           if (!messageElement) {
             const messagesContainer = document.getElementById('messagesContainer');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message assistant';
-            messageDiv.innerHTML = `
-              <div class="message-avatar">${currentDH.avatarEmoji}</div>
-              <div class="message-bubble"></div>
-            `;
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content assistant';
+            messageDiv.appendChild(contentDiv);
             messagesContainer.appendChild(messageDiv);
-            messageElement = messageDiv.querySelector('.message-bubble');
+            messageElement = contentDiv;
             scrollToBottom();
           }
 
@@ -568,17 +597,23 @@
         },
         // onComplete: 消息完成
         (data) => {
+          // 更新会话ID
+          if (data.session_id) {
+            sessionId = data.session_id;
+          }
+
           // 保存到消息历史
           messages.push({
             role: 'assistant',
             content: aiMessage,
-            timestamp: new Date().toISOString(),
-            emotion: data.emotion || 'neutral'
+            timestamp: new Date().toISOString()
           });
-          saveMessages();
+          saveMessagesLocal();
 
           // 追踪对话发送事件
-          MindPalAnalytics.trackChatSend(parseInt(dhId), userMessage.length);
+          if (typeof MindPalAnalytics !== 'undefined') {
+            MindPalAnalytics.trackChatSend(dhId, userMessage.length);
+          }
         },
         // onError: 错误处理
         (error) => {
@@ -587,7 +622,7 @@
             messageElement.textContent = `抱歉，发生错误: ${error}`;
             messageElement.style.color = 'var(--color-danger)';
           } else {
-            addMessage('assistant', `抱歉，发生错误: ${error}`);
+            addMessageToUI('assistant', `抱歉，发生错误: ${error}`);
           }
         }
       );
@@ -636,17 +671,18 @@
     }
 
     // 清除对话
-    function clearChat() {
+    async function clearChat() {
       if (!confirm('确定要清除所有对话记录吗？')) {
         return;
       }
 
       messages = [];
-      saveMessages();
+      sessionId = null;
+      saveMessagesLocal();
       renderMessages();
 
-      // 添加欢迎消息
-      addMessage('assistant', `对话已清除。有什么新的话题想聊吗？`);
+      // 添加新的欢迎消息
+      addMessageToUI('assistant', `对话已清除。有什么新的话题想聊吗？`);
     }
 
     // 设置
@@ -655,7 +691,13 @@
     }
 
     // 页面加载
-    window.addEventListener('load', loadDigitalHuman);
+    window.addEventListener('load', function() {
+      // 检查登录状态
+      if (!MindPalAuth.requireLogin(window.location.href)) {
+        return;
+      }
+      loadDigitalHuman();
+    });
   </script>
 </body>
 </html>

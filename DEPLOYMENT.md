@@ -29,8 +29,8 @@ chmod +x deploy.sh
 
 #### 5. 访问应用
 - 前端: http://localhost
-- 后端API: http://localhost:5000
-- 健康检查: http://localhost:5000/api/health
+- 后端API: http://localhost:8000
+- 健康检查: http://localhost:8000/health
 
 #### 6. 预设测试账号
 - 手机号: `13800138000`
@@ -43,7 +43,7 @@ chmod +x deploy.sh
 #### 1. 后端部署
 
 ```bash
-cd backend
+cd backend_v2
 
 # 创建虚拟环境
 python -m venv venv
@@ -53,17 +53,14 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 配置环境变量
-cp ../.env.example ../.env
-# 编辑.env,填入DASHSCOPE_API_KEY
-
-# 创建必要目录
-mkdir -p data uploads data/vectors
+cp .env.example .env
+# 编辑 .env，填入本地配置
 
 # 启动后端
-python app.py
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-后端将运行在 http://localhost:5000
+后端将运行在 http://localhost:8000
 
 #### 2. 前端部署
 
@@ -112,36 +109,25 @@ docker-compose down -v
 
 ```
 MindPal/
-├── backend/                  # 后端服务
+├── backend_v2/               # 主线后端（FastAPI）
 │   ├── app/
-│   │   ├── models/          # 数据库模型
-│   │   ├── routes/          # API路由
-│   │   └── services/        # 业务逻辑
-│   │       ├── qianwen_service.py    # LLM服务
-│   │       ├── file_parser.py        # 文件解析
-│   │       ├── chunking_service.py   # 文本分块
-│   │       ├── vector_store.py       # FAISS向量库
-│   │       └── rag_service.py        # RAG检索
-│   ├── data/                # 数据库和向量存储
-│   ├── uploads/             # 上传文件存储
-│   └── app.py              # 启动文件
+│   │   ├── api/v1/          # API路由
+│   │   ├── models/          # 数据模型
+│   │   ├── schemas/         # Pydantic模式
+│   │   ├── services/        # 业务逻辑
+│   │   ├── core/            # 安全/WebSocket等核心能力
+│   │   ├── config.py        # 配置管理
+│   │   └── main.py          # 启动入口
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── requirements.txt
 │
-├── frontend/                # 前端应用
-│   ├── index.html          # 登录页
-│   ├── dh-list.html        # 数字人列表
-│   ├── chat.html           # 对话页面
-│   ├── knowledge.html      # 知识库管理
-│   ├── css/                # 样式文件
-│   └── js/
-│       ├── config.js       # API配置
-│       ├── auth.js         # 认证管理
-│       └── api.js          # API封装
-│
-├── Dockerfile.backend      # 后端Dockerfile
-├── Dockerfile.frontend     # 前端Dockerfile
-├── docker-compose.yml      # Docker编排
-├── nginx.conf              # Nginx配置
-└── deploy.sh               # 一键部署脚本
+├── backend/                  # 历史/MVP 参考实现（Flask）
+├── frontend/                 # 前端应用
+├── Dockerfile.frontend       # 前端 Dockerfile
+├── docker-compose.yml        # 根编排（默认接 backend_v2）
+├── nginx.conf                # Nginx配置
+└── deploy.sh                 # 一键部署脚本
 ```
 
 ---

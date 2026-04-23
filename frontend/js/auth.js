@@ -47,7 +47,7 @@ const MindPalAuth = {
    * @returns {string|null}
    */
   getAuthToken() {
-    const token = localStorage.getItem('mindpal_token');
+    const token = sessionStorage.getItem('mindpal_token');
     if (token) {
       return token;
     }
@@ -77,7 +77,7 @@ const MindPalAuth = {
     localStorage.setItem('mindpal_user', JSON.stringify(loginData));
 
     if (token) {
-      localStorage.setItem('mindpal_token', token);
+      sessionStorage.setItem('mindpal_token', token);
     }
   },
 
@@ -86,7 +86,7 @@ const MindPalAuth = {
    */
   logout() {
     localStorage.removeItem('mindpal_user');
-    localStorage.removeItem('mindpal_token');
+    sessionStorage.removeItem('mindpal_token');
     localStorage.removeItem('mindpal_remember');
 
     // 跳转到登录页

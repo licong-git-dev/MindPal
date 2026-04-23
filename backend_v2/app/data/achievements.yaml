@@ -1,0 +1,308 @@
+# MindPal 成就系统配置
+# 分类: exploration(探索), social(社交), dialogue(对话), collection(收集), story(剧情), npc(NPC亲密度)
+
+achievements:
+  # ==================== 探索类成就 ====================
+  - id: "exp_first_steps"
+    name: "初入心境"
+    description: "第一次进入MindPal世界"
+    category: "exploration"
+    points: 10
+    icon: "footprints"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 50
+      gold: 100
+
+  - id: "exp_village_tour"
+    name: "村庄漫步"
+    description: "探索整个新手村"
+    category: "exploration"
+    points: 20
+    icon: "map"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 100
+      gold: 200
+
+  - id: "exp_secret_garden"
+    name: "秘密花园"
+    description: "发现隐藏的心灵花园"
+    category: "exploration"
+    points: 50
+    icon: "flower"
+    is_hidden: true
+    target_value: 1
+    rewards:
+      exp: 200
+      diamonds: 10
+
+  - id: "exp_memory_lake"
+    name: "记忆之湖"
+    description: "到达记忆湖畔"
+    category: "exploration"
+    points: 30
+    icon: "water"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 150
+      gold: 300
+
+  # ==================== 对话类成就 ====================
+  - id: "dlg_first_chat"
+    name: "初次对话"
+    description: "与NPC进行第一次对话"
+    category: "dialogue"
+    points: 10
+    icon: "chat"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 30
+      gold: 50
+
+  - id: "dlg_chatty"
+    name: "话匣子"
+    description: "与NPC对话50次"
+    category: "dialogue"
+    points: 30
+    icon: "chat_bubble"
+    is_hidden: false
+    target_value: 50
+    rewards:
+      exp: 200
+      gold: 300
+
+  - id: "dlg_deep_talk"
+    name: "深度交流"
+    description: "与NPC进行500次对话"
+    category: "dialogue"
+    points: 100
+    icon: "heart_chat"
+    is_hidden: false
+    target_value: 500
+    rewards:
+      exp: 500
+      diamonds: 30
+
+  - id: "dlg_open_heart"
+    name: "敞开心扉"
+    description: "在对话中表达真实情感"
+    category: "dialogue"
+    points: 50
+    icon: "open_heart"
+    is_hidden: true
+    target_value: 1
+    rewards:
+      exp: 300
+      diamonds: 20
+
+  # ==================== NPC亲密度成就 ====================
+  - id: "npc_bei_friend"
+    name: "小贝的朋友"
+    description: "与小贝好感度达到50"
+    category: "npc"
+    points: 30
+    icon: "bei_heart"
+    is_hidden: false
+    target_value: 50
+    rewards:
+      exp: 200
+      gold: 500
+
+  - id: "npc_bei_bestie"
+    name: "小贝的闺蜜"
+    description: "与小贝好感度达到100"
+    category: "npc"
+    points: 100
+    icon: "bei_star"
+    is_hidden: false
+    target_value: 100
+    rewards:
+      exp: 500
+      diamonds: 50
+
+  - id: "npc_aela_trust"
+    name: "艾拉的信任"
+    description: "与艾拉好感度达到50"
+    category: "npc"
+    points: 30
+    icon: "aela_heart"
+    is_hidden: false
+    target_value: 50
+    rewards:
+      exp: 200
+      gold: 500
+
+  - id: "npc_momo_vip"
+    name: "莫莫的VIP客户"
+    description: "与莫莫好感度达到50"
+    category: "npc"
+    points: 30
+    icon: "momo_heart"
+    is_hidden: false
+    target_value: 50
+    rewards:
+      exp: 200
+      gold: 1000
+
+  - id: "npc_chronos_worthy"
+    name: "时间守护者的认可"
+    description: "与克洛诺斯好感度达到50"
+    category: "npc"
+    points: 30
+    icon: "chronos_heart"
+    is_hidden: false
+    target_value: 50
+    rewards:
+      exp: 200
+      gold: 500
+
+  # ==================== 社交类成就 ====================
+  - id: "soc_first_friend"
+    name: "第一个朋友"
+    description: "添加第一个好友"
+    category: "social"
+    points: 20
+    icon: "friend"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 100
+      gold: 200
+
+  - id: "soc_social_butterfly"
+    name: "社交达人"
+    description: "拥有10个好友"
+    category: "social"
+    points: 50
+    icon: "friends"
+    is_hidden: false
+    target_value: 10
+    rewards:
+      exp: 300
+      diamonds: 20
+
+  - id: "soc_party_leader"
+    name: "队长出击"
+    description: "创建一个队伍"
+    category: "social"
+    points: 20
+    icon: "party"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 100
+      gold: 200
+
+  # ==================== 收集类成就 ====================
+  - id: "col_first_item"
+    name: "第一件物品"
+    description: "获得第一件物品"
+    category: "collection"
+    points: 10
+    icon: "item"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 30
+      gold: 50
+
+  - id: "col_treasure_hunter"
+    name: "寻宝猎人"
+    description: "收集50件不同物品"
+    category: "collection"
+    points: 100
+    icon: "treasure"
+    is_hidden: false
+    target_value: 50
+    rewards:
+      exp: 500
+      diamonds: 30
+
+  - id: "col_wealthy"
+    name: "小有积蓄"
+    description: "拥有10000金币"
+    category: "collection"
+    points: 30
+    icon: "gold"
+    is_hidden: false
+    target_value: 10000
+    rewards:
+      exp: 200
+      diamonds: 10
+
+  # ==================== 剧情类成就 ====================
+  - id: "story_courage_key"
+    name: "勇气之钥"
+    description: "完成镜中对话挑战，获得勇气之钥"
+    category: "story"
+    points: 200
+    icon: "key_courage"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 1000
+      diamonds: 100
+      items:
+        - id: "key_courage"
+          count: 1
+
+  - id: "story_release_key"
+    name: "释然之钥"
+    description: "完成记忆迷宫挑战，获得释然之钥"
+    category: "story"
+    points: 200
+    icon: "key_release"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 1000
+      diamonds: 100
+      items:
+        - id: "key_release"
+          count: 1
+
+  - id: "story_hope_key"
+    name: "希望之钥"
+    description: "完成未来建造挑战，获得希望之钥"
+    category: "story"
+    points: 200
+    icon: "key_hope"
+    is_hidden: false
+    target_value: 1
+    rewards:
+      exp: 1000
+      diamonds: 100
+      items:
+        - id: "key_hope"
+          count: 1
+
+  - id: "story_three_keys"
+    name: "心灵觉醒"
+    description: "集齐三把钥匙，开启心灵圣殿"
+    category: "story"
+    points: 500
+    icon: "awakening"
+    is_hidden: true
+    target_value: 1
+    rewards:
+      exp: 3000
+      diamonds: 500
+      title: "心灵觉醒者"
+
+  - id: "story_main_complete"
+    name: "旅途的终点"
+    description: "完成主线剧情"
+    category: "story"
+    points: 300
+    icon: "crown"
+    is_hidden: true
+    target_value: 1
+    rewards:
+      exp: 2000
+      diamonds: 200
+      title: "心境旅者"

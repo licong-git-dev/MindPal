@@ -3,7 +3,7 @@
 **文档版本**: v1.0
 **创建日期**: 2025-01-11
 **API提供商**: 阿里云 (通义千问)
-**API Key**: `sk-71bb10435f134dfdab3a4b684e57b640`
+**API Key**: `your_dashscope_api_key`
 
 ---
 
@@ -88,7 +88,7 @@ pip install dashscope flask flask-cors python-dotenv
 #### 环境变量配置 (.env)
 ```env
 # 阿里云配置
-DASHSCOPE_API_KEY=sk-71bb10435f134dfdab3a4b684e57b640
+DASHSCOPE_API_KEY=your_dashscope_api_key
 
 # 模型配置
 LLM_MODEL=qwen-turbo          # 或 qwen-plus, qwen-max
@@ -112,7 +112,7 @@ from dashscope import Generation
 import dashscope
 
 # 配置API Key
-dashscope.api_key = "sk-71bb10435f134dfdab3a4b684e57b640"
+dashscope.api_key = "your_dashscope_api_key"
 
 def chat_with_qianwen(messages, personality_prompt="", stream=True):
     """
@@ -867,7 +867,7 @@ services:
 
 ```bash
 # .env.production
-DASHSCOPE_API_KEY=sk-71bb10435f134dfdab3a4b684e57b640
+DASHSCOPE_API_KEY=your_dashscope_api_key
 LLM_MODEL=qwen-plus
 FLASK_ENV=production
 SECRET_KEY=<生产环境随机密钥>

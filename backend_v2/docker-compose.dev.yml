@@ -1,0 +1,24 @@
+# MindPal V2 Docker Compose - 开发环境
+# 仅包含后端API，使用SQLite数据库
+
+version: '3.8'
+
+services:
+  # FastAPI 后端 (开发模式)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mindpal_backend_dev
+    environment:
+      - DEBUG=true
+      - DATABASE_URL=sqlite+aiosqlite:///./mindpal_v2.db
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./mindpal_v2.db:/app/mindpal_v2.db
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped

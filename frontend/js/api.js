@@ -10,6 +10,7 @@ const MindPalAPI = {
   async request(url, options = {}) {
     const defaultOptions = {
       method: 'GET',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
       }
@@ -50,34 +51,95 @@ const MindPalAPI = {
     /**
      * 用户注册
      */
-    async register(phone, password) {
-      return await MindPalAPI.request(MindPalConfig.API.AUTH.REGISTER, {
+    async register(username, email, password) {
+      const response = await fetch(`${MindPalConfig.API_BASE_URL}${MindPalConfig.API.AUTH.REGISTER}`, {
         method: 'POST',
-        body: JSON.stringify({ phone, password })
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password })
       });
-    },
 
-    /**
-     * 用户登录
-     */
-    async login(phone, password) {
-      const result = await MindPalAPI.request(MindPalConfig.API.AUTH.LOGIN, {
-        method: 'POST',
-        body: JSON.stringify({ phone, password })
-      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.detail || '注册失败');
+      }
+
+      if (result.code !== 0) {
+        throw new Error(result.message || '注册失败');
+      }
 
       // 保存登录信息
-      if (result.success && result.data) {
-        MindPalAuth.saveLogin(result.data.user, result.data.token);
-      }
+      const data = result.data;
+      MindPalAuth.saveLogin({
+        id: data.user_id,
+        username: data.username
+      }, data.access_token);
 
       return result;
     },
 
     /**
-     * 验证token
+     * 用户登录
      */
-    async verify() {
+    async login(account, password) {
+      const response = await fetch(`${MindPalConfig.API_BASE_URL}${MindPalConfig.API.AUTH.LOGIN}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account, password })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.detail || '登录失败');
+      }
+
+      if (result.code !== 0) {
+        throw new Error(result.message || '登录失败');
+      }
+
+      // 保存登录信息
+      const data = result.data;
+      MindPalAuth.saveLogin({
+        id: data.user_id,
+        username: data.username,
+        player_id: data.player_id,
+        has_character: data.has_character
+      }, data.access_token);
+
+      return result;
+    },
+
+    /**
+     * 刷新Token
+     */
+    async refresh() {
+      const response = await fetch(`${MindPalConfig.API_BASE_URL}${MindPalConfig.API.AUTH.REFRESH}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.code !== 0) {
+        MindPalAuth.logout();
+        throw new Error('Token refresh failed');
+      }
+
+      // 更新access_token
+      sessionStorage.setItem('mindpal_token', result.data.access_token);
+
+      return result;
+    },
+
+    /**
+     * 获取当前用户信息
+     */
+    async me() {
       return await MindPalAPI.request(MindPalConfig.API.AUTH.VERIFY);
     }
   },
@@ -111,12 +173,124 @@ const MindPalAPI = {
     },
 
     /**
+     * 更新数字人
+     */
+    async update(dhId, dhData) {
+      return await MindPalAPI.request(MindPalConfig.API.DIGITAL_HUMANS.UPDATE(dhId), {
+        method: 'PUT',
+        body: JSON.stringify(dhData)
+      });
+    },
+
+    /**
      * 删除数字人
      */
     async delete(dhId) {
       return await MindPalAPI.request(MindPalConfig.API.DIGITAL_HUMANS.DELETE(dhId), {
         method: 'DELETE'
       });
+    },
+
+    /**
+     * 与数字人对话 (流式SSE)
+     */
+    async chat(dhId, message, sessionId, onChunk, onComplete, onError) {
+      const token = MindPalAuth.getAuthToken();
+
+      try {
+        const response = await fetch(
+          `${MindPalConfig.API_BASE_URL}${MindPalConfig.API.DIGITAL_HUMANS.CHAT_STREAM(dhId)}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token && !token.startsWith('temp_') ? `Bearer ${token}` : ''
+            },
+            body: JSON.stringify({
+              dh_id: dhId,
+              message: message,
+              session_id: sessionId || null
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || `HTTP Error: ${response.status}`);
+        }
+
+        // 处理SSE流
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let fullResponse = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+
+                if (data.type === 'chunk' && data.content) {
+                  fullResponse += data.content;
+                  onChunk && onChunk(data.content, fullResponse);
+                } else if (data.type === 'done') {
+                  onComplete && onComplete({
+                    response: fullResponse,
+                    session_id: data.session_id,
+                    tokens_used: data.tokens_used
+                  });
+                  return;
+                } else if (data.type === 'error') {
+                  onError && onError(data.message);
+                  return;
+                }
+              } catch (e) {
+                console.error('解析SSE消息失败:', e, line);
+              }
+            }
+          }
+        }
+
+        // 流结束但没有收到done信号
+        if (fullResponse) {
+          onComplete && onComplete({ response: fullResponse });
+        }
+
+      } catch (error) {
+        console.error('数字人对话失败:', error);
+        onError && onError(error.message);
+      }
+    },
+
+    /**
+     * 获取对话历史
+     */
+    async getHistory(dhId, limit = 50) {
+      return await MindPalAPI.request(
+        `${MindPalConfig.API.DIGITAL_HUMANS.HISTORY(dhId)}?limit=${limit}`
+      );
+    },
+
+    /**
+     * 获取性格选项列表
+     */
+    async getPersonalities() {
+      return await MindPalAPI.request(MindPalConfig.API.DIGITAL_HUMANS.PERSONALITIES);
+    },
+
+    /**
+     * 获取领域选项列表
+     */
+    async getDomains() {
+      return await MindPalAPI.request(MindPalConfig.API.DIGITAL_HUMANS.DOMAINS);
     }
   },
 

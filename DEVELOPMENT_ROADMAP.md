@@ -37,7 +37,7 @@
   pip install dashscope==1.14.1
 
   # 配置环境变量
-  DASHSCOPE_API_KEY=sk-71bb10435f134dfdab3a4b684e57b640
+  DASHSCOPE_API_KEY=your_dashscope_api_key
   LLM_MODEL=qwen-turbo
   ```
 
@@ -480,7 +480,7 @@
    pip install dashscope==1.14.1
 
    # 配置.env
-   echo "DASHSCOPE_API_KEY=sk-71bb10435f134dfdab3a4b684e57b640" >> .env
+   echo "DASHSCOPE_API_KEY=your_dashscope_api_key" >> .env
    ```
 
 3. **前后端联调**

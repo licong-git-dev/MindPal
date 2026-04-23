@@ -356,6 +356,7 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/analytics.js"></script>
 
   <script>
     // 页面加载时检查登录状态
@@ -374,8 +375,9 @@
         // 调用API获取数字人列表
         const result = await MindPalAPI.digitalHumans.list();
 
-        if (!result.success) {
-          throw new Error(result.error || '获取数字人列表失败');
+        // 处理APIResponse格式 {code, message, data}
+        if (result.code !== 0) {
+          throw new Error(result.message || '获取数字人列表失败');
         }
 
         const digitalHumans = result.data || [];
@@ -389,6 +391,13 @@
           // 显示空状态
           emptyState.style.display = 'block';
           dhGrid.innerHTML = '';
+          // 保留创建卡片
+          dhGrid.innerHTML = `
+            <a href="create-dh-step1.html" class="create-dh-card">
+              <div class="create-icon">+</div>
+              <div class="create-text">创建新数字人</div>
+            </a>
+          `;
           return;
         }
 
@@ -396,9 +405,12 @@
         emptyState.style.display = 'none';
 
         // 渲染数字人卡片
-        const createCard = dhGrid.querySelector('.create-dh-card');
-        dhGrid.innerHTML = '';
-        dhGrid.appendChild(createCard);
+        dhGrid.innerHTML = `
+          <a href="create-dh-step1.html" class="create-dh-card">
+            <div class="create-icon">+</div>
+            <div class="create-text">创建新数字人</div>
+          </a>
+        `;
 
         digitalHumans.forEach(dh => {
           const card = createDHCard(dh);
@@ -407,10 +419,33 @@
 
       } catch (error) {
         console.error('加载数字人列表失败:', error);
-        alert('加载数字人列表失败: ' + error.message);
+        dhCount.textContent = '加载失败';
         // 显示空状态
-        emptyState.style.display = 'block';
-        dhGrid.innerHTML = '';
+        emptyState.style.display = 'none';
+        dhGrid.innerHTML = `
+          <a href="create-dh-step1.html" class="create-dh-card">
+            <div class="create-icon">+</div>
+            <div class="create-text">创建新数字人</div>
+          </a>
+        `;
+
+        const errorCard = document.createElement('div');
+        errorCard.className = 'dh-card';
+        errorCard.style.textAlign = 'center';
+        errorCard.style.padding = '40px';
+
+        const errorText = document.createElement('p');
+        errorText.style.color = 'var(--color-text-secondary)';
+        errorText.textContent = `加载失败: ${error.message}`;
+
+        const retryButton = document.createElement('button');
+        retryButton.className = 'btn btn-secondary';
+        retryButton.textContent = '重试';
+        retryButton.addEventListener('click', loadDigitalHumans);
+
+        errorCard.appendChild(errorText);
+        errorCard.appendChild(retryButton);
+        dhGrid.appendChild(errorCard);
       }
     }
 
@@ -462,10 +497,11 @@
         window.location.href = `chat.html?id=${dh.id}`;
       };
 
-      // 格式化最后对话时间
+      // 格式化最后对话时间 (后端返回snake_case: last_conversation_at)
       let lastChatText = '还未开始对话';
-      if (dh.lastChatAt) {
-        const lastChat = new Date(dh.lastChatAt);
+      const lastChatAt = dh.last_conversation_at || dh.lastChatAt;
+      if (lastChatAt) {
+        const lastChat = new Date(lastChatAt);
         const now = new Date();
         const diff = now - lastChat;
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -481,24 +517,71 @@
         }
       }
 
-      card.innerHTML = `
-        <div class="dh-avatar">${dh.avatarEmoji || '👤'}</div>
-        <div class="dh-info">
-          <div class="dh-name">${dh.name}</div>
-          <div class="dh-meta">
-            <span>💬 ${dh.messageCount || 0}条对话</span>
-            <span style="margin-left: var(--spacing-sm);">⏰ ${lastChatText}</span>
-          </div>
-        </div>
-        <div class="dh-actions">
-          <button class="btn btn-small btn-primary" onclick="event.stopPropagation(); window.location.href='chat.html?id=${dh.id}'">
-            对话
-          </button>
-          <button class="btn btn-small btn-secondary" onclick="event.stopPropagation(); editDH(${dh.id})">
-            编辑
-          </button>
-        </div>
-      `;
+      // 消息数量 (后端返回: total_messages)
+      const messageCount = dh.total_messages || dh.messageCount || 0;
+
+      // 性格图标映射
+      const personalityIcons = {
+        'gentle': '🌸',
+        'energetic': '⚡',
+        'wise': '🦉',
+        'humorous': '😄',
+        'caring': '💝',
+        'creative': '🎨'
+      };
+      const personalityIcon = personalityIcons[dh.personality] || '🤖';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'dh-avatar';
+      avatar.textContent = personalityIcon;
+
+      const info = document.createElement('div');
+      info.className = 'dh-info';
+
+      const name = document.createElement('div');
+      name.className = 'dh-name';
+      name.textContent = dh.name;
+
+      const meta = document.createElement('div');
+      meta.className = 'dh-meta';
+
+      const messageSpan = document.createElement('span');
+      messageSpan.textContent = `💬 ${messageCount}条对话`;
+
+      const timeSpan = document.createElement('span');
+      timeSpan.style.marginLeft = 'var(--spacing-sm)';
+      timeSpan.textContent = `⏰ ${lastChatText}`;
+
+      meta.appendChild(messageSpan);
+      meta.appendChild(timeSpan);
+      info.appendChild(name);
+      info.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'dh-actions';
+
+      const chatButton = document.createElement('button');
+      chatButton.className = 'btn btn-small btn-primary';
+      chatButton.textContent = '对话';
+      chatButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        window.location.href = `chat.html?id=${dh.id}`;
+      });
+
+      const deleteButton = document.createElement('button');
+      deleteButton.className = 'btn btn-small btn-secondary';
+      deleteButton.textContent = '删除';
+      deleteButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        deleteDH(dh.id);
+      });
+
+      actions.appendChild(chatButton);
+      actions.appendChild(deleteButton);
+
+      card.appendChild(avatar);
+      card.appendChild(info);
+      card.appendChild(actions);
 
       return card;
     }
@@ -518,8 +601,9 @@
       try {
         const result = await MindPalAPI.digitalHumans.delete(id);
 
-        if (!result.success) {
-          throw new Error(result.error || '删除失败');
+        // 处理APIResponse格式
+        if (result.code !== 0) {
+          throw new Error(result.message || '删除失败');
         }
 
         alert('删除成功');

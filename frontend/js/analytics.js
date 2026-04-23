@@ -43,7 +43,6 @@ const MindPalAnalytics = {
     // 自动追踪页面浏览
     this.trackPageView();
 
-    console.log('[Analytics] SDK initialized, session:', this.sessionId);
   },
 
   /**
@@ -224,13 +223,13 @@ const MindPalAnalytics = {
         const data = JSON.stringify({ events });
         if (navigator.sendBeacon) {
           navigator.sendBeacon(
-            `${MindPalConfig.API_BASE_URL}/api/analytics/batch`,
+            `${MindPalConfig.API_BASE_URL}${MindPalConfig.API.ANALYTICS.BATCH}`,
             new Blob([data], { type: 'application/json' })
           );
         }
       } else {
         // 异步发送
-        const response = await fetch(`${MindPalConfig.API_BASE_URL}/api/analytics/batch`, {
+        const response = await fetch(`${MindPalConfig.API_BASE_URL}${MindPalConfig.API.ANALYTICS.BATCH}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

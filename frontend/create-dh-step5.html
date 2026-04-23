@@ -567,19 +567,6 @@
         return;
       }
 
-      // 验证必填项
-      if (!dhData.avatar) {
-        alert('请先选择形象');
-        window.location.href = 'create-dh-step1.html';
-        return;
-      }
-
-      if (!dhData.voice) {
-        alert('请先选择声音');
-        window.location.href = 'create-dh-step3.html';
-        return;
-      }
-
       dhData.name = name;
 
       const createBtn = document.getElementById('createBtn');
@@ -587,27 +574,38 @@
       createBtn.disabled = true;
 
       try {
-        // 调用API创建数字人
-        const result = await MindPalAPI.digitalHumans.create({
+        // 构建符合后端API格式的请求数据
+        const requestData = {
           name: dhData.name,
-          avatar: dhData.avatar,
-          avatarEmoji: dhData.avatarEmoji,
-          avatarCustom: dhData.avatarCustom,
-          personality: dhData.personality,
-          traits: dhData.traits,
-          customPersonality: dhData.customPersonality,
-          voice: dhData.voice,
-          voiceParams: dhData.voiceParams
-        });
+          personality: dhData.personality || 'gentle',
+          personality_traits: dhData.traits ? {
+            warmth: dhData.traits.empathy || 50,
+            humor: dhData.traits.humor || 50,
+            energy: dhData.traits.liveliness || 50,
+            wisdom: dhData.traits.creativity || 50,
+            empathy: dhData.traits.empathy || 50
+          } : null,
+          custom_personality: dhData.customPersonality || null,
+          role_type: 'companion',
+          voice_id: dhData.voice || 'xiaoya',
+          voice_speed: dhData.voiceParams?.speed || 1.0,
+          domains: dhData.knowledge?.categories || null
+        };
 
-        if (!result.success) {
-          throw new Error(result.error || '创建失败');
+        // 调用API创建数字人
+        const result = await MindPalAPI.digitalHumans.create(requestData);
+
+        // 处理APIResponse格式
+        if (result.code !== 0) {
+          throw new Error(result.message || '创建失败');
         }
 
         const digitalHuman = result.data;
 
         // 追踪创建数字人事件
-        MindPalAnalytics.trackDHCreate(digitalHuman.id, digitalHuman.name);
+        if (typeof MindPalAnalytics !== 'undefined') {
+          MindPalAnalytics.trackDHCreate(digitalHuman.id, digitalHuman.name);
+        }
 
         // 清除会话数据
         sessionStorage.removeItem('create_dh_data');
@@ -619,6 +617,7 @@
           localStorage.setItem('mindpal_dh_drafts', JSON.stringify(filteredDrafts));
         }
 
+        alert('创建成功！');
         // 跳转到对话页面
         window.location.href = `chat.html?id=${digitalHuman.id}`;
 

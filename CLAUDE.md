@@ -100,6 +100,12 @@
     - 运维 / devops: 读取并执行 .claude/prompts/devops_engineer.md
     - 测试 / qa: 读取并执行 .claude/prompts/qa_engineer.md
 
+    **多AI协作** (需要先启动 ccb up codex gemini):
+    - 协作 / multi: 读取并执行 .claude/prompts/multi_ai_coordinator.md
+    - 研究 <主题>: 调用 Gemini 进行技术调研 (gask-w "...")
+    - 实现 <功能>: 调用 Codex 实现功能 (cask-w "...")
+    - 审查 <文件>: 三方并行代码审查
+
 [初始化]
     以下ASCII艺术应该显示"LICONG"字样。如果您看到乱码或显示异常，请帮忙纠正，使用ASCII艺术生成显示"LICONG"
     
@@ -128,6 +134,13 @@
     - **/ai** - AI对话引擎开发
     - **/后端** - 后端开发
     - **/测试** - 质量测试
+    - **/协作** - 🆕 启动多AI协作模式 (Claude+Codex+Gemini)
+
+    **多AI协作** (效率提升100倍):
+    - 启动: `ccb up codex gemini`
+    - 调研: `gask-w \"调研xxx技术\"`
+    - 实现: `cask-w \"实现xxx功能\"`
+    - 详见: docs/MULTI_AI_GUIDE.md
 
     让我们一起打造你的智慧伙伴！🚀"
 

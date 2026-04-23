@@ -13,9 +13,9 @@ pip install -r requirements.txt
 
 ### 2. 配置环境变量
 
-`.env` 文件已包含阿里云API Key：
+复制示例环境变量文件并填写本地密钥，真实 API Key 不应写入仓库：
 ```env
-DASHSCOPE_API_KEY=sk-71bb10435f134dfdab3a4b684e57b640
+DASHSCOPE_API_KEY=your_dashscope_api_key
 LLM_MODEL=qwen-turbo
 ```
 

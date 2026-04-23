@@ -1,26 +1,24 @@
 version: '3.8'
 
 services:
-  # 后端服务
+  # 后端服务（主线：backend_v2 / FastAPI）
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
+      context: ./backend_v2
+      dockerfile: Dockerfile
     container_name: mindpal-backend
     restart: unless-stopped
     ports:
-      - "5000:5000"
-    volumes:
-      - ./backend/data:/app/backend/data
-      - ./backend/uploads:/app/backend/uploads
-      - ./.env:/app/.env
+      - "8000:8000"
+    env_file:
+      - ./backend_v2/.env
     environment:
-      - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
+      - DEBUG=false
     networks:
       - mindpal-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -48,7 +46,3 @@ services:
 networks:
   mindpal-network:
     driver: bridge
-
-volumes:
-  backend-data:
-  backend-uploads:

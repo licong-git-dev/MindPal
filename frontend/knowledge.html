@@ -582,7 +582,7 @@
 
         // 调用API
         const token = MindPalAuth.getAuthToken();
-        const response = await fetch(`${MindPalConfig.API_BASE_URL}/api/knowledge/upload`, {
+        const response = await fetch(`${MindPalConfig.API_BASE_URL}${MindPalConfig.API.KNOWLEDGE.UPLOAD}`, {
           method: 'POST',
           headers: {
             'Authorization': token && !token.startsWith('temp_') ? `Bearer ${token}` : ''

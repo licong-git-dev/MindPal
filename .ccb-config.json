@@ -1,0 +1,69 @@
+{
+  "BackendEnv": "windows",
+  "terminal": "wezterm",
+  "project": "MindPal",
+  "description": "面向元宇宙的智能体数字人交互平台",
+  "ai_roles": {
+    "claude": {
+      "role": "协调者",
+      "responsibilities": ["架构设计", "代码审查", "团队协调", "Prompt工程", "方案决策"]
+    },
+    "codex": {
+      "role": "实现者",
+      "responsibilities": ["算法实现", "代码重构", "性能优化", "单元测试", "Bug修复"]
+    },
+    "gemini": {
+      "role": "研究员",
+      "responsibilities": ["技术调研", "方案对比", "知识检索", "文档分析", "趋势分析"]
+    }
+  },
+  "workflows": {
+    "dialogue_engine": {
+      "description": "数字人对话引擎开发",
+      "steps": [
+        "gemini: 调研对话框架（LangChain/LlamaIndex）",
+        "claude: 设计对话引擎架构",
+        "codex: 实现DialogueManager核心类",
+        "codex: 实现IntentClassifier意图分类",
+        "codex: 实现EmotionAnalyzer情感分析",
+        "claude: 集成测试和代码审查"
+      ]
+    },
+    "rag_system": {
+      "description": "知识库RAG系统开发",
+      "steps": [
+        "gemini: 调研RAG最新技术（HyDE/Self-RAG/CRAG）",
+        "gemini: 对比向量模型（BGE/M3E/OpenAI）",
+        "codex: 实现KnowledgeBaseRAG类",
+        "codex: 实现Reranker重排序",
+        "claude: 性能评估和优化"
+      ]
+    },
+    "emotion_recognition": {
+      "description": "情感识别模块开发",
+      "steps": [
+        "gemini: 调研情感识别模型",
+        "claude: 设计情感状态机",
+        "codex: 实现EmotionDetector类",
+        "codex: 集成到对话流程",
+        "claude: 测试和调优"
+      ]
+    },
+    "code_review": {
+      "description": "代码审查流程",
+      "parallel": true,
+      "steps": [
+        "codex: 审查代码质量和性能",
+        "gemini: 审查安全性和最佳实践",
+        "claude: 审查架构设计和业务逻辑",
+        "claude: 综合三方意见给出最终报告"
+      ]
+    }
+  },
+  "shortcuts": {
+    "/研究": "gask-w",
+    "/实现": "cask-w",
+    "/审查": "parallel_review",
+    "/优化": "iterative_optimize"
+  }
+}

@@ -151,21 +151,20 @@ data: {"done": true, "emotion": "happy"}
 
 ### 1. 健康检查
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:8000/health
 ```
 
-### 2. 用户注册
+### 2. 用户登录
 ```bash
-curl -X POST http://localhost:5000/api/auth/register \
+curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"phone":"13800138001","password":"test123"}'
+  -d '{"account":"demo@example.com","password":"test123456"}'
 ```
 
-### 3. 用户登录
+### 3. 获取当前用户信息
 ```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"phone":"13800138000","password":"test123456"}'
+curl http://localhost:8000/api/v1/auth/me \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **返回示例**:
@@ -185,14 +184,14 @@ curl -X POST http://localhost:5000/api/auth/login \
 
 ### 4. 获取数字人列表
 ```bash
-curl http://localhost:5000/api/digital-humans \
-  -H "Authorization: Bearer YOUR_TOKEN"
+curl http://localhost:8000/api/v1/digital-humans \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ### 5. 查看对话历史
 ```bash
-curl http://localhost:5000/api/chat/history/1?limit=50 \
-  -H "Authorization: Bearer YOUR_TOKEN"
+curl "http://localhost:8000/api/v1/dialogue/history?npc_id=bei&limit=50" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ---
