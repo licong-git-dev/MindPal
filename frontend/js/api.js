@@ -520,6 +520,80 @@ const MindPalAPI = {
   },
 
   /**
+   * 语音 API（ASR 语音识别 + TTS 语音合成）
+   *
+   * 依赖后端 backend_v2/app/api/v1/voice.py:
+   *   POST /voice/asr/upload  multipart 音频 → 识别文本
+   *   POST /voice/tts         json { text, voice } → audio/mpeg blob
+   */
+  voice: {
+    /**
+     * 上传音频文件识别为文本
+     * @param {Blob} audioBlob - 录音 blob
+     * @param {string} format - wav / mp3 / pcm / webm（浏览器录音默认 webm）
+     * @param {number} sampleRate - 采样率
+     * @returns 识别结果 { code, data: { text, confidence, duration } }
+     */
+    async asrUpload(audioBlob, format = 'webm', sampleRate = 16000) {
+      const token = MindPalAuth.getAuthToken();
+      const fd = new FormData();
+      fd.append('file', audioBlob, `record.${format}`);
+      fd.append('format', format);
+      fd.append('sample_rate', String(sampleRate));
+
+      const response = await fetch(
+        `${MindPalConfig.API_BASE_URL}${MindPalConfig.API.VOICE.ASR_UPLOAD}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': token && !token.startsWith('temp_') ? `Bearer ${token}` : '',
+          },
+          body: fd,
+        }
+      );
+      if (!response.ok) {
+        let msg = `HTTP ${response.status}`;
+        try { const j = await response.json(); msg = j.detail || j.message || msg; } catch (_) {}
+        throw new Error(msg);
+      }
+      return await response.json();
+    },
+
+    /**
+     * 文本转语音
+     * @param {string} text - 要合成的文本
+     * @param {string} voice - 语音 id（见 /voice/voices）
+     * @param {string} format - mp3 / wav / pcm
+     * @returns Blob 音频
+     */
+    async ttsSynthesize(text, voice = 'xiaoyun', format = 'mp3') {
+      const token = MindPalAuth.getAuthToken();
+      const response = await fetch(
+        `${MindPalConfig.API_BASE_URL}${MindPalConfig.API.VOICE.TTS}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token && !token.startsWith('temp_') ? `Bearer ${token}` : '',
+          },
+          body: JSON.stringify({ text, voice, format }),
+        }
+      );
+      if (!response.ok) {
+        let msg = `HTTP ${response.status}`;
+        try { const j = await response.json(); msg = j.detail || j.message || msg; } catch (_) {}
+        throw new Error(msg);
+      }
+      return await response.blob();
+    },
+
+    /** 获取可用语音列表 */
+    async getVoices() {
+      return await MindPalAPI.request(MindPalConfig.API.VOICE.VOICES);
+    },
+  },
+
+  /**
    * 数字人长期记忆 API（可视化记忆时间线）
    *
    * 全部挂在 /api/v1/digital-humans/{dh_id}/memories/*，不依赖 Player 模型。

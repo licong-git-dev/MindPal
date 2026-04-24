@@ -315,6 +315,40 @@
       }
     }
 
+    /* ===== AI 消息扬声器（TTS 播放）按钮 ===== */
+    .message-speaker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--color-text-secondary);
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .message-speaker:hover {
+      background: rgba(99, 102, 241, 0.25);
+      color: var(--color-primary-1);
+      transform: scale(1.05);
+    }
+    .message-speaker:disabled { cursor: wait; opacity: 0.7; }
+
+    /* 录音中动画 */
+    .voice-btn.recording {
+      background: #ef4444 !important;
+      color: #fff !important;
+      animation: pulseRec 1s ease-in-out infinite;
+    }
+    @keyframes pulseRec {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+      50%      { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    }
+
     /* ===== 危机干预 Banner ===== */
     .crisis-banner {
       position: sticky;
@@ -646,6 +680,17 @@
       contentDiv.textContent = msg.content;
 
       messageDiv.appendChild(contentDiv);
+
+      // AI 消息追加扬声器按钮（按需 TTS 播放）
+      if (msg.role === 'assistant' && msg.content) {
+        const speakerBtn = document.createElement('button');
+        speakerBtn.className = 'message-speaker';
+        speakerBtn.title = '听 TA 说';
+        speakerBtn.textContent = '🔊';
+        speakerBtn.addEventListener('click', (e) => onSpeakerClick(e, msg.content));
+        messageDiv.appendChild(speakerBtn);
+      }
+
       return messageDiv;
     }
 
@@ -836,6 +881,19 @@
           });
           saveMessagesLocal();
 
+          // 给刚刚流式写入的消息追加扬声器按钮（TTS 播放）
+          if (messageElement && messageElement.parentElement) {
+            const parent = messageElement.parentElement;
+            if (!parent.querySelector('.message-speaker')) {
+              const btn = document.createElement('button');
+              btn.className = 'message-speaker';
+              btn.title = '听 TA 说';
+              btn.textContent = '🔊';
+              btn.addEventListener('click', (e) => onSpeakerClick(e, aiMessage));
+              parent.appendChild(btn);
+            }
+          }
+
           if (typeof MindPalAnalytics !== 'undefined') {
             MindPalAnalytics.trackChatSend(dhId, userMessage.length);
           }
@@ -889,22 +947,140 @@
       }
     });
 
-    // 语音输入
-    function toggleVoiceInput() {
+    // ==================== 语音交互 ====================
+    // 设计: 麦克风按钮点击开始录音，再次点击停止并上传
+    // 录音走 MediaRecorder（浏览器默认 webm/opus），上传到后端 /voice/asr/upload
+    // 拿到识别文本后填入输入框（让用户可编辑后再发送）
+
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let currentMediaStream = null;
+    let isAudioPlaying = false;
+
+    function supportsRecording() {
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
+                window.MediaRecorder);
+    }
+
+    async function toggleVoiceInput() {
+      if (!supportsRecording()) {
+        alert('当前浏览器不支持录音。请使用 Chrome / Safari 最新版。');
+        return;
+      }
+
       const voiceBtn = document.getElementById('voiceBtn');
 
       if (isRecording) {
-        // 停止录音
+        // 停止录音 → 触发 onstop 里的上传
+        try {
+          mediaRecorder && mediaRecorder.state !== 'inactive' && mediaRecorder.stop();
+        } catch (_) {}
         isRecording = false;
         voiceBtn.classList.remove('recording');
         voiceBtn.textContent = '🎤';
-        alert('语音识别功能开发中...');
-      } else {
-        // 开始录音
-        isRecording = true;
-        voiceBtn.classList.add('recording');
-        voiceBtn.textContent = '⏸';
+        voiceBtn.title = '识别中...';
+        return;
       }
+
+      // 开始录音
+      try {
+        currentMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        console.error('获取麦克风失败:', err);
+        alert('无法访问麦克风：' + (err.message || err));
+        return;
+      }
+
+      recordedChunks = [];
+      try {
+        mediaRecorder = new MediaRecorder(currentMediaStream);
+      } catch (err) {
+        // 某些浏览器对 MIME 敏感
+        try {
+          mediaRecorder = new MediaRecorder(currentMediaStream, { mimeType: 'audio/webm' });
+        } catch (e2) {
+          alert('启动录音失败: ' + e2.message);
+          currentMediaStream.getTracks().forEach(t => t.stop());
+          return;
+        }
+      }
+
+      mediaRecorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data);
+      };
+      mediaRecorder.onstop = async () => {
+        // 停止音轨
+        if (currentMediaStream) {
+          currentMediaStream.getTracks().forEach(t => t.stop());
+          currentMediaStream = null;
+        }
+        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        if (blob.size === 0) {
+          voiceBtn.title = '语音输入';
+          return;
+        }
+        voiceBtn.textContent = '⏳';
+        voiceBtn.title = '识别中...';
+        try {
+          const resp = await MindPalAPI.voice.asrUpload(blob, 'webm', 16000);
+          if (resp && resp.code === 0 && resp.data && resp.data.text) {
+            // 填入输入框，用户确认后再发送（比自动发送更稳）
+            const ta = document.getElementById('messageInput');
+            ta.value = (ta.value ? ta.value + ' ' : '') + resp.data.text;
+            ta.dispatchEvent(new Event('input'));
+            ta.focus();
+          } else {
+            alert('识别失败：' + (resp && resp.message) || '无返回文本');
+          }
+        } catch (err) {
+          console.error('ASR 失败:', err);
+          alert('语音识别失败：' + (err.message || err));
+        } finally {
+          voiceBtn.textContent = '🎤';
+          voiceBtn.title = '语音输入';
+        }
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      voiceBtn.classList.add('recording');
+      voiceBtn.textContent = '⏹';
+      voiceBtn.title = '再次点击停止录音';
+    }
+
+    // TTS 播放某段文本（用在 AI 消息旁的 🔊 按钮）
+    async function speakText(text, btnEl) {
+      if (isAudioPlaying) return;  // 防止重叠播放
+      if (!text) return;
+      const originalText = btnEl ? btnEl.textContent : '';
+      if (btnEl) { btnEl.textContent = '⏳'; btnEl.disabled = true; }
+      isAudioPlaying = true;
+      try {
+        const blob = await MindPalAPI.voice.ttsSynthesize(text, 'ruoxi', 'mp3');
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          isAudioPlaying = false;
+          if (btnEl) { btnEl.textContent = originalText || '🔊'; btnEl.disabled = false; }
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          isAudioPlaying = false;
+          if (btnEl) { btnEl.textContent = originalText || '🔊'; btnEl.disabled = false; }
+        };
+        await audio.play();
+      } catch (err) {
+        console.error('TTS 失败:', err);
+        isAudioPlaying = false;
+        if (btnEl) { btnEl.textContent = originalText || '🔊'; btnEl.disabled = false; }
+      }
+    }
+
+    // 点击某条 AI 消息的扬声器按钮
+    function onSpeakerClick(ev, text) {
+      ev.stopPropagation();
+      speakText(text, ev.currentTarget);
     }
 
     // 清除对话
