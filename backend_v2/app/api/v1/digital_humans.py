@@ -23,6 +23,7 @@ from app.schemas.digital_human import (
 )
 from app.schemas import APIResponse
 from app.core.security import get_current_user_id
+from app.core.quota import QuotaGuard, DEFAULT_CHAT_TOKENS
 from app.services.personality_engine import get_personality_engine
 from app.services.llm import get_llm_router
 from app.services.dialogue import get_enhanced_processor
@@ -385,18 +386,9 @@ async def chat_with_dh(
     npc_key = _dh_context_key(dh_id)
 
     # 配额检查（超限直接 402）
-    quota = processor.check_quota(user_id, estimated_tokens=1000)
-    if not quota["allowed"]:
-        raise HTTPException(
-            status_code=402,
-            detail={
-                "code": "QUOTA_EXCEEDED",
-                "reason": quota.get("reason", "daily quota exceeded"),
-                "remaining_tokens": quota.get("remaining_tokens"),
-                "remaining_cost": quota.get("remaining_cost"),
-                "upgrade_url": "/pricing.html"
-            }
-        )
+    guard = QuotaGuard(user_id, DEFAULT_CHAT_TOKENS)
+    if not guard.check():
+        raise guard.as_http_402()
 
     # 获取或创建会话
     session_id = body.session_id or str(uuid.uuid4())
@@ -581,18 +573,12 @@ async def chat_stream_with_dh(
     processor = get_enhanced_processor(db)
     npc_key = _dh_context_key(dh_id)
 
-    # 配额检查 —— 返回 SSE error 帧而不是 HTTP 402，因为前端已连上流
-    quota = processor.check_quota(user_id, estimated_tokens=1000)
-    if not quota["allowed"]:
+    # 配额检查 —— 流式场景用 SSE error 帧告知前端（而非 HTTP 402，因流已准备开启）
+    guard = QuotaGuard(user_id, DEFAULT_CHAT_TOKENS)
+    if not guard.check():
+        err_payload = guard.as_sse_error_payload()
         async def quota_error_stream():
-            err = {
-                "error": "quota_exceeded",
-                "reason": quota.get("reason", "daily quota exceeded"),
-                "remaining_tokens": quota.get("remaining_tokens"),
-                "remaining_cost": quota.get("remaining_cost"),
-                "upgrade_url": "/pricing.html",
-            }
-            yield f"event: error\ndata: {json.dumps(err, ensure_ascii=False)}\n\n"
+            yield f"event: error\ndata: {json.dumps(err_payload, ensure_ascii=False)}\n\n"
         return StreamingResponse(quota_error_stream(), media_type="text/event-stream")
 
     # 获取或创建会话
