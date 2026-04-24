@@ -261,12 +261,27 @@ yield f"event: done\ndata: {json.dumps({'full_response': ...})}\n\n"
 
 ### P1：4-8 周内做（差异化护城河）
 
-#### P1-1. 可视化长期记忆 UI【5 天】
-**目标**：让用户看见/编辑/删除 AI 记住了什么
-**新增前端页面**：`frontend/memory.html`
-- 时间线布局：日期分组、每条记忆一张卡片
-- 字段：`summary`、`emotion icon`、`importance star`、`delete` 按钮
-- 后端已有 API：[memory.py](../../backend_v2/app/api/v1/memory.py)（337 行，检查是否已经暴露列表接口）
+#### P1-1. 可视化长期记忆 UI【✅ 已完成 2026-04-23】
+**目标**：让用户看见 / 编辑 / 删除 AI 记住了什么
+**完成文件**：
+- 前端：[frontend/memory.html](../../frontend/memory.html)（约 450 行）
+- 后端：[backend_v2/app/api/v1/digital_humans.py](../../backend_v2/app/api/v1/digital_humans.py)
+  新增 5 个路由在 `/api/v1/digital-humans/{dh_id}/memories/*`
+- 底层：[vector_store.py](../../backend_v2/app/services/memory/vector_store.py)
+  加 `count(filter)` / `list_by_metadata` / `delete_by_metadata`；
+  [retriever.py](../../backend_v2/app/services/memory/retriever.py)
+  加 `list_memories` / `count_memories_by_emotion` / `delete_all_memories`
+
+**落地能力**：
+- 时间线视图（最新在前） + 情感图标 + 重要性星级 + 用户原话/TA 回复
+- 8 种情感筛选 Chip（joy/sadness/anger/fear/surprise/disgust/love/neutral）
+- 语义搜索（`?q=...`，debounce 300ms，显示相关度百分比）
+- 单条删除（confirm 对话框）+ 清空全部（二次输入"删除"校验）
+- 入口：dh-list.html 卡片"🧠 记忆"按钮 + chat.html 顶栏 🧠 图标
+- 安全：所有端点验证 DigitalHuman.user_id 归属；单删再校 memory_id 前缀
+
+**为什么押这个**：筑梦岛/星野/Character.AI/豆包都没有可视化记忆 UI，
+这是市场研究确认的差异化护城河（详见本文第一部分）。
 
 #### P1-2. 乙女向 / 角色扮演人格大类【3 天】
 **目标**：新增"浪漫陪伴"人格类别，下 6 个预设男主
