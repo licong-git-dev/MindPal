@@ -24,6 +24,12 @@ from app.schemas.digital_human import (
 from app.schemas import APIResponse
 from app.core.security import get_current_user_id
 from app.core.quota import QuotaGuard, DEFAULT_CHAT_TOKENS
+from app.core.cache import (
+    get_cache,
+    llm_cache_key,
+    should_skip_cache,
+    fake_stream_from_cache,
+)
 from app.services.personality_engine import get_personality_engine
 from app.services.llm import get_llm_router
 from app.services.dialogue import get_enhanced_processor
@@ -459,22 +465,54 @@ async def chat_with_dh(
             "needs_comfort": dialogue_context.emotion_result.needs_comfort,
         }
 
-    # 调用 LLM
+    # 调用 LLM（P1-4: 加缓存层）
     llm_router = get_llm_router()
     llm_service = llm_router.get_service()
 
     # 构建完整 messages（历史 + 当前）
     messages = history_dicts + [{"role": "user", "content": body.message}]
+    temperature = 0.5 if dialogue_context.is_crisis_mode else 0.8
+    system_prompt = dialogue_context.enhanced_system_prompt or base_prompt
 
-    try:
-        ai_response = await llm_service.chat(
+    cache = get_cache()
+    skip_reason = should_skip_cache(
+        is_crisis=dialogue_context.is_crisis_mode,
+        temperature=temperature,
+        message_text=body.message,
+    )
+    cache_key = None
+    cached_text: Optional[str] = None
+    if not skip_reason:
+        cache_key = llm_cache_key(
+            model=llm_service.get_model_name(),
             messages=messages,
-            system_prompt=dialogue_context.enhanced_system_prompt or base_prompt,
-            temperature=0.5 if dialogue_context.is_crisis_mode else 0.8,
-            max_tokens=500,
+            system_prompt=system_prompt,
+            temperature=temperature,
         )
-    except Exception:
-        ai_response = "抱歉，我现在有点恍惚...能再说一遍吗？"
+        try:
+            cached_text = await cache.get(cache_key)
+        except Exception:
+            cached_text = None
+
+    ai_response = cached_text
+    cache_hit = bool(cached_text)
+    if not cache_hit:
+        try:
+            ai_response = await llm_service.chat(
+                messages=messages,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=500,
+            )
+        except Exception:
+            ai_response = "抱歉，我现在有点恍惚...能再说一遍吗？"
+
+        # 写入缓存（仅真实调用 + 无 skip 条件）
+        if ai_response and cache_key and not skip_reason:
+            try:
+                await cache.set(cache_key, ai_response)
+            except Exception:
+                pass
 
     # 保存 AI 回复（含情感标记）
     ai_msg = DHMessage(
@@ -656,13 +694,35 @@ async def chat_stream_with_dh(
     system_prompt = dialogue_context.enhanced_system_prompt or base_prompt
     temperature = 0.5 if dialogue_context.is_crisis_mode else 0.8
 
+    # 响应缓存（P1-4）: 危机模式/高温/过短过长 skip
+    cache = get_cache()
+    skip_reason = should_skip_cache(
+        is_crisis=dialogue_context.is_crisis_mode,
+        temperature=temperature,
+        message_text=body.message,
+    )
+    cache_key = None
+    cached_text: Optional[str] = None
+    if not skip_reason:
+        cache_key = llm_cache_key(
+            model=llm_service.get_model_name(),
+            messages=chat_messages,
+            system_prompt=system_prompt,
+            temperature=temperature,
+        )
+        try:
+            cached_text = await cache.get(cache_key)
+        except Exception:
+            cached_text = None  # 缓存故障降级为未命中
+
     # commit 当前用户消息+情感，避免流式过程中事务悬挂
     await db.commit()
 
     async def generate():
         full_response = ""
+        cache_hit = bool(cached_text)
 
-        # start 帧（带情感和危机状态）
+        # start 帧（带情感和危机状态 + 命中缓存标记）
         start_data = {
             "session_id": session_id,
             "dh_id": dh_id,
@@ -672,6 +732,7 @@ async def chat_stream_with_dh(
             "crisis_detected": metadata["crisis"]["detected"],
             "crisis_level": metadata["crisis"]["level"],
             "model": metadata["model"],
+            "cache_hit": cache_hit,
         }
         yield f"event: start\ndata: {json.dumps(start_data, ensure_ascii=False)}\n\n"
 
@@ -684,20 +745,33 @@ async def chat_stream_with_dh(
             }
             yield f"event: crisis\ndata: {json.dumps(crisis_data, ensure_ascii=False)}\n\n"
 
-        # delta 帧（LLM 流式输出）
+        # delta 帧：缓存命中走 fake-stream，否则真实 LLM 流式
         try:
-            async for chunk in llm_service.chat_stream(
-                messages=chat_messages,
-                system_prompt=system_prompt,
-                temperature=temperature,
-                max_tokens=500,
-            ):
-                full_response += chunk
-                yield f"event: delta\ndata: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
+            if cache_hit and cached_text:
+                # 从缓存回放（省一次真实 LLM 调用）
+                full_response = cached_text
+                async for chunk in fake_stream_from_cache(cached_text):
+                    yield f"event: delta\ndata: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
+            else:
+                async for chunk in llm_service.chat_stream(
+                    messages=chat_messages,
+                    system_prompt=system_prompt,
+                    temperature=temperature,
+                    max_tokens=500,
+                ):
+                    full_response += chunk
+                    yield f"event: delta\ndata: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
         except Exception:
             fallback = "抱歉，我现在有点恍惚...能再说一遍吗？"
             full_response = fallback
             yield f"event: delta\ndata: {json.dumps({'content': fallback}, ensure_ascii=False)}\n\n"
+
+        # 写入缓存（只在真实生成且无 skip 时写）
+        if not cache_hit and cache_key and full_response and not skip_reason:
+            try:
+                await cache.set(cache_key, full_response)
+            except Exception:
+                pass  # 缓存写入失败不影响主链路
 
         # done 帧前：保存 AI 消息 + 记忆 + 统计 + 用量
         try:
