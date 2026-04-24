@@ -372,7 +372,20 @@ yield f"event: done\ndata: {json.dumps({'full_response': ...})}\n\n"
 
 **验证**: 5 个保留路由 py_compile 全部通过，active set 校验脚本已通过
 
-#### P2-2. 归档 backend/（Flask MVP）【1 天】
+#### P2-2. 归档 backend/（Flask MVP）【✅ 已完成 2026-04-23】
+
+**执行动作**：
+- `git mv backend/` → `archive/backend-flask-mvp/`（保留完整 git 历史）
+- 删除孤立的 `Dockerfile.backend`（docker-compose 早已指向 backend_v2）
+- 新建 [archive/README.md](../../archive/README.md) 作为归档总索引
+- 更新根 README.md 项目结构图与架构图（从"双后端"改为"单主线"）
+
+**为什么现在可以归档**：backend_v2 已接管所有主链路（P0-P1 完成确认），
+deploy.sh / docker-compose 均不再引用 `backend/`。保留代码的唯一价值
+变成"历史参考"，归档比保留在活跃目录更清晰。
+
+**未触动**：`docs/ops/DEPLOYMENT.md` 和 `docs/ops/INTEGRATION_TEST_GUIDE.md`
+里的 Flask 版本说明段落（需要独立的文档重写工作，不在 P2-2 范围）。
 **做法**：把 `backend/` 目录整个 `git mv` 到 `archive/backend-flask-mvp/`
 - 前提：确认所有 API 都已迁到 `backend_v2/`
 - 保留只读，用于 SUMMARY.md 历史参考

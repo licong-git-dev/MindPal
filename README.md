@@ -146,7 +146,7 @@
 
 ## 🏗️ 技术架构
 
-### 架构现状（双后端并存）
+### 架构现状（单主线）
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -154,35 +154,35 @@
 │     13 pages │ api.js 封装 │ analytics.js 埋点           │
 └────────────────────────┬────────────────────────────────┘
                          │ REST / SSE
-            ┌────────────┴────────────┐
-            │                         │
-    ┌───────▼────────┐       ┌────────▼─────────┐
-    │  backend/       │       │  backend_v2/     │
-    │  Flask 3.0      │       │  FastAPI 0.109   │
-    │  (MVP 现役)     │       │  (下一代, 在建)  │
-    │                 │       │                  │
-    │ • auth          │       │ • auth + JWT     │
-    │ • digital_humans│       │ • dialogue/LLM   │
-    │ • chat (SSE)    │       │ • memory 引擎    │
-    │ • knowledge+RAG │       │ • emotion 分析   │
-    │ • subscription  │       │ • crisis 检测    │
-    │ • analytics     │       │ • voice (ASR/TTS)│
-    │                 │       │ • payment (WX/支付宝)│
-    │                 │       │ • three_keys 挑战│
-    └───────┬─────────┘       └────────┬─────────┘
-            │                          │
-            └──────────┬───────────────┘
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-   ┌────▼────┐  ┌──────▼──────┐  ┌───▼────────┐
-   │ SQLite  │  │ 阿里云       │  │ FAISS      │
-   │ (开发)  │  │ DashScope    │  │ Vector     │
-   │  → PG   │  │ (qwen/embed) │  │ Store      │
-   └─────────┘  └──────────────┘  └────────────┘
+                ┌────────▼─────────┐
+                │  backend_v2/     │
+                │  FastAPI 0.109   │
+                │                  │
+                │ • auth + JWT     │
+                │ • digital_humans │  (主对话链路：含 memory/
+                │   + /memories    │     crisis/emotion/quota pipeline)
+                │ • voice ASR/TTS  │
+                │ • payment (Alipay真接入 + mock 测试)
+                │ • analytics      │
+                │                  │
+                │ [禁用] dialogue / inventory / shop /
+                │        quest / party / achievement /
+                │        three_keys / ws  (游戏化残留，P2-1 归档)
+                └────────┬─────────┘
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+   ┌────▼────┐  ┌────────▼────────┐  ┌────▼──────────┐
+   │ SQLite  │  │ 阿里云 DashScope │  │ Redis 缓存    │
+   │ → PG    │  │ (qwen + embed)  │  │ (可选, P1-4)  │
+   └─────────┘  └─────────────────┘  └───────────────┘
+                                     ┌───────────────┐
+                                     │ Vector Store  │
+                                     │ InMemory/Chroma│
+                                     └───────────────┘
 ```
 
-> ⚠️ **技术债提醒**：两套后端不是设计，是演进中未合并的遗留。详见「战略方向 · 波次 1」。
+> ✅ 历史的 Flask MVP 后端已 [归档到 archive/backend-flask-mvp/](archive/backend-flask-mvp/)。
 
 ### 技术栈清单
 
@@ -217,10 +217,6 @@ MindPal/
 │   ├── css/  { variables, base, components, animations }
 │   └── assets/
 │
-├── backend/                          # [遗留·Flask MVP] 波次 1 将归档
-│   ├── app/  { models, routes, services, utils }
-│   └── requirements.txt
-│
 ├── backend_v2/                       # [主线·FastAPI] 新开发集中于此
 │   ├── app/
 │   │   ├── api/v1/        # 20+ 路由
@@ -248,11 +244,16 @@ MindPal/
 │
 ├── deploy.sh                         # 云服务器一键部署
 ├── docker-compose.yml                # 容器编排（根级，context=当前目录）
-├── Dockerfile.backend  Dockerfile.frontend
-└── nginx.conf                        # 反向代理 + SSE 兼容
+├── Dockerfile.frontend               # 前端 Nginx 镜像
+├── nginx.conf                        # 反向代理 + SSE 兼容
+│
+└── archive/                          # 历史归档（git mv 保留提交史）
+    ├── README.md
+    └── backend-flask-mvp/            # 旧 Flask MVP（P2-2 归档于 2026-04-23）
 ```
 
 > ⚙️ 部署文件（Dockerfile / docker-compose / nginx.conf / deploy.sh）**必须保留在根目录**，因为 `docker-compose.yml` 使用 `context: .` 引用前端构建上下文。
+> ⚙️ `backend_v2/Dockerfile` 位于 backend_v2 子目录（docker-compose 的 backend service 从那里构建）。
 
 ---
 
