@@ -314,6 +314,110 @@
         max-width: 85%;
       }
     }
+
+    /* ===== 危机干预 Banner ===== */
+    .crisis-banner {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: linear-gradient(135deg, #ff8a5b 0%, #ff5e6c 100%);
+      color: #fff;
+      padding: 16px 20px;
+      box-shadow: 0 4px 12px rgba(255, 94, 108, 0.35);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    .crisis-banner[hidden] { display: none; }
+    .crisis-banner-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .crisis-banner-icon {
+      font-size: 28px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .crisis-banner-content {
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .crisis-banner-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .crisis-banner-body { opacity: 0.95; margin-bottom: 8px; }
+    .crisis-banner-resources {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 13px;
+    }
+    .crisis-banner-resources li { margin-bottom: 4px; }
+    .crisis-banner-resources a {
+      color: #fff;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .crisis-banner-close {
+      align-self: center;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .crisis-banner-close:hover { background: rgba(255, 255, 255, 0.35); }
+
+    /* ===== 配额超限 Modal ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay[hidden] { display: none; }
+    .modal-card {
+      background: #1e293b;
+      color: #f1f5f9;
+      border-radius: 16px;
+      padding: 28px 28px 24px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+    .modal-card h3 { margin: 0 0 12px; font-size: 20px; }
+    .modal-card p { margin: 0 0 20px; font-size: 14px; color: #cbd5e1; line-height: 1.6; }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .modal-actions .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+    .btn-primary   { background: #6366f1; color: #fff; font-weight: 600; }
+    .btn-primary:hover   { background: #4f46e5; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.2); }
   </style>
 
   <!-- JS Dependencies -->
@@ -345,11 +449,42 @@
       </div>
     </header>
 
+    <!-- 危机干预 banner（仅当检测到心理危机时显示，无法 dismiss 直到用户点击"我已知晓"） -->
+    <div id="crisisBanner" class="crisis-banner" role="alert" aria-live="assertive" hidden>
+      <div class="crisis-banner-inner">
+        <div class="crisis-banner-icon">💛</div>
+        <div class="crisis-banner-content">
+          <div class="crisis-banner-title" id="crisisBannerTitle">我们有点担心你</div>
+          <div class="crisis-banner-body" id="crisisBannerBody">
+            如果你感到非常难受，请不要独自面对。以下是 24 小时心理援助热线：
+          </div>
+          <ul class="crisis-banner-resources" id="crisisBannerResources">
+            <li>全国心理援助热线: <a href="tel:4001619995">400-161-9995</a></li>
+            <li>北京心理危机研究与干预中心: <a href="tel:01082951332">010-82951332</a></li>
+            <li>生命热线: <a href="tel:4008211215">400-821-1215</a></li>
+          </ul>
+        </div>
+        <button class="crisis-banner-close" onclick="dismissCrisisBanner()">我已知晓</button>
+      </div>
+    </div>
+
+    <!-- 配额超限 modal -->
+    <div id="quotaModal" class="modal-overlay" hidden>
+      <div class="modal-card">
+        <h3>今日对话次数已用完</h3>
+        <p id="quotaModalReason">免费版每日配额已达上限。升级会员解锁无限对话。</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="dismissQuotaModal()">稍后再说</button>
+          <a class="btn btn-primary" href="pricing.html">立即升级</a>
+        </div>
+      </div>
+    </div>
+
     <!-- 数字人显示区域 -->
     <div class="dh-display">
       <div class="dh-emotion" id="emotionDisplay">
-        <span class="emotion-icon">😊</span>
-        <span>心情愉悦</span>
+        <span class="emotion-icon" id="emotionIcon">🙂</span>
+        <span id="emotionLabel">在线</span>
       </div>
       <div class="dh-avatar-large" id="dhAvatarLarge">👤</div>
       <div class="dh-status" id="dhStatus">在线</div>
@@ -564,21 +699,100 @@
       }
     }
 
+    // ===== 情感 / 危机 / 配额 相关 UI 辅助 =====
+
+    // 情感 → 图标+文案 映射（与后端 emotion analyzer 的 EmotionType 对齐）
+    const EMOTION_MAP = {
+      joy:      { icon: '😊', label: '心情愉悦' },
+      sadness:  { icon: '😔', label: '有些低落' },
+      anger:    { icon: '😠', label: '略有波动' },
+      fear:     { icon: '😟', label: '略显担忧' },
+      surprise: { icon: '😲', label: '有点惊讶' },
+      disgust:  { icon: '😕', label: '感觉复杂' },
+      love:     { icon: '🥰', label: '暖意流淌' },
+      neutral:  { icon: '🙂', label: '在线' },
+    };
+
+    function updateEmotionDisplay(emotion, needsComfort) {
+      const meta = EMOTION_MAP[emotion] || EMOTION_MAP.neutral;
+      const iconEl = document.getElementById('emotionIcon');
+      const labelEl = document.getElementById('emotionLabel');
+      if (iconEl) iconEl.textContent = needsComfort ? '🫂' : meta.icon;
+      if (labelEl) labelEl.textContent = needsComfort ? '在认真陪你' : meta.label;
+    }
+
+    function showCrisisBanner(data) {
+      const banner = document.getElementById('crisisBanner');
+      if (!banner) return;
+      // 如果后端返回了具体的资源列表，用它们；否则用默认硬编码
+      const resources = (data && Array.isArray(data.resources) && data.resources.length) ? data.resources : null;
+      if (resources) {
+        const ul = document.getElementById('crisisBannerResources');
+        if (ul) {
+          ul.innerHTML = '';
+          resources.forEach((r) => {
+            const li = document.createElement('li');
+            // resources 可能是字符串或 {name, phone} 结构，两种都兼容
+            if (typeof r === 'string') {
+              li.textContent = r;
+            } else if (r && r.name && r.phone) {
+              const a = document.createElement('a');
+              a.href = `tel:${String(r.phone).replace(/[^0-9]/g, '')}`;
+              a.textContent = r.phone;
+              li.textContent = `${r.name}: `;
+              li.appendChild(a);
+            } else {
+              li.textContent = JSON.stringify(r);
+            }
+            ul.appendChild(li);
+          });
+        }
+      }
+      banner.hidden = false;
+      // 将页面滚动到顶部让用户看见
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function dismissCrisisBanner() {
+      const banner = document.getElementById('crisisBanner');
+      if (banner) banner.hidden = true;
+    }
+
+    function showQuotaModal(reason, upgradeUrl) {
+      const modal = document.getElementById('quotaModal');
+      const reasonEl = document.getElementById('quotaModalReason');
+      if (reasonEl && reason) {
+        const reasonMap = {
+          'daily_token_limit_exceeded': '今日对话次数已用完。升级会员解锁更多对话。',
+          'daily_cost_limit_exceeded': '今日 AI 调用额度已用完。升级会员解锁更多调用。',
+        };
+        reasonEl.textContent = reasonMap[reason] || '免费版每日配额已达上限。升级会员解锁无限对话。';
+      }
+      if (modal) modal.hidden = false;
+    }
+
+    function dismissQuotaModal() {
+      const modal = document.getElementById('quotaModal');
+      if (modal) modal.hidden = true;
+    }
+
     // 生成AI回复（调用数字人对话API）
     async function generateReply(userMessage) {
       let aiMessage = '';
       let messageElement = null;
 
-      // 使用数字人专用的流式对话API
-      await MindPalAPI.digitalHumans.chat(
-        dhId,
-        userMessage,
-        sessionId,
-        // onChunk: 处理每个文本片段
-        (chunk, fullText) => {
-          aiMessage = fullText;
+      // 使用数字人专用的流式对话API — callbacks 对象签名
+      await MindPalAPI.digitalHumans.chat(dhId, userMessage, sessionId, {
+        // 流开始：拿到 emotion / crisis_level / model 等元数据
+        onStart: (data) => {
+          if (data && data.emotion) {
+            updateEmotionDisplay(data.emotion, data.needs_comfort);
+          }
+        },
 
-          // 如果还没有创建消息元素，创建一个
+        // 每个文本 chunk
+        onChunk: (chunk, fullText) => {
+          aiMessage = fullText;
           if (!messageElement) {
             const messagesContainer = document.getElementById('messagesContainer');
             const messageDiv = document.createElement('div');
@@ -590,42 +804,62 @@
             messageElement = contentDiv;
             scrollToBottom();
           }
-
-          // 更新消息内容（打字机效果）
           messageElement.textContent = aiMessage;
           scrollToBottom();
         },
-        // onComplete: 消息完成
-        (data) => {
-          // 更新会话ID
-          if (data.session_id) {
-            sessionId = data.session_id;
-          }
 
-          // 保存到消息历史
+        // 元数据（start 帧后或后端 meta 帧）
+        onMeta: (meta) => {
+          if (meta && meta.emotion) {
+            updateEmotionDisplay(meta.emotion, meta.needs_comfort);
+          }
+        },
+
+        // 危机事件 — 强制显示热线 banner
+        onCrisis: (data) => {
+          showCrisisBanner(data);
+        },
+
+        // 消息完成
+        onComplete: (data) => {
+          if (data.session_id) sessionId = data.session_id;
+          if (data.emotion) updateEmotionDisplay(data.emotion);
+
           messages.push({
             role: 'assistant',
             content: aiMessage,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            emotion: data.emotion,
           });
           saveMessagesLocal();
 
-          // 追踪对话发送事件
           if (typeof MindPalAnalytics !== 'undefined') {
             MindPalAnalytics.trackChatSend(dhId, userMessage.length);
           }
         },
-        // onError: 错误处理
-        (error) => {
+
+        // 错误处理 — 识别配额超限特殊处理
+        onError: (error) => {
           console.error('对话错误:', error);
+          // error 可能是 string（旧路径）或 object（SSE error 帧）
+          let errObj = null;
+          try { errObj = typeof error === 'string' ? JSON.parse(error) : error; } catch (_) { /* not JSON */ }
+
+          if (errObj && (errObj.error === 'quota_exceeded' || errObj.code === 'QUOTA_EXCEEDED')) {
+            showQuotaModal(errObj.reason, errObj.upgrade_url);
+            if (messageElement) messageElement.remove();
+            return;
+          }
+
+          const errText = typeof error === 'string' ? error : JSON.stringify(error);
           if (messageElement) {
-            messageElement.textContent = `抱歉，发生错误: ${error}`;
+            messageElement.textContent = `抱歉，发生错误: ${errText}`;
             messageElement.style.color = 'var(--color-danger)';
           } else {
-            addMessageToUI('assistant', `抱歉，发生错误: ${error}`);
+            addMessageToUI('assistant', `抱歉，发生错误: ${errText}`);
           }
-        }
-      );
+        },
+      });
     }
 
     // 输入框自动调整高度
