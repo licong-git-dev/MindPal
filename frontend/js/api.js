@@ -5,6 +5,102 @@
 
 const MindPalAPI = {
   /**
+   * SSE 流解析器 - 解析标准 Server-Sent Events 格式
+   *
+   * 每个事件由 `\n\n` 分隔，事件内部：
+   *   event: <type>\n
+   *   data: <json>\n
+   *
+   * 多行 data: 会被拼接，event 缺省时默认为 "message"。
+   * handlers 支持: onStart, onDelta, onCrisis, onMeta, onDone, onError, onEvent
+   *
+   * @param {Response} response - fetch 返回的 Response
+   * @param {Object} handlers
+   */
+  async _parseSSEStream(response, handlers) {
+    const h = handlers || {};
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    const dispatch = (type, data) => {
+      switch (type) {
+        case 'start':   h.onStart  && h.onStart(data);  break;
+        case 'delta':   h.onDelta  && h.onDelta(data);  break;
+        case 'crisis':  h.onCrisis && h.onCrisis(data); break;
+        case 'meta':    h.onMeta   && h.onMeta(data);   break;
+        case 'done':    h.onDone   && h.onDone(data);   break;
+        case 'error':   h.onError  && h.onError(data);  break;
+        default:        h.onEvent  && h.onEvent(type, data);
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // 按 \n\n 切分事件块
+      let idx;
+      while ((idx = buffer.indexOf('\n\n')) !== -1) {
+        const block = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
+
+        if (!block.trim()) continue;
+
+        let eventType = 'message';
+        const dataLines = [];
+
+        for (const line of block.split('\n')) {
+          if (line.startsWith('event:')) {
+            eventType = line.slice(6).trim();
+          } else if (line.startsWith('data:')) {
+            dataLines.push(line.slice(5).trimStart());
+          }
+        }
+
+        if (dataLines.length === 0) continue;
+
+        const rawData = dataLines.join('\n');
+        let parsed;
+        try {
+          parsed = JSON.parse(rawData);
+        } catch (e) {
+          parsed = { raw: rawData };
+        }
+
+        dispatch(eventType, parsed);
+
+        // done/error 提前退出
+        if (eventType === 'done' || eventType === 'error') {
+          return;
+        }
+      }
+    }
+
+    // 处理可能残留的最后一块（没有 \n\n 收尾）
+    if (buffer.trim()) {
+      let eventType = 'message';
+      const dataLines = [];
+      for (const line of buffer.split('\n')) {
+        if (line.startsWith('event:')) {
+          eventType = line.slice(6).trim();
+        } else if (line.startsWith('data:')) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      }
+      if (dataLines.length) {
+        const rawData = dataLines.join('\n');
+        let parsed;
+        try { parsed = JSON.parse(rawData); }
+        catch (e) { parsed = { raw: rawData }; }
+        dispatch(eventType, parsed);
+      }
+    }
+  },
+
+  /**
    * 通用请求方法
    */
   async request(url, options = {}) {
@@ -193,8 +289,26 @@ const MindPalAPI = {
 
     /**
      * 与数字人对话 (流式SSE)
+     *
+     * 后端发送标准 SSE 格式（每个事件以 \n\n 分隔）:
+     *   event: start     data: {session_id, dh_id, emotion, crisis_detected, model}
+     *   event: crisis    data: {resources, level, hotline}  [仅危机模式]
+     *   event: meta      data: {emotion, crisis_level, ...} [pipeline metadata]
+     *   event: delta     data: {content}                    [增量文本]
+     *   event: done      data: {full_response, emotion, memories_used, ...}
+     *   event: error     data: {error, reason}
+     *
+     * @param {Object} callbacks - { onStart, onChunk, onMeta, onCrisis, onComplete, onError }
      */
-    async chat(dhId, message, sessionId, onChunk, onComplete, onError) {
+    async chat(dhId, message, sessionId, callbacks) {
+      const cbs = callbacks || {};
+      // 向后兼容旧签名: chat(dhId, message, sessionId, onChunk, onComplete, onError)
+      if (typeof callbacks === 'function') {
+        cbs.onChunk = arguments[3];
+        cbs.onComplete = arguments[4];
+        cbs.onError = arguments[5];
+      }
+
       const token = MindPalAuth.getAuthToken();
 
       try {
@@ -215,58 +329,70 @@ const MindPalAPI = {
         );
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.detail || `HTTP Error: ${response.status}`);
+          let errMsg = `HTTP Error: ${response.status}`;
+          try {
+            const err = await response.json();
+            errMsg = err.detail || err.message || errMsg;
+          } catch (_) { /* body 不是 JSON，忽略 */ }
+          throw new Error(errMsg);
         }
 
-        // 处理SSE流
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
         let fullResponse = '';
+        let startMeta = {};
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-
-                if (data.type === 'chunk' && data.content) {
-                  fullResponse += data.content;
-                  onChunk && onChunk(data.content, fullResponse);
-                } else if (data.type === 'done') {
-                  onComplete && onComplete({
-                    response: fullResponse,
-                    session_id: data.session_id,
-                    tokens_used: data.tokens_used
-                  });
-                  return;
-                } else if (data.type === 'error') {
-                  onError && onError(data.message);
-                  return;
-                }
-              } catch (e) {
-                console.error('解析SSE消息失败:', e, line);
-              }
+        await MindPalAPI._parseSSEStream(response, {
+          onStart: (data) => {
+            startMeta = data || {};
+            cbs.onStart && cbs.onStart(data);
+            // start 帧本身携带 emotion/crisis_detected，也触发 meta 回调
+            if (data && (data.emotion || data.crisis_detected !== undefined)) {
+              cbs.onMeta && cbs.onMeta({
+                emotion: data.emotion,
+                crisis_detected: data.crisis_detected,
+                model: data.model
+              });
             }
+          },
+          onDelta: (data) => {
+            if (data && typeof data.content === 'string') {
+              fullResponse += data.content;
+              cbs.onChunk && cbs.onChunk(data.content, fullResponse);
+            }
+          },
+          onCrisis: (data) => {
+            cbs.onCrisis && cbs.onCrisis(data || {});
+          },
+          onMeta: (data) => {
+            cbs.onMeta && cbs.onMeta(data || {});
+          },
+          onDone: (data) => {
+            const payload = data || {};
+            cbs.onComplete && cbs.onComplete({
+              response: fullResponse || payload.full_response || '',
+              session_id: startMeta.session_id || payload.session_id,
+              emotion: payload.emotion || startMeta.emotion,
+              emotion_intensity: payload.emotion_intensity,
+              crisis_detected: payload.crisis_detected || startMeta.crisis_detected,
+              affinity_change: payload.affinity_change,
+              memories_used: payload.memories_used,
+              model_used: payload.model_used || startMeta.model,
+              tokens_used: payload.tokens_used
+            });
+          },
+          onError: (data) => {
+            const msg = (data && (data.error || data.reason || data.message)) || 'Stream error';
+            cbs.onError && cbs.onError(msg);
           }
-        }
+        });
 
-        // 流结束但没有收到done信号
-        if (fullResponse) {
-          onComplete && onComplete({ response: fullResponse });
+        // 流正常结束但后端没发 done（兜底）
+        if (fullResponse && cbs.onComplete) {
+          cbs.onComplete({ response: fullResponse, session_id: startMeta.session_id });
         }
 
       } catch (error) {
         console.error('数字人对话失败:', error);
-        onError && onError(error.message);
+        cbs.onError && cbs.onError(error.message || String(error));
       }
     },
 
@@ -318,43 +444,21 @@ const MindPalAPI = {
           throw new Error(`HTTP Error: ${response.status}`);
         }
 
-        // 处理SSE流
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-
-          // 处理完整的SSE消息
-          const lines = buffer.split('\n\n');
-          buffer = lines.pop() || ''; // 保留不完整的行
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-
-                if (data.chunk) {
-                  onChunk && onChunk(data.chunk);
-                } else if (data.done) {
-                  onComplete && onComplete(data);
-                  return;
-                } else if (data.error) {
-                  onError && onError(data.error);
-                  return;
-                }
-              } catch (e) {
-                console.error('解析SSE消息失败:', e);
-              }
+        let fullResponse = '';
+        await MindPalAPI._parseSSEStream(response, {
+          onDelta: (data) => {
+            if (data && typeof data.content === 'string') {
+              fullResponse += data.content;
+              onChunk && onChunk(data.content);
             }
+          },
+          onDone: (data) => {
+            onComplete && onComplete({ ...(data || {}), response: fullResponse || (data && data.full_response) || '' });
+          },
+          onError: (data) => {
+            onError && onError((data && (data.error || data.reason || data.message)) || 'Stream error');
           }
-        }
+        });
 
       } catch (error) {
         console.error('发送消息失败:', error);
