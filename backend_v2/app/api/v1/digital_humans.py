@@ -25,8 +25,18 @@ from app.schemas import APIResponse
 from app.core.security import get_current_user_id
 from app.services.personality_engine import get_personality_engine
 from app.services.llm import get_llm_router
+from app.services.dialogue import get_enhanced_processor
 
 router = APIRouter()
+
+
+def _dh_context_key(dh_id: int) -> str:
+    """将 DigitalHuman ID 映射成 enhanced_processor 所需的 npc_id 形式。
+
+    enhanced_processor 的 memory / crisis / emotion 链路对 npc_id 只做 key 用途，
+    不查 NPC 表。用 "dh_{id}" 前缀避免与游戏 NPC 撞 key。
+    """
+    return f"dh_{dh_id}"
 
 
 # ===================== 数字人 CRUD =====================
@@ -339,9 +349,13 @@ async def chat_with_dh(
     """
     与数字人对话（非流式）
 
-    - **dh_id**: 数字人ID
-    - **message**: 用户消息
-    - **session_id**: 会话ID（可选）
+    集成完整 pipeline:
+      1. 配额检查（cost_tracker）
+      2. 情感分析 + 危机检测（emotion_analyzer + crisis_detector）
+      3. 长期记忆检索（memory_retriever）
+      4. 危机模式降温 + 安全 system prompt
+      5. LLM 调用
+      6. 记忆写入 + 情感保存到 DHMessage.emotion
     """
     # 获取数字人
     stmt = select(DigitalHuman).where(
@@ -358,6 +372,30 @@ async def chat_with_dh(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Digital human not found"
+        )
+
+    # 获取用户昵称
+    user_stmt = select(User).where(User.id == user_id)
+    user_result = await db.execute(user_stmt)
+    user = user_result.scalar_one_or_none()
+    player_name = (user.username if user else None) or "朋友"
+
+    # 初始化 pipeline 处理器
+    processor = get_enhanced_processor(db)
+    npc_key = _dh_context_key(dh_id)
+
+    # 配额检查（超限直接 402）
+    quota = processor.check_quota(user_id, estimated_tokens=1000)
+    if not quota["allowed"]:
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "code": "QUOTA_EXCEEDED",
+                "reason": quota.get("reason", "daily quota exceeded"),
+                "remaining_tokens": quota.get("remaining_tokens"),
+                "remaining_cost": quota.get("remaining_cost"),
+                "upgrade_url": "/pricing.html"
+            }
         )
 
     # 获取或创建会话
@@ -376,7 +414,7 @@ async def chat_with_dh(
         db.add(session)
         await db.flush()
 
-    # 保存用户消息
+    # 保存用户消息（先占位，情感稍后回填）
     user_msg = DHMessage(
         session_id=session_id,
         dh_id=dh_id,
@@ -384,6 +422,7 @@ async def chat_with_dh(
         content=body.message,
     )
     db.add(user_msg)
+    await db.flush()
 
     # 获取历史消息（最近10轮）
     stmt = select(DHMessage).where(
@@ -393,45 +432,91 @@ async def chat_with_dh(
     history_messages = list(result.scalars().all())
     history_messages.reverse()
 
-    # 构建消息列表
-    messages = [{"role": msg.role, "content": msg.content} for msg in history_messages]
-    messages.append({"role": "user", "content": body.message})
+    # 构建 history dicts 供 processor 用
+    history_dicts = [
+        {"role": msg.role, "content": msg.content}
+        for msg in history_messages
+        if msg.id != user_msg.id  # 不把当前消息重复加入历史
+    ]
 
-    # 调用LLM
+    # process_message: 情感分析 + 危机检测 + 记忆检索 + 构建增强 prompt
+    base_prompt = dh.system_prompt or f"你是{dh.name}，一个友善的 AI 伙伴。"
+    dialogue_context = await processor.process_message(
+        player_id=user_id,
+        npc_id=npc_key,
+        session_id=session_id,
+        message=body.message,
+        player_name=player_name,
+        affinity_value=0,
+        base_system_prompt=base_prompt,
+        history_messages=history_dicts,
+    )
+
+    # 危机处理
+    crisis_response = None
+    if dialogue_context.is_crisis_mode:
+        crisis_response = await processor.handle_crisis_if_needed(dialogue_context)
+
+    # 回填用户消息的情感
+    if dialogue_context.emotion_result:
+        user_msg.emotion = dialogue_context.emotion_result.dominant.value
+        user_msg.emotion_scores = {
+            "intensity": round(dialogue_context.emotion_result.intensity, 3),
+            "is_positive": dialogue_context.emotion_result.is_positive,
+            "needs_comfort": dialogue_context.emotion_result.needs_comfort,
+        }
+
+    # 调用 LLM
     llm_router = get_llm_router()
     llm_service = llm_router.get_service()
+
+    # 构建完整 messages（历史 + 当前）
+    messages = history_dicts + [{"role": "user", "content": body.message}]
 
     try:
         ai_response = await llm_service.chat(
             messages=messages,
-            system_prompt=dh.system_prompt or f"你是{dh.name}，一个友善的AI伙伴。",
-            temperature=0.8,
+            system_prompt=dialogue_context.enhanced_system_prompt or base_prompt,
+            temperature=0.5 if dialogue_context.is_crisis_mode else 0.8,
             max_tokens=500,
         )
-    except Exception as e:
-        ai_response = f"抱歉，我现在有点恍惚...能再说一遍吗？"
+    except Exception:
+        ai_response = "抱歉，我现在有点恍惚...能再说一遍吗？"
 
-    # 保存AI回复
+    # 保存 AI 回复（含情感标记）
     ai_msg = DHMessage(
         session_id=session_id,
         dh_id=dh_id,
         role="assistant",
         content=ai_response,
+        emotion=dialogue_context.emotion_result.dominant.value if dialogue_context.emotion_result else None,
         llm_model=llm_service.get_model_name(),
     )
     db.add(ai_msg)
+
+    # 存入长期记忆（跨 session）
+    await processor.store_conversation_memory(dialogue_context, ai_response)
 
     # 更新统计
     session.message_count += 2
     session.last_message_at = datetime.utcnow()
     dh.total_messages += 2
     dh.total_conversations = dh.total_conversations or 0
-    if not body.session_id:  # 新会话
+    if not body.session_id:
         dh.total_conversations += 1
     dh.last_conversation_at = datetime.utcnow()
 
+    # 记录成本（估算）
+    processor.record_usage(
+        dialogue_context,
+        input_tokens=sum(len(m["content"]) for m in messages) // 3,
+        output_tokens=len(ai_response) // 3,
+    )
+
     await db.commit()
 
+    # 返回结构化元数据
+    metadata = processor.get_response_metadata(dialogue_context)
     return APIResponse(
         code=0,
         message="success",
@@ -440,6 +525,11 @@ async def chat_with_dh(
             "dh_id": dh_id,
             "response": ai_response,
             "is_complete": True,
+            "emotion": metadata["emotion"],
+            "crisis": metadata["crisis"],
+            "crisis_resources": crisis_response.get("resources") if crisis_response else None,
+            "memories_used": metadata["memories_used"],
+            "model_used": metadata["model"],
         }
     )
 
@@ -452,9 +542,17 @@ async def chat_stream_with_dh(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    与数字人对话（流式SSE）
+    与数字人对话（流式 SSE）—— 接入完整 pipeline
 
-    返回Server-Sent Events流
+    SSE 事件序列:
+      event: start    data: {session_id, dh_id, emotion, crisis_detected, model}
+      event: crisis   data: {resources, level}    [仅危机模式]
+      event: delta    data: {content}             [多次，每个 chunk 一帧]
+      event: done     data: {full_response, emotion, emotion_intensity,
+                             crisis_detected, memories_used, model_used}
+      event: error    data: {error, reason}       [quota 超限等]
+
+    返回 Server-Sent Events 流。
     """
     # 获取数字人
     stmt = select(DigitalHuman).where(
@@ -472,6 +570,30 @@ async def chat_stream_with_dh(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Digital human not found"
         )
+
+    # 获取用户昵称
+    user_stmt = select(User).where(User.id == user_id)
+    user_result = await db.execute(user_stmt)
+    user = user_result.scalar_one_or_none()
+    player_name = (user.username if user else None) or "朋友"
+
+    # 初始化处理器
+    processor = get_enhanced_processor(db)
+    npc_key = _dh_context_key(dh_id)
+
+    # 配额检查 —— 返回 SSE error 帧而不是 HTTP 402，因为前端已连上流
+    quota = processor.check_quota(user_id, estimated_tokens=1000)
+    if not quota["allowed"]:
+        async def quota_error_stream():
+            err = {
+                "error": "quota_exceeded",
+                "reason": quota.get("reason", "daily quota exceeded"),
+                "remaining_tokens": quota.get("remaining_tokens"),
+                "remaining_cost": quota.get("remaining_cost"),
+                "upgrade_url": "/pricing.html",
+            }
+            yield f"event: error\ndata: {json.dumps(err, ensure_ascii=False)}\n\n"
+        return StreamingResponse(quota_error_stream(), media_type="text/event-stream")
 
     # 获取或创建会话
     session_id = body.session_id or str(uuid.uuid4())
@@ -504,39 +626,137 @@ async def chat_stream_with_dh(
         DHMessage.session_id == session_id
     ).order_by(DHMessage.created_at.desc()).limit(20)
     result = await db.execute(stmt)
-    history_messages = list(result.scalars().all())
-    history_messages.reverse()
+    history_rows = list(result.scalars().all())
+    history_rows.reverse()
+    history_dicts = [
+        {"role": r.role, "content": r.content}
+        for r in history_rows
+        if r.id != user_msg.id
+    ]
 
-    messages = [{"role": msg.role, "content": msg.content} for msg in history_messages]
-    messages.append({"role": "user", "content": body.message})
+    # 预处理：情感/危机/记忆
+    base_prompt = dh.system_prompt or f"你是{dh.name}，一个友善的 AI 伙伴。"
+    dialogue_context = await processor.process_message(
+        player_id=user_id,
+        npc_id=npc_key,
+        session_id=session_id,
+        message=body.message,
+        player_name=player_name,
+        affinity_value=0,
+        base_system_prompt=base_prompt,
+        history_messages=history_dicts,
+    )
 
-    # 获取LLM服务
+    crisis_response = None
+    if dialogue_context.is_crisis_mode:
+        crisis_response = await processor.handle_crisis_if_needed(dialogue_context)
+
+    # 回填用户消息情感到 DHMessage
+    if dialogue_context.emotion_result:
+        user_msg.emotion = dialogue_context.emotion_result.dominant.value
+        user_msg.emotion_scores = {
+            "intensity": round(dialogue_context.emotion_result.intensity, 3),
+            "is_positive": dialogue_context.emotion_result.is_positive,
+            "needs_comfort": dialogue_context.emotion_result.needs_comfort,
+        }
+
+    metadata = processor.get_response_metadata(dialogue_context)
+
+    # 准备 LLM 调用参数（跳出生成器前全部准备好，避免闭包中 db session 的复杂性）
     llm_router = get_llm_router()
     llm_service = llm_router.get_service()
+    chat_messages = history_dicts + [{"role": "user", "content": body.message}]
+    system_prompt = dialogue_context.enhanced_system_prompt or base_prompt
+    temperature = 0.5 if dialogue_context.is_crisis_mode else 0.8
+
+    # commit 当前用户消息+情感，避免流式过程中事务悬挂
+    await db.commit()
 
     async def generate():
-        """SSE生成器"""
         full_response = ""
 
-        # 发送开始事件
-        yield f"event: start\ndata: {json.dumps({'session_id': session_id, 'dh_id': dh_id})}\n\n"
+        # start 帧（带情感和危机状态）
+        start_data = {
+            "session_id": session_id,
+            "dh_id": dh_id,
+            "emotion": metadata["emotion"]["dominant"],
+            "emotion_intensity": metadata["emotion"]["intensity"],
+            "needs_comfort": metadata["emotion"]["needs_comfort"],
+            "crisis_detected": metadata["crisis"]["detected"],
+            "crisis_level": metadata["crisis"]["level"],
+            "model": metadata["model"],
+        }
+        yield f"event: start\ndata: {json.dumps(start_data, ensure_ascii=False)}\n\n"
 
+        # crisis 帧（仅危机模式，在 delta 之前）
+        if crisis_response:
+            crisis_data = {
+                "level": metadata["crisis"]["level"],
+                "resources": crisis_response.get("resources", []),
+                "intervention_needed": metadata["crisis"]["intervention_needed"],
+            }
+            yield f"event: crisis\ndata: {json.dumps(crisis_data, ensure_ascii=False)}\n\n"
+
+        # delta 帧（LLM 流式输出）
         try:
             async for chunk in llm_service.chat_stream(
-                messages=messages,
-                system_prompt=dh.system_prompt or f"你是{dh.name}，一个友善的AI伙伴。",
-                temperature=0.8,
+                messages=chat_messages,
+                system_prompt=system_prompt,
+                temperature=temperature,
                 max_tokens=500,
             ):
                 full_response += chunk
-                yield f"event: delta\ndata: {json.dumps({'content': chunk})}\n\n"
-        except Exception as e:
-            error_msg = "抱歉，我现在有点恍惚...能再说一遍吗？"
-            full_response = error_msg
-            yield f"event: delta\ndata: {json.dumps({'content': error_msg})}\n\n"
+                yield f"event: delta\ndata: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
+        except Exception:
+            fallback = "抱歉，我现在有点恍惚...能再说一遍吗？"
+            full_response = fallback
+            yield f"event: delta\ndata: {json.dumps({'content': fallback}, ensure_ascii=False)}\n\n"
 
-        # 发送完成事件
-        yield f"event: done\ndata: {json.dumps({'full_response': full_response})}\n\n"
+        # done 帧前：保存 AI 消息 + 记忆 + 统计 + 用量
+        try:
+            ai_msg = DHMessage(
+                session_id=session_id,
+                dh_id=dh_id,
+                role="assistant",
+                content=full_response,
+                emotion=metadata["emotion"]["dominant"] if metadata["emotion"]["dominant"] != "neutral" else None,
+                llm_model=llm_service.get_model_name(),
+            )
+            db.add(ai_msg)
+
+            session.message_count += 2
+            session.last_message_at = datetime.utcnow()
+            dh.total_messages += 2
+            dh.total_conversations = dh.total_conversations or 0
+            if not body.session_id:
+                dh.total_conversations += 1
+            dh.last_conversation_at = datetime.utcnow()
+
+            await processor.store_conversation_memory(dialogue_context, full_response)
+
+            processor.record_usage(
+                dialogue_context,
+                input_tokens=sum(len(m["content"]) for m in chat_messages) // 3,
+                output_tokens=len(full_response) // 3,
+            )
+
+            await db.commit()
+        except Exception:
+            # 持久化失败不影响已发给用户的回复
+            pass
+
+        # done 帧
+        done_data = {
+            "full_response": full_response,
+            "session_id": session_id,
+            "emotion": metadata["emotion"]["dominant"],
+            "emotion_intensity": metadata["emotion"]["intensity"],
+            "crisis_detected": metadata["crisis"]["detected"],
+            "crisis_level": metadata["crisis"]["level"],
+            "memories_used": metadata["memories_used"],
+            "model_used": metadata["model"],
+        }
+        yield f"event: done\ndata: {json.dumps(done_data, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
         generate(),
