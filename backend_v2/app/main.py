@@ -91,6 +91,7 @@ async def root():
             "voice": "/api/v1/voice",
             "payment": "/api/v1/payment",
             "analytics": "/api/v1/analytics",
+            "account": "/api/v1/account",
         }
     }
 

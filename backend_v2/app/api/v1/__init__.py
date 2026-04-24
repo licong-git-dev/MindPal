@@ -18,6 +18,7 @@ from app.api.v1.voice import router as voice_router
 from app.api.v1.payment import router as payment_router
 from app.api.v1.digital_humans import router as digital_humans_router
 from app.api.v1.analytics import router as analytics_router
+from app.api.v1.account import router as account_router
 
 # ==================== 已禁用的游戏化路由（代码文件保留在 api/v1/ 供将来参考） ====================
 # player_router        / prefix="/player"        角色 CRUD
@@ -45,6 +46,7 @@ api_router.include_router(digital_humans_router, prefix="/digital-humans", tags=
 api_router.include_router(voice_router, prefix="/voice", tags=["语音"])
 api_router.include_router(payment_router, prefix="/payment", tags=["支付"])
 api_router.include_router(analytics_router, prefix="/analytics", tags=["埋点分析"])
+api_router.include_router(account_router, prefix="/account", tags=["账户数据权利"])
 
 
 __all__ = ["api_router"]

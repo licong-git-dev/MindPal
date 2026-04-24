@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的数据 - MindPal</title>
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .account-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      padding-bottom: 60px;
+    }
+
+    .account-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .account-header .back-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--color-text-primary);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .account-header h1 {
+      flex: 1;
+      font-size: 16px;
+      margin: 0;
+      color: var(--color-text-primary);
+    }
+
+    .account-body {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    .legal-banner {
+      background: rgba(99, 102, 241, 0.1);
+      border-left: 3px solid var(--color-primary-1);
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+    .legal-banner strong { color: var(--color-text-primary); }
+
+    .section {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 16px;
+      padding: 20px 22px;
+      margin-bottom: 18px;
+    }
+    .section h2 {
+      font-size: 16px;
+      margin: 0 0 14px;
+      color: var(--color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section .icon { font-size: 20px; }
+    .section p {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      margin: 0 0 14px;
+    }
+
+    /* 数据摘要卡片 */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .stat-card {
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-card .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-primary-1);
+    }
+    .stat-card .stat-label {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+
+    .account-info {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px 14px;
+      font-size: 13px;
+    }
+    .account-info .label { color: var(--color-text-secondary); }
+    .account-info .value { color: var(--color-text-primary); word-break: break-all; }
+
+    /* 操作按钮 */
+    .btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .btn:disabled { opacity: 0.6; cursor: wait; }
+    .btn-primary  { background: var(--color-primary-1); color: #fff; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-warning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
+    .btn-warning:hover { background: rgba(251, 191, 36, 0.3); }
+    .btn-danger  { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+
+    /* 危险确认 modal */
+    .confirm-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .confirm-modal[hidden] { display: none; }
+    .confirm-card {
+      background: #1e293b;
+      color: #f1f5f9;
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 440px;
+      width: 100%;
+      border-top: 4px solid #ef4444;
+    }
+    .confirm-card h3 { margin: 0 0 12px; font-size: 18px; color: #fca5a5; }
+    .confirm-card ul {
+      margin: 12px 0;
+      padding-left: 20px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #cbd5e1;
+    }
+    .confirm-card input {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      color: #f1f5f9;
+      font-size: 14px;
+      margin: 10px 0;
+    }
+    .confirm-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(34, 197, 94, 0.92);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 4000;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .toast.error { background: rgba(239, 68, 68, 0.92); }
+    .toast[hidden] { display: none; }
+
+    .skeleton {
+      background: linear-gradient(90deg,
+        rgba(148, 163, 184, 0.08) 25%,
+        rgba(148, 163, 184, 0.2) 50%,
+        rgba(148, 163, 184, 0.08) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 10px;
+      height: 80px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+</head>
+<body>
+  <div class="account-page page-transition">
+    <header class="account-header">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <h1>我的数据</h1>
+    </header>
+
+    <div class="account-body">
+      <div class="legal-banner">
+        <strong>🔒 数据权利说明</strong><br>
+        根据中国《个人信息保护法》第 44、45、47 条，你有权随时查看、导出、删除自己的个人信息。
+        下列操作均无需客服介入，实时生效。
+      </div>
+
+      <!-- 数据摘要 -->
+      <section class="section">
+        <h2><span class="icon">📊</span>数据摘要</h2>
+        <p>以下是系统中与你账号相关的所有数据类别与数量。</p>
+        <div id="accountInfo" class="account-info"></div>
+        <div id="summaryGrid" class="summary-grid" style="margin-top:16px;">
+          <div class="skeleton"></div>
+          <div class="skeleton"></div>
+          <div class="skeleton"></div>
+          <div class="skeleton"></div>
+          <div class="skeleton"></div>
+        </div>
+      </section>
+
+      <!-- 导出 -->
+      <section class="section">
+        <h2><span class="icon">⬇️</span>导出完整数据</h2>
+        <p>下载一个 JSON 文件，包含你的所有数据副本：账号信息、数字人档案、对话记录、长期记忆、订单记录。（PIPL §45 查阅复制权）</p>
+        <button id="btnExport" class="btn btn-primary" onclick="onExport()">下载 JSON 副本</button>
+      </section>
+
+      <!-- 清空记忆 -->
+      <section class="section">
+        <h2><span class="icon">🧠</span>清空所有长期记忆</h2>
+        <p>删除所有数字人记住的跨会话信息（不影响对话消息本身）。清空后数字人重新开始"认识你"的过程。</p>
+        <button id="btnClearMemories" class="btn btn-warning" onclick="onClearMemories()">清空长期记忆</button>
+      </section>
+
+      <!-- 注销账户 -->
+      <section class="section">
+        <h2><span class="icon">❌</span>注销账户</h2>
+        <p>永久删除账号及所有关联数据：数字人、对话、记忆、订单记录全部无法恢复。（PIPL §47 删除权）</p>
+        <button id="btnDelete" class="btn btn-danger" onclick="showDeleteConfirm()">注销我的账户</button>
+      </section>
+    </div>
+  </div>
+
+  <!-- 注销确认 modal -->
+  <div id="deleteConfirm" class="confirm-modal" hidden>
+    <div class="confirm-card">
+      <h3>⚠️ 永久注销账户</h3>
+      <p>此操作不可恢复。我们将立即删除：</p>
+      <ul>
+        <li>账号信息（用户名、邮箱、手机）</li>
+        <li>所有数字人与人格设定</li>
+        <li>所有对话记录与长期记忆</li>
+        <li>订单记录（已付会员权益立即失效，不退款）</li>
+      </ul>
+      <p style="color:#fca5a5;">为验证是你本人操作，请输入当前账号密码：</p>
+      <input id="confirmPassword" type="password" placeholder="当前密码" autocomplete="current-password">
+      <div class="confirm-actions">
+        <button class="btn" onclick="hideDeleteConfirm()">取消</button>
+        <button class="btn btn-danger" id="btnConfirmDelete" onclick="onDeleteAccount()">确认注销</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script>
+    // ======== 认证检查 ========
+    if (!MindPalAuth.isLoggedIn()) {
+      window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+    }
+
+    // ======== Toast 辅助 ========
+    let toastTimer = null;
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.toggle('error', isError);
+      toast.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.hidden = true; }, 3500);
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // ======== 数据摘要 ========
+    async function loadSummary() {
+      try {
+        const resp = await MindPalAPI.account.dataSummary();
+        if (resp.code !== 0) throw new Error(resp.message || '加载失败');
+        const data = resp.data;
+
+        // 账号信息
+        const info = document.getElementById('accountInfo');
+        const fields = [
+          { label: '用户名', value: data.username },
+          { label: '邮箱',   value: data.email },
+          { label: '手机号', value: data.phone || '(未绑定)' },
+          { label: '注册时间', value: data.created_at ? new Date(data.created_at).toLocaleString('zh-CN') : '-' },
+          { label: '上次登录', value: data.last_login ? new Date(data.last_login).toLocaleString('zh-CN') : '-' },
+        ];
+        info.innerHTML = fields.map(f =>
+          `<span class="label">${f.label}</span><span class="value">${escapeHtml(f.value)}</span>`
+        ).join('');
+
+        // 数量卡片
+        const c = data.counts || {};
+        const stats = [
+          { label: '数字人', value: c.digital_humans || 0 },
+          { label: '对话会话', value: c.conversations || 0 },
+          { label: '对话消息', value: c.messages || 0 },
+          { label: '长期记忆', value: c.long_term_memories || 0 },
+          { label: '订单记录', value: c.orders || 0 },
+        ];
+        document.getElementById('summaryGrid').innerHTML = stats.map(s => `
+          <div class="stat-card">
+            <div class="stat-value">${s.value}</div>
+            <div class="stat-label">${s.label}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('加载摘要失败:', err);
+        document.getElementById('summaryGrid').innerHTML =
+          `<div style="grid-column:1/-1;color:var(--color-text-secondary);font-size:13px;">加载失败：${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    // ======== 导出 ========
+    async function onExport() {
+      const btn = document.getElementById('btnExport');
+      btn.disabled = true;
+      btn.textContent = '生成中...';
+      try {
+        const info = await MindPalAPI.account.dataExport();
+        showToast(`已下载 ${info.filename}（${(info.sizeBytes / 1024).toFixed(1)} KB）`);
+      } catch (err) {
+        console.error('导出失败:', err);
+        showToast('导出失败：' + (err.message || err), true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '下载 JSON 副本';
+      }
+    }
+
+    // ======== 清空长期记忆 ========
+    async function onClearMemories() {
+      const confirmText = prompt(
+        '⚠️ 这会永久删除所有数字人对你的长期记忆，不可恢复。\n\n' +
+        '如果确认，请输入"删除"继续：'
+      );
+      if (confirmText !== '删除') return;
+
+      const btn = document.getElementById('btnClearMemories');
+      btn.disabled = true;
+      btn.textContent = '清空中...';
+      try {
+        const resp = await MindPalAPI.account.clearMemories();
+        if (resp.code !== 0) throw new Error(resp.message || '清空失败');
+        showToast(`已删除 ${resp.data.deleted} 条长期记忆`);
+        loadSummary();
+      } catch (err) {
+        console.error('清空失败:', err);
+        showToast('清空失败：' + (err.message || err), true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '清空长期记忆';
+      }
+    }
+
+    // ======== 注销账户 ========
+    function showDeleteConfirm() {
+      document.getElementById('confirmPassword').value = '';
+      document.getElementById('deleteConfirm').hidden = false;
+      setTimeout(() => document.getElementById('confirmPassword').focus(), 100);
+    }
+    function hideDeleteConfirm() {
+      document.getElementById('deleteConfirm').hidden = true;
+    }
+
+    async function onDeleteAccount() {
+      const password = document.getElementById('confirmPassword').value;
+      if (!password) {
+        showToast('请输入密码', true);
+        return;
+      }
+
+      const doubleCheck = confirm('最后确认：注销后 30 秒内无法恢复。继续？');
+      if (!doubleCheck) return;
+
+      const btn = document.getElementById('btnConfirmDelete');
+      btn.disabled = true;
+      btn.textContent = '处理中...';
+      try {
+        const resp = await MindPalAPI.account.deleteAccount(password);
+        if (resp.code !== 0) throw new Error(resp.message || '注销失败');
+
+        const s = resp.data.deleted_summary || {};
+        alert(
+          `账号已注销。\n\n` +
+          `删除统计:\n` +
+          `  记忆: ${s.memories || 0}\n` +
+          `  消息: ${s.messages || 0}\n` +
+          `  会话: ${s.conversations || 0}\n` +
+          `  数字人: ${s.digital_humans || 0}\n` +
+          `  订单: ${s.orders || 0}\n\n` +
+          `感谢使用 MindPal。`
+        );
+        // 清除本地 token 和所有缓存
+        try {
+          MindPalAuth.clearAuth && MindPalAuth.clearAuth();
+        } catch (_) {}
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = 'index.html';
+      } catch (err) {
+        console.error('注销失败:', err);
+        showToast('注销失败：' + (err.message || err), true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '确认注销';
+      }
+    }
+
+    // 初始化
+    loadSummary();
+  </script>
+</body>
+</html>

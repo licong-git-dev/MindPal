@@ -640,6 +640,73 @@ const MindPalAPI = {
   },
 
   /**
+   * 账户数据权利 API（PIPL §44/45/47）
+   *
+   * - dataSummary(): 查看我的数据概览（类别 + 数量）
+   * - dataExport():  下载完整数据 JSON（返回 Blob 触发浏览器下载）
+   * - clearMemories(): 清空长期记忆（跨所有数字人）
+   * - deleteAccount(password): 注销账户（级联删除全部数据）
+   */
+  account: {
+    async dataSummary() {
+      return await MindPalAPI.request(MindPalConfig.API.ACCOUNT.DATA_SUMMARY);
+    },
+
+    /**
+     * 导出数据为 JSON 文件并触发浏览器下载
+     * @returns {Promise<{filename:string, sizeBytes:number}>}
+     */
+    async dataExport() {
+      const token = MindPalAuth.getAuthToken();
+      const response = await fetch(
+        `${MindPalConfig.API_BASE_URL}${MindPalConfig.API.ACCOUNT.DATA_EXPORT}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': token && !token.startsWith('temp_') ? `Bearer ${token}` : '',
+          },
+        }
+      );
+      if (!response.ok) {
+        let msg = `HTTP ${response.status}`;
+        try { const j = await response.json(); msg = j.detail || j.message || msg; } catch (_) {}
+        throw new Error(msg);
+      }
+      const blob = await response.blob();
+      // 从 Content-Disposition 提取 filename
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match ? match[1] : `mindpal_data_${Date.now()}.json`;
+
+      // 触发下载
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // 延迟 revoke 让下载启动完成
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      return { filename, sizeBytes: blob.size };
+    },
+
+    async clearMemories() {
+      return await MindPalAPI.request(MindPalConfig.API.ACCOUNT.CLEAR_MEMORIES, {
+        method: 'DELETE',
+      });
+    },
+
+    async deleteAccount(password) {
+      return await MindPalAPI.request(MindPalConfig.API.ACCOUNT.DELETE, {
+        method: 'DELETE',
+        body: JSON.stringify({ password }),
+      });
+    },
+  },
+
+  /**
    * 订阅系统API
    */
   subscription: {

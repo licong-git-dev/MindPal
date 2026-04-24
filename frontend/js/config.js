@@ -92,6 +92,14 @@ const MindPalConfig = {
       TEST_ADD_GOLD: '/api/v1/payment/test/add-gold'
     },
 
+    // 账户数据权利（PIPL §44/45/47）
+    ACCOUNT: {
+      DATA_SUMMARY:   '/api/v1/account/data-summary',
+      DATA_EXPORT:    '/api/v1/account/data-export',
+      CLEAR_MEMORIES: '/api/v1/account/memories?confirm=true',
+      DELETE:         '/api/v1/account?confirm=true',
+    },
+
     // 数据埋点相关
     ANALYTICS: {
       TRACK: '/api/v1/analytics/track',

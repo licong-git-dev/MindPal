@@ -404,9 +404,31 @@ deploy.sh / docker-compose 均不再引用 `backend/`。保留代码的唯一价
 - 敏感词过滤规则库
 - 用户举报 + 审核员工作台
 
-#### P3-3. 用户数据权利 UI【3 天】
-- 账号→"我的数据"页面
-- 功能：查看所有数据 / 导出 JSON / 删除所有记忆 / 注销账户
+#### P3-3. 用户数据权利 UI【✅ 已完成 2026-04-23】
+
+**完成文件**：
+- 后端：[backend_v2/app/api/v1/account.py](../../backend_v2/app/api/v1/account.py)
+  （4 个端点：data-summary / data-export / DELETE memories / DELETE account）
+- 前端：[frontend/account-data.html](../../frontend/account-data.html)
+  （数据摘要卡片 + 导出 / 清空记忆 / 注销账户三个操作区）
+- 入口：dh-list.html 和 subscription.html 顶栏加 🔒 图标
+
+**对应法条**：
+- PIPL §44 知情权 → `/data-summary` 告诉用户存储了哪些类别
+- PIPL §45 查阅复制权 → `/data-export` 下载 JSON 副本
+- PIPL §47 删除权 → `DELETE /memories`（记忆）+ `DELETE /account`（全部）
+
+**安全设计**：
+- 清空记忆需前端 prompt "删除" 校验 + 后端 `?confirm=true` 兜底
+- 注销账户需：前端 Modal 显示影响范围 + 输入密码 + 二次确认 + `?confirm=true`
+- 注销后端：密码校验 → 级联按外键顺序删除（memories/messages/conversations/
+  digital_humans/orders/user）→ 订单失败 fallback 不阻塞主流程
+- 注销成功：前端清 localStorage/sessionStorage + 跳回登录页
+
+**待优化**：
+- Order 删除被 Payment 外键约束可能阻塞 —— 合规建议改为"假名化"（PIPL §51）
+  而非物理删除订单（需要财务审计留底）
+- 缺注销操作日志打点（合规审计建议）
 
 ---
 
