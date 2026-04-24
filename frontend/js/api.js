@@ -513,6 +513,52 @@ const MindPalAPI = {
   },
 
   /**
+   * 数字人长期记忆 API（可视化记忆时间线）
+   *
+   * 全部挂在 /api/v1/digital-humans/{dh_id}/memories/*，不依赖 Player 模型。
+   */
+  memories: {
+    /**
+     * 列出记忆
+     * @param {number} dhId - 数字人 ID
+     * @param {Object} opts - { limit, offset, emotion, q }
+     *   q: 传入则走语义搜索；emotion: 按情感筛选；都不传则时间线
+     */
+    async list(dhId, opts = {}) {
+      const params = new URLSearchParams();
+      if (opts.limit != null) params.set('limit', opts.limit);
+      if (opts.offset != null) params.set('offset', opts.offset);
+      if (opts.emotion) params.set('emotion', opts.emotion);
+      if (opts.q) params.set('q', opts.q);
+      const qs = params.toString();
+      const base = MindPalConfig.API.MEMORIES.LIST(dhId);
+      const url = qs ? `${base}?${qs}` : base;
+      return await MindPalAPI.request(url);
+    },
+
+    /** 统计：total + by_emotion */
+    async stats(dhId) {
+      return await MindPalAPI.request(MindPalConfig.API.MEMORIES.STATS(dhId));
+    },
+
+    /** 删除单条 */
+    async delete(dhId, memoryId) {
+      return await MindPalAPI.request(
+        MindPalConfig.API.MEMORIES.DELETE(dhId, memoryId),
+        { method: 'DELETE' }
+      );
+    },
+
+    /** 清空全部（二次确认由前端保障，后端也要 confirm=true 兜底） */
+    async clear(dhId) {
+      return await MindPalAPI.request(
+        MindPalConfig.API.MEMORIES.CLEAR(dhId),
+        { method: 'DELETE' }
+      );
+    },
+  },
+
+  /**
    * 订阅系统API
    */
   subscription: {

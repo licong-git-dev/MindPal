@@ -58,6 +58,14 @@ const MindPalConfig = {
       DELETE: (docId) => `/api/v1/knowledge/${docId}`
     },
 
+    // 数字人长期记忆（可视化记忆时间线）
+    MEMORIES: {
+      LIST: (dhId) => `/api/v1/digital-humans/${dhId}/memories`,
+      STATS: (dhId) => `/api/v1/digital-humans/${dhId}/memories/stats`,
+      DELETE: (dhId, memoryId) => `/api/v1/digital-humans/${dhId}/memories/${encodeURIComponent(memoryId)}`,
+      CLEAR: (dhId) => `/api/v1/digital-humans/${dhId}/memories?confirm=true`,
+    },
+
     // 订阅相关
     SUBSCRIPTION: {
       CREATE: '/api/v1/subscription/create',

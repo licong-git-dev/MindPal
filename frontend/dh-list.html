@@ -568,6 +568,15 @@
         window.location.href = `chat.html?id=${dh.id}`;
       });
 
+      const memoryButton = document.createElement('button');
+      memoryButton.className = 'btn btn-small btn-secondary';
+      memoryButton.textContent = '🧠 记忆';
+      memoryButton.title = '查看 TA 记住的事';
+      memoryButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        window.location.href = `memory.html?id=${dh.id}`;
+      });
+
       const deleteButton = document.createElement('button');
       deleteButton.className = 'btn btn-small btn-secondary';
       deleteButton.textContent = '删除';
@@ -577,6 +586,7 @@
       });
 
       actions.appendChild(chatButton);
+      actions.appendChild(memoryButton);
       actions.appendChild(deleteButton);
 
       card.appendChild(avatar);

@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>记忆时间线 - MindPal</title>
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .memory-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 顶部栏 */
+    .mem-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .mem-header .back-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--color-text-primary);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .mem-title {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .mem-title h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+    .mem-subtitle {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+    .mem-clear-btn {
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .mem-clear-btn:hover { background: rgba(239, 68, 68, 0.2); }
+
+    /* 工具栏（搜索 + 筛选） */
+    .mem-toolbar {
+      padding: 16px 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: rgba(30, 41, 59, 0.5);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .mem-search {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 10px;
+      padding: 8px 14px;
+    }
+    .mem-search input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--color-text-primary);
+      font-size: 14px;
+      outline: none;
+    }
+    .mem-search input::placeholder { color: var(--color-text-secondary); }
+    .mem-filters {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .mem-filter-chip {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--color-text-secondary);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mem-filter-chip:hover { background: rgba(255, 255, 255, 0.1); }
+    .mem-filter-chip.active {
+      background: var(--color-primary-1);
+      color: #fff;
+      border-color: var(--color-primary-1);
+    }
+    .mem-filter-chip .count {
+      opacity: 0.7;
+      margin-left: 4px;
+      font-size: 11px;
+    }
+
+    /* 统计栏 */
+    .mem-stats {
+      padding: 12px 20px;
+      background: rgba(99, 102, 241, 0.08);
+      border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .mem-stats-total {
+      color: var(--color-primary-1);
+      font-weight: 600;
+    }
+
+    /* 时间线容器 */
+    .mem-timeline {
+      flex: 1;
+      padding: 20px;
+      max-width: 760px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* 记忆卡片 */
+    .memory-card {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .memory-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    .memory-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .memory-emotion-icon {
+      font-size: 20px;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 50%;
+    }
+    .memory-emotion-name {
+      color: var(--color-text-secondary);
+      font-size: 12px;
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+    }
+    .memory-time {
+      flex: 1;
+      font-size: 12px;
+      color: var(--color-text-disabled);
+      text-align: right;
+    }
+    .memory-importance {
+      display: flex;
+      gap: 2px;
+      margin-right: 8px;
+    }
+    .memory-importance .star {
+      color: #fbbf24;
+      font-size: 14px;
+    }
+    .memory-importance .star.dim { color: rgba(251, 191, 36, 0.2); }
+
+    .memory-summary {
+      color: var(--color-text-primary);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .memory-dialog {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--color-text-secondary);
+    }
+    .memory-dialog .dialog-line { margin-bottom: 4px; }
+    .memory-dialog .dialog-line:last-child { margin-bottom: 0; }
+    .memory-dialog .dialog-role {
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .memory-dialog .role-user { color: #93c5fd; }
+    .memory-dialog .role-npc { color: #fca5a5; }
+
+    .memory-relevance {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 8px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      font-size: 11px;
+      border-radius: 10px;
+    }
+
+    .memory-actions {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .memory-card:hover .memory-actions { opacity: 1; }
+    .memory-action-btn {
+      background: rgba(0, 0, 0, 0.3);
+      border: none;
+      color: var(--color-text-secondary);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .memory-action-btn:hover {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    /* 空状态 */
+    .mem-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      text-align: center;
+      color: var(--color-text-secondary);
+    }
+    .mem-empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+    .mem-empty-title {
+      font-size: 18px;
+      color: var(--color-text-primary);
+      margin-bottom: 8px;
+    }
+    .mem-empty-body {
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      max-width: 360px;
+    }
+    .mem-empty .btn-primary {
+      background: var(--color-primary-1);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* 骨架屏 */
+    .mem-skeleton {
+      background: rgba(148, 163, 184, 0.1);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+      height: 110px;
+      animation: shimmer 1.4s infinite;
+      background: linear-gradient(90deg,
+        rgba(148, 163, 184, 0.08) 25%,
+        rgba(148, 163, 184, 0.2) 50%,
+        rgba(148, 163, 184, 0.08) 75%);
+      background-size: 200% 100%;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* 加载更多 */
+    .mem-load-more {
+      text-align: center;
+      padding: 20px;
+    }
+    .mem-load-more button {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--color-primary-1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 8px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .mem-load-more button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    @media (max-width: 600px) {
+      .mem-toolbar { flex-direction: column; }
+      .mem-search { min-width: 100%; }
+    }
+  </style>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/analytics.js"></script>
+</head>
+<body>
+  <div class="memory-page page-transition">
+    <!-- 顶部 -->
+    <header class="mem-header">
+      <button class="back-btn" onclick="goBack()">←</button>
+      <div class="mem-title">
+        <h1 id="pageTitle">记忆时间线</h1>
+        <div class="mem-subtitle" id="pageSubtitle">加载中...</div>
+      </div>
+      <button class="mem-clear-btn" onclick="clearAllMemories()">清空全部</button>
+    </header>
+
+    <!-- 工具栏 -->
+    <div class="mem-toolbar">
+      <div class="mem-search">
+        <span>🔍</span>
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="输入关键词语义搜索记忆…"
+          oninput="onSearchInput()"
+        >
+      </div>
+      <div class="mem-filters" id="emotionFilters">
+        <!-- chip 动态渲染 -->
+      </div>
+    </div>
+
+    <!-- 统计栏 -->
+    <div class="mem-stats" id="statsBar" style="display:none;">
+      <span>📖 共记住了 <span class="mem-stats-total" id="statsTotal">0</span> 件事</span>
+      <span id="statsModeHint"></span>
+    </div>
+
+    <!-- 时间线 -->
+    <div class="mem-timeline" id="timeline">
+      <div class="mem-skeleton"></div>
+      <div class="mem-skeleton"></div>
+      <div class="mem-skeleton"></div>
+    </div>
+
+    <!-- 加载更多 -->
+    <div class="mem-load-more" id="loadMoreWrap" style="display:none;">
+      <button id="loadMoreBtn" onclick="loadMore()">加载更多</button>
+    </div>
+  </div>
+
+  <script>
+    // ======== 状态 ========
+    const urlParams = new URLSearchParams(window.location.search);
+    const dhId = parseInt(urlParams.get('id'));
+    if (!dhId || Number.isNaN(dhId)) {
+      alert('缺少数字人 ID');
+      window.location.href = 'dh-list.html';
+    }
+
+    const PAGE_SIZE = 20;
+
+    // ISO 情感类别 → UI 元数据
+    const EMOTION_META = {
+      joy:      { icon: '😊', label: '开心' },
+      sadness:  { icon: '😔', label: '低落' },
+      anger:    { icon: '😠', label: '愤怒' },
+      fear:     { icon: '😟', label: '担忧' },
+      surprise: { icon: '😲', label: '惊讶' },
+      disgust:  { icon: '😕', label: '复杂' },
+      love:     { icon: '🥰', label: '温暖' },
+      neutral:  { icon: '🙂', label: '日常' },
+    };
+
+    let currentEmotion = null;    // 情感筛选
+    let currentQuery = '';        // 语义搜索
+    let offset = 0;
+    let total = 0;
+    let loading = false;
+    let statsCache = { total: 0, by_emotion: {} };
+    let searchDebounce = null;
+
+    // ======== 路由 ========
+    function goBack() {
+      const ref = document.referrer;
+      if (ref && ref.includes(window.location.host)) {
+        history.back();
+      } else {
+        window.location.href = `chat.html?id=${dhId}`;
+      }
+    }
+
+    // ======== 工具 ========
+    function formatTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '';
+      const now = new Date();
+      const diff = (now - d) / 1000;
+      if (diff < 60) return '刚刚';
+      if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`;
+      if (diff < 7 * 86400) return `${Math.floor(diff / 86400)} 天前`;
+      return d.toLocaleDateString('zh-CN') + ' ' + d.toTimeString().slice(0, 5);
+    }
+
+    function renderImportance(importance) {
+      const level = Math.min(5, Math.max(1, Math.round((Number(importance) || 0) * 5)));
+      const stars = [];
+      for (let i = 0; i < 5; i++) {
+        stars.push(`<span class="star ${i < level ? '' : 'dim'}">★</span>`);
+      }
+      return `<div class="memory-importance" title="重要性 ${level}/5">${stars.join('')}</div>`;
+    }
+
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // ======== 渲染 ========
+    function renderMemoryCard(m) {
+      const emotion = m.emotion || 'neutral';
+      const meta = EMOTION_META[emotion] || EMOTION_META.neutral;
+      const time = formatTime(m.created_at);
+      const importance = renderImportance(m.importance);
+      const relevanceBadge = m.relevance_score != null
+        ? `<span class="memory-relevance">相关度 ${Math.round(m.relevance_score * 100)}%</span>`
+        : '';
+      const userMsg = m.user_message ? `<div class="dialog-line"><span class="dialog-role role-user">你:</span>${escapeHtml(m.user_message)}</div>` : '';
+      const npcMsg = m.npc_response ? `<div class="dialog-line"><span class="dialog-role role-npc">TA:</span>${escapeHtml(m.npc_response)}</div>` : '';
+      const dialog = (userMsg || npcMsg) ? `<div class="memory-dialog">${userMsg}${npcMsg}</div>` : '';
+
+      return `
+        <div class="memory-card" data-memory-id="${escapeHtml(m.id)}">
+          <div class="memory-actions">
+            <button class="memory-action-btn" title="删除这条记忆" onclick="deleteMemory('${escapeHtml(m.id)}')">🗑️</button>
+          </div>
+          <div class="memory-card-header">
+            <span class="memory-emotion-icon" title="${meta.label}">${meta.icon}</span>
+            <span class="memory-emotion-name">${meta.label}</span>
+            ${importance}
+            <span class="memory-time">${time}</span>
+          </div>
+          <div class="memory-summary">${escapeHtml(m.summary) || '(无摘要)'}${relevanceBadge}</div>
+          ${dialog}
+        </div>
+      `;
+    }
+
+    function renderEmptyState() {
+      const timeline = document.getElementById('timeline');
+      const hint = currentQuery
+        ? `没有匹配"${escapeHtml(currentQuery)}"的记忆`
+        : currentEmotion
+          ? `没有"${EMOTION_META[currentEmotion]?.label || currentEmotion}"类别的记忆`
+          : '还没有任何记忆';
+      const ctaHint = currentQuery || currentEmotion
+        ? '试试换个关键词或筛选条件'
+        : '多和 TA 聊聊，重要的对话会被自动记住';
+
+      timeline.innerHTML = `
+        <div class="mem-empty">
+          <div class="mem-empty-icon">🧠</div>
+          <div class="mem-empty-title">${hint}</div>
+          <div class="mem-empty-body">${ctaHint}</div>
+          <a class="btn-primary" href="chat.html?id=${dhId}">返回对话</a>
+        </div>
+      `;
+      document.getElementById('loadMoreWrap').style.display = 'none';
+    }
+
+    function renderList(items, append = false) {
+      const timeline = document.getElementById('timeline');
+      if (!append) timeline.innerHTML = '';
+
+      // 首次渲染时移除骨架
+      const skeletons = timeline.querySelectorAll('.mem-skeleton');
+      skeletons.forEach(s => s.remove());
+
+      if (items.length === 0 && !append) {
+        renderEmptyState();
+        return;
+      }
+
+      const html = items.map(renderMemoryCard).join('');
+      timeline.insertAdjacentHTML('beforeend', html);
+    }
+
+    function renderFilters() {
+      const wrap = document.getElementById('emotionFilters');
+      const by = statsCache.by_emotion || {};
+      const allCount = statsCache.total || 0;
+
+      const chips = [`<button class="mem-filter-chip ${!currentEmotion ? 'active' : ''}" onclick="setFilter(null)">全部<span class="count">${allCount}</span></button>`];
+
+      // 只显示实际有数据的情感
+      const emotions = Object.keys(EMOTION_META);
+      for (const emo of emotions) {
+        const cnt = by[emo] || 0;
+        if (cnt === 0) continue;
+        const meta = EMOTION_META[emo];
+        chips.push(`<button class="mem-filter-chip ${currentEmotion === emo ? 'active' : ''}" onclick="setFilter('${emo}')">${meta.icon} ${meta.label}<span class="count">${cnt}</span></button>`);
+      }
+
+      wrap.innerHTML = chips.join('');
+    }
+
+    function renderStats() {
+      const statsBar = document.getElementById('statsBar');
+      const totalEl = document.getElementById('statsTotal');
+      const hint = document.getElementById('statsModeHint');
+      totalEl.textContent = statsCache.total || 0;
+      if (currentQuery) {
+        hint.textContent = `· 搜索"${currentQuery}"`;
+      } else if (currentEmotion) {
+        const meta = EMOTION_META[currentEmotion];
+        hint.textContent = `· 筛选 ${meta?.icon || ''} ${meta?.label || currentEmotion}`;
+      } else {
+        hint.textContent = '';
+      }
+      statsBar.style.display = 'flex';
+    }
+
+    // ======== 数据 ========
+    async function loadStats() {
+      try {
+        const resp = await MindPalAPI.memories.stats(dhId);
+        if (resp.code === 0) {
+          statsCache = resp.data;
+          renderFilters();
+          renderStats();
+        }
+      } catch (e) {
+        console.error('加载统计失败:', e);
+      }
+    }
+
+    async function loadList(reset = true) {
+      if (loading) return;
+      loading = true;
+      if (reset) {
+        offset = 0;
+        document.getElementById('timeline').innerHTML = `
+          <div class="mem-skeleton"></div>
+          <div class="mem-skeleton"></div>
+          <div class="mem-skeleton"></div>
+        `;
+      }
+      document.getElementById('loadMoreBtn').disabled = true;
+
+      try {
+        const resp = await MindPalAPI.memories.list(dhId, {
+          limit: PAGE_SIZE,
+          offset,
+          emotion: currentEmotion || undefined,
+          q: currentQuery || undefined,
+        });
+
+        if (resp.code !== 0) throw new Error(resp.message || '加载失败');
+
+        const data = resp.data || {};
+        const items = data.items || [];
+        total = data.total || 0;
+
+        renderList(items, !reset);
+        offset += items.length;
+
+        const loadMoreWrap = document.getElementById('loadMoreWrap');
+        const hasMore = !currentQuery && offset < total && items.length === PAGE_SIZE;
+        loadMoreWrap.style.display = hasMore ? 'block' : 'none';
+      } catch (err) {
+        console.error('加载记忆失败:', err);
+        document.getElementById('timeline').innerHTML = `
+          <div class="mem-empty">
+            <div class="mem-empty-icon">⚠️</div>
+            <div class="mem-empty-title">加载失败</div>
+            <div class="mem-empty-body">${escapeHtml(err.message || String(err))}</div>
+            <button class="btn-primary" onclick="loadList(true)">重试</button>
+          </div>
+        `;
+      } finally {
+        loading = false;
+        document.getElementById('loadMoreBtn').disabled = false;
+      }
+    }
+
+    function loadMore() { loadList(false); }
+
+    // ======== 交互 ========
+    function setFilter(emotion) {
+      currentEmotion = emotion;
+      currentQuery = '';
+      document.getElementById('searchInput').value = '';
+      renderFilters();
+      renderStats();
+      loadList(true);
+    }
+
+    function onSearchInput() {
+      const val = document.getElementById('searchInput').value.trim();
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        currentQuery = val;
+        if (val) currentEmotion = null;  // 搜索时清除情感筛选
+        renderFilters();
+        renderStats();
+        loadList(true);
+      }, 300);
+    }
+
+    async function deleteMemory(memoryId) {
+      if (!confirm('确定删除这条记忆？不可恢复。')) return;
+      try {
+        await MindPalAPI.memories.delete(dhId, memoryId);
+        // 前端乐观移除
+        const card = document.querySelector(`.memory-card[data-memory-id="${CSS.escape(memoryId)}"]`);
+        if (card) card.remove();
+        // 更新统计
+        await loadStats();
+        // 如果当前列表空了，重新拉
+        const timeline = document.getElementById('timeline');
+        if (!timeline.querySelector('.memory-card')) {
+          loadList(true);
+        }
+      } catch (e) {
+        alert('删除失败: ' + (e.message || e));
+      }
+    }
+
+    async function clearAllMemories() {
+      const confirmText = prompt(
+        '⚠️ 这会永久删除 TA 对你的所有记忆，不可恢复。\n\n' +
+        '如果确认，请输入 "删除" 继续：'
+      );
+      if (confirmText !== '删除') return;
+      try {
+        const resp = await MindPalAPI.memories.clear(dhId);
+        if (resp.code === 0) {
+          alert(`已删除 ${resp.data.deleted} 条记忆`);
+          statsCache = { total: 0, by_emotion: {} };
+          renderFilters();
+          renderStats();
+          renderList([], false);
+        } else {
+          throw new Error(resp.message || '清空失败');
+        }
+      } catch (e) {
+        alert('清空失败: ' + (e.message || e));
+      }
+    }
+
+    // ======== 初始化 ========
+    async function loadDHInfo() {
+      try {
+        const resp = await MindPalAPI.digitalHumans.get(dhId);
+        if (resp.code === 0) {
+          const dh = resp.data;
+          document.getElementById('pageTitle').textContent = `${dh.name} 的记忆`;
+          document.getElementById('pageSubtitle').textContent =
+            `共 ${statsCache.total || 0} 条记忆 · 最新在上`;
+        }
+      } catch (e) {
+        console.warn('获取数字人信息失败:', e);
+      }
+    }
+
+    (async function init() {
+      if (!MindPalAuth.isLoggedIn()) {
+        window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+        return;
+      }
+      await loadStats();
+      await loadDHInfo();
+      // 更新 subtitle 为实际总数
+      document.getElementById('pageSubtitle').textContent =
+        `共 ${statsCache.total || 0} 条记忆 · 最新在上`;
+      await loadList(true);
+    })();
+  </script>
+</body>
+</html>

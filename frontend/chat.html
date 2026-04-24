@@ -440,6 +440,9 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn btn-icon" onclick="goToMemory()" title="查看记忆">
+          🧠
+        </button>
         <button class="btn btn-icon" onclick="clearChat()" title="清除对话">
           🗑️
         </button>
@@ -917,6 +920,11 @@
 
       // 添加新的欢迎消息
       addMessageToUI('assistant', `对话已清除。有什么新的话题想聊吗？`);
+    }
+
+    // 跳转到记忆时间线
+    function goToMemory() {
+      window.location.href = `memory.html?id=${dhId}`;
     }
 
     // 设置
