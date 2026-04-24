@@ -25,6 +25,7 @@
 
 | 文档 | 用途 |
 |------|------|
+| 🔥 [DEEP_AUDIT_V3.md](roadmap/DEEP_AUDIT_V3.md) | **深度审计**：市场+监管+代码+ 5 personas 用户旅程断点 + 修改清单 |
 | ⭐ [PRODUCT_STRATEGY_V3.md](roadmap/PRODUCT_STRATEGY_V3.md) | **战略过滤器**：三车道验证/差异化/规模化 + Kill Criteria + 不做清单 |
 | [DEVELOPMENT_ROADMAP.md](roadmap/DEVELOPMENT_ROADMAP.md) | 4 阶段产品路线图（执行层）|
 | [BUSINESS_ROADMAP_V2.md](roadmap/BUSINESS_ROADMAP_V2.md) | 商业化路线图 V2（执行层）|

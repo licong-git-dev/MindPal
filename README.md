@@ -330,6 +330,7 @@ docker compose up -d
 | 技术 | [docs/technical/TECHNICAL_STRATEGY.md](docs/technical/TECHNICAL_STRATEGY.md) | 深度技术方案 |
 | 技术 | [docs/technical/BACKEND_IMPLEMENTATION_PLAN.md](docs/technical/BACKEND_IMPLEMENTATION_PLAN.md) | 后端实施计划 |
 | 技术 | [docs/technical/HUNYUAN_INTEGRATION_PLAN.md](docs/technical/HUNYUAN_INTEGRATION_PLAN.md) | 混元 3D 整合方案 |
+| 路线 🔥 | [docs/roadmap/DEEP_AUDIT_V3.md](docs/roadmap/DEEP_AUDIT_V3.md) | **深度审计**：市场+代码+ persona 全链路诊断 + 修改清单 |
 | 路线 ⭐ | [docs/roadmap/PRODUCT_STRATEGY_V3.md](docs/roadmap/PRODUCT_STRATEGY_V3.md) | **战略过滤器**：三车道 + Kill Criteria + 不做清单 |
 | 路线 | [docs/roadmap/DEVELOPMENT_ROADMAP.md](docs/roadmap/DEVELOPMENT_ROADMAP.md) | 4 阶段开发路线图（执行层） |
 | 路线 | [docs/roadmap/BUSINESS_ROADMAP_V2.md](docs/roadmap/BUSINESS_ROADMAP_V2.md) | 商业化路线图 V2（执行层） |
