@@ -30,6 +30,7 @@ const MindPalConfig = {
       CHAT_STREAM: (id) => `/api/v1/digital-humans/${id}/chat/stream`,
       HISTORY: (id) => `/api/v1/digital-humans/${id}/history`,
       PERSONALITIES: '/api/v1/digital-humans/options/personalities',
+      PERSONALITIES_GROUPED: '/api/v1/digital-humans/options/personalities/grouped',
       DOMAINS: '/api/v1/digital-humans/options/domains'
     },
 

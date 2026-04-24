@@ -413,6 +413,13 @@ const MindPalAPI = {
     },
 
     /**
+     * 按大类分组的性格选项（返回 { categories: { companion: [...], romantic: [...] } }）
+     */
+    async getPersonalitiesGrouped() {
+      return await MindPalAPI.request(MindPalConfig.API.DIGITAL_HUMANS.PERSONALITIES_GROUPED);
+    },
+
+    /**
      * 获取领域选项列表
      */
     async getDomains() {

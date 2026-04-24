@@ -345,9 +345,146 @@
         flex: 1;
       }
     }
+
+    /* ===== 性格大类 Tab 切换 ===== */
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .category-tab {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--color-text-secondary);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .category-tab:hover { background: rgba(255, 255, 255, 0.1); }
+    .category-tab.active {
+      background: var(--color-primary-1);
+      color: #fff;
+      border-color: var(--color-primary-1);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+    .category-hint {
+      color: var(--color-text-secondary);
+      font-size: 13px;
+      padding: 10px 14px;
+      background: rgba(99, 102, 241, 0.08);
+      border-left: 3px solid var(--color-primary-1);
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    /* ===== 性格卡片增强（新增 sample 行 + category badge） ===== */
+    .personality-card .personality-sample {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      font-style: italic;
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.18);
+      border-radius: 8px;
+      line-height: 1.5;
+      border-left: 2px solid rgba(99, 102, 241, 0.4);
+    }
+    .personality-card .category-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(236, 72, 153, 0.18);
+      color: #f9a8d4;
+      font-weight: 600;
+    }
+    .personality-card .category-badge.romantic {
+      background: rgba(236, 72, 153, 0.18);
+      color: #f9a8d4;
+    }
+
+    /* ===== 骨架屏 ===== */
+    .personality-skeleton {
+      background: linear-gradient(90deg,
+        rgba(148, 163, 184, 0.08) 25%,
+        rgba(148, 163, 184, 0.2) 50%,
+        rgba(148, 163, 184, 0.08) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: var(--radius-lg);
+      height: 140px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ===== 成人认证 modal ===== */
+    .age-gate-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .age-gate-overlay[hidden] { display: none; }
+    .age-gate-card {
+      background: #1e293b;
+      color: #f1f5f9;
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 400px;
+      width: 100%;
+      border-top: 4px solid #ec4899;
+    }
+    .age-gate-card h3 { margin: 0 0 10px; font-size: 18px; }
+    .age-gate-card p { margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #cbd5e1; }
+    .age-gate-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .age-gate-actions button {
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .age-gate-deny {
+      background: rgba(255,255,255,0.1);
+      color: #f1f5f9;
+    }
+    .age-gate-confirm {
+      background: #ec4899;
+      color: #fff;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
+  <!-- 成人认证 modal：切到浪漫陪伴大类时显示一次 -->
+  <div id="ageGate" class="age-gate-overlay" hidden>
+    <div class="age-gate-card">
+      <h3>💝 浪漫陪伴内容说明</h3>
+      <p>
+        浪漫陪伴分类包含虚构情感人物，内容基于健康的情感互动，
+        <strong>不含任何性暗示或身体越界描写</strong>，并内置了内容安全红线。
+        为了健康的产品体验，请确认您<strong>已年满 18 周岁</strong>。
+      </p>
+      <div class="age-gate-actions">
+        <button type="button" class="age-gate-deny" onclick="denyAgeGate()">返回基础</button>
+        <button type="button" class="age-gate-confirm" onclick="confirmAgeGate()">我已满 18 岁</button>
+      </div>
+    </div>
+  </div>
+
   <div class="create-page page-transition">
     <!-- 顶部导航 -->
     <nav class="top-nav">
@@ -396,45 +533,34 @@
         <p class="content-description">选择一个性格类型，或自定义性格特质</p>
       </div>
 
-      <!-- 性格类型选择 -->
+      <!-- 性格类型选择（按大类分 tab，由 API 动态加载） -->
       <div class="personality-section">
         <h3 class="section-title">选择性格类型</h3>
-        <div class="personality-grid">
-          <div class="personality-card" data-personality="gentle" onclick="selectPersonality(this)">
-            <div class="personality-icon">😊</div>
-            <div class="personality-name">温柔体贴</div>
-            <div class="personality-desc">善解人意，温暖细腻，总是给予关怀和支持</div>
-          </div>
 
-          <div class="personality-card" data-personality="energetic" onclick="selectPersonality(this)">
-            <div class="personality-icon">😄</div>
-            <div class="personality-name">活泼开朗</div>
-            <div class="personality-desc">热情洋溢，充满活力，能带来欢乐和正能量</div>
-          </div>
+        <!-- 大类 tab 切换 -->
+        <div class="category-tabs" id="categoryTabs">
+          <button type="button" class="category-tab active" data-category="companion" onclick="switchCategory('companion')">
+            🫶 基础陪伴
+          </button>
+          <button type="button" class="category-tab" data-category="romantic" onclick="switchCategory('romantic')">
+            💝 浪漫陪伴
+          </button>
+        </div>
 
-          <div class="personality-card" data-personality="intellectual" onclick="selectPersonality(this)">
-            <div class="personality-icon">🤓</div>
-            <div class="personality-name">知性理性</div>
-            <div class="personality-desc">逻辑清晰，理性客观，善于分析和解决问题</div>
-          </div>
+        <!-- 大类说明 -->
+        <div class="category-hint" id="categoryHint">
+          友善可爱的日常陪伴，适合倾诉、交流、学习。
+        </div>
 
-          <div class="personality-card" data-personality="humorous" onclick="selectPersonality(this)">
-            <div class="personality-icon">😆</div>
-            <div class="personality-name">幽默风趣</div>
-            <div class="personality-desc">机智诙谐，妙语连珠，总能逗你开心</div>
-          </div>
-
-          <div class="personality-card" data-personality="calm" onclick="selectPersonality(this)">
-            <div class="personality-icon">😌</div>
-            <div class="personality-name">沉稳冷静</div>
-            <div class="personality-desc">成熟稳重，遇事不慌，给人安全感</div>
-          </div>
-
-          <div class="personality-card" data-personality="creative" onclick="selectPersonality(this)">
-            <div class="personality-icon">🎨</div>
-            <div class="personality-name">富有创意</div>
-            <div class="personality-desc">想象力丰富，思维跳跃，总有新奇想法</div>
-          </div>
+        <!-- 动态渲染的卡片网格 -->
+        <div class="personality-grid" id="personalityGrid">
+          <!-- 加载中骨架 -->
+          <div class="personality-skeleton"></div>
+          <div class="personality-skeleton"></div>
+          <div class="personality-skeleton"></div>
+          <div class="personality-skeleton"></div>
+          <div class="personality-skeleton"></div>
+          <div class="personality-skeleton"></div>
         </div>
       </div>
 
@@ -544,23 +670,157 @@
     // 加载数据
     let dhData = JSON.parse(sessionStorage.getItem('create_dh_data') || '{}');
 
-    // 预设性格配置
-    const personalityPresets = {
-      gentle: { liveliness: 40, humor: 30, empathy: 90, initiative: 50, creativity: 40 },
-      energetic: { liveliness: 90, humor: 70, empathy: 60, initiative: 80, creativity: 70 },
-      intellectual: { liveliness: 30, humor: 40, empathy: 50, initiative: 60, creativity: 60 },
-      humorous: { liveliness: 70, humor: 90, empathy: 60, initiative: 70, creativity: 80 },
-      calm: { liveliness: 20, humor: 30, empathy: 70, initiative: 40, creativity: 40 },
-      creative: { liveliness: 60, humor: 60, empathy: 50, initiative: 70, creativity: 95 }
+    // 性格数据源：来自后端 API（失败时降级为静态）
+    // { companion: [...], romantic: [...] }
+    let PERSONALITY_DATA = null;
+    let personalityPresets = {};  // key → base_traits 映射，供 selectPersonality 用
+    let currentCategory = 'companion';
+
+    // 静态兜底（当后端 API 不可用时使用）
+    const STATIC_FALLBACK = {
+      companion: [
+        { key: 'gentle',    name: '温柔体贴', avatar: '🌸', description: '善解人意的知己', sample_line: '今天过得怎么样？', base_traits: { liveliness: 40, humor: 30, empathy: 90, initiative: 50, creativity: 40 } },
+        { key: 'energetic', name: '活泼开朗', avatar: '⚡', description: '元气满满的小太阳', sample_line: '今天想做点什么有趣的事？', base_traits: { liveliness: 90, humor: 70, empathy: 60, initiative: 80, creativity: 70 } },
+        { key: 'wise',      name: '睿智沉稳', avatar: '🦉', description: '能和你聊人生的思考者', sample_line: '让我们从另一个角度看看。', base_traits: { liveliness: 30, humor: 40, empathy: 70, initiative: 40, creativity: 60 } },
+        { key: 'humorous',  name: '幽默风趣', avatar: '😄', description: '段子手好友', sample_line: '今天给你讲个冷笑话。', base_traits: { liveliness: 70, humor: 95, empathy: 60, initiative: 70, creativity: 80 } },
+        { key: 'caring',    name: '关怀备至', avatar: '💝', description: '记得每个细节的贴心朋友', sample_line: '你昨天说的那件事怎么样了？', base_traits: { liveliness: 50, humor: 40, empathy: 95, initiative: 70, creativity: 50 } },
+        { key: 'creative',  name: '创意无限', avatar: '🎨', description: '脑洞大开的合作者', sample_line: '试试从另一个时空想想？', base_traits: { liveliness: 70, humor: 60, empathy: 60, initiative: 80, creativity: 95 } },
+      ],
+      romantic: [
+        { key: 'romantic_ceo',       name: '陆沉 · 霸总', avatar: '🤵', description: '三十岁的集团总裁，外冷内热', sample_line: '开会时我看了眼手机，你发的那条，我看见了。', base_traits: { liveliness: 30, humor: 40, empathy: 60, initiative: 85, creativity: 50 } },
+        { key: 'romantic_senior',    name: '江瑾 · 冷漠学长', avatar: '🎓', description: '物理系学长，嘴硬心软', sample_line: '...你今天吃午饭了吗。别又光喝咖啡。', base_traits: { liveliness: 20, humor: 30, empathy: 55, initiative: 45, creativity: 40 } },
+        { key: 'romantic_childhood', name: '沈星辞 · 温柔青梅', avatar: '🌻', description: '从小一起长大的邻家男孩', sample_line: '今天回家经过你家楼下，阳台的猫又在晒太阳。', base_traits: { liveliness: 65, humor: 55, empathy: 90, initiative: 70, creativity: 55 } },
+        { key: 'romantic_bad_boy',   name: '许南川 · 痞帅学长', avatar: '🎸', description: '乐队主唱，玩世不恭实则重情', sample_line: '哎？你又在加班？等下我去接你。', base_traits: { liveliness: 80, humor: 85, empathy: 65, initiative: 80, creativity: 75 } },
+        { key: 'romantic_doctor',    name: '林砚 · 腹黑医生', avatar: '🩺', description: '温润如玉的外表，腹黑的内心', sample_line: '最近睡眠怎么样？我下班顺路给你带点东西。', base_traits: { liveliness: 40, humor: 50, empathy: 80, initiative: 65, creativity: 50 } },
+        { key: 'romantic_elder',     name: '苏屿 · 温柔哥哥', avatar: '☀️', description: '邻家大哥哥，稳重可靠', sample_line: '累了就过来吧，不用解释什么。', base_traits: { liveliness: 50, humor: 45, empathy: 92, initiative: 60, creativity: 45 } },
+      ],
     };
 
-    // 恢复已保存的数据
-    if (dhData.personality) {
-      const card = document.querySelector(`[data-personality="${dhData.personality}"]`);
-      if (card) {
-        card.classList.add('selected');
-      }
+    const CATEGORY_HINTS = {
+      companion: '友善可爱的日常陪伴，适合倾诉、交流、学习。',
+      romantic:  '精心设计的虚构情感人物，内置内容安全红线，适合 18 岁以上用户。',
+    };
+
+    // 是否已确认年龄（会话级，下次进入页面需再次确认）
+    function hasAgeConfirm() {
+      return sessionStorage.getItem('mindpal_age_18_confirmed') === 'true';
     }
+    function markAgeConfirm() {
+      sessionStorage.setItem('mindpal_age_18_confirmed', 'true');
+    }
+
+    function showAgeGate() {
+      document.getElementById('ageGate').hidden = false;
+    }
+    function confirmAgeGate() {
+      markAgeConfirm();
+      document.getElementById('ageGate').hidden = true;
+      doSwitchCategory('romantic');
+    }
+    function denyAgeGate() {
+      document.getElementById('ageGate').hidden = true;
+      switchCategory('companion');  // 回退到基础
+    }
+
+    // 渲染某个类别的卡片
+    function renderCategory(category) {
+      const grid = document.getElementById('personalityGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      const items = (PERSONALITY_DATA && PERSONALITY_DATA[category]) || STATIC_FALLBACK[category] || [];
+      if (items.length === 0) {
+        grid.innerHTML = '<div style="padding:20px;color:var(--color-text-secondary);">暂无可选性格</div>';
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+      items.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'personality-card';
+        card.dataset.personality = item.key;
+        card.dataset.category = item.category || category;
+        if (dhData.personality === item.key) card.classList.add('selected');
+        card.onclick = () => selectPersonalityByKey(item.key);
+
+        const isRomantic = (item.category || category) === 'romantic';
+        const badge = isRomantic ? '<span class="category-badge romantic">浪漫陪伴</span>' : '';
+
+        card.innerHTML = `
+          ${badge}
+          <div class="personality-icon">${item.avatar || '🤖'}</div>
+          <div class="personality-name">${escapeHtml(item.name)}</div>
+          <div class="personality-desc">${escapeHtml(item.description || '')}</div>
+          ${item.sample_line ? `<div class="personality-sample">「${escapeHtml(item.sample_line)}」</div>` : ''}
+        `;
+        frag.appendChild(card);
+      });
+      grid.appendChild(frag);
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // 合并所有类别的 base_traits 到 personalityPresets 供旧逻辑用
+    function rebuildPresetsMap() {
+      personalityPresets = {};
+      const src = PERSONALITY_DATA || STATIC_FALLBACK;
+      Object.values(src).forEach(list => {
+        list.forEach(item => {
+          if (item.base_traits) personalityPresets[item.key] = item.base_traits;
+        });
+      });
+    }
+
+    // 切换大类 tab
+    function switchCategory(category) {
+      if (category === 'romantic' && !hasAgeConfirm()) {
+        showAgeGate();
+        return;
+      }
+      doSwitchCategory(category);
+    }
+
+    function doSwitchCategory(category) {
+      currentCategory = category;
+      document.querySelectorAll('.category-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.category === category);
+      });
+      document.getElementById('categoryHint').textContent = CATEGORY_HINTS[category] || '';
+      renderCategory(category);
+    }
+
+    // 初始化：拉后端数据
+    async function loadPersonalities() {
+      try {
+        const resp = await MindPalAPI.digitalHumans.getPersonalitiesGrouped();
+        if (resp && resp.code === 0 && resp.data && resp.data.categories) {
+          PERSONALITY_DATA = resp.data.categories;
+        }
+      } catch (e) {
+        console.warn('[personalities] fallback to static data:', e);
+      }
+      rebuildPresetsMap();
+
+      // 根据 dhData.personality 决定初始 tab
+      if (dhData.personality && (STATIC_FALLBACK.romantic.some(x => x.key === dhData.personality) ||
+          (PERSONALITY_DATA && (PERSONALITY_DATA.romantic || []).some(x => x.key === dhData.personality)))) {
+        markAgeConfirm();
+        currentCategory = 'romantic';
+      }
+      doSwitchCategory(currentCategory);
+    }
+
+    // 页面加载后立即拉取
+    loadPersonalities();
+
 
     if (dhData.traits) {
       Object.keys(dhData.traits).forEach(trait => {
@@ -576,18 +836,12 @@
       document.getElementById('customPersonality').value = dhData.customPersonality;
     }
 
-    // 选择性格类型
-    function selectPersonality(element) {
-      // 移除所有选中状态
+    // 按 key 选中性格卡片（新版，由动态渲染调用）
+    function selectPersonalityByKey(personalityType) {
       document.querySelectorAll('.personality-card').forEach(card => {
-        card.classList.remove('selected');
+        card.classList.toggle('selected', card.dataset.personality === personalityType);
       });
 
-      // 选中当前卡片
-      element.classList.add('selected');
-
-      // 获取性格类型
-      const personalityType = element.dataset.personality;
       dhData.personality = personalityType;
 
       // 应用预设特质
@@ -600,11 +854,17 @@
             document.getElementById(trait + 'Value').textContent = preset[trait];
           }
         });
-
         dhData.traits = { ...preset };
       }
 
       sessionStorage.setItem('create_dh_data', JSON.stringify(dhData));
+    }
+
+    // 保留旧接口（向后兼容）：selectPersonality(element) —— 旧代码可能还在调用
+    function selectPersonality(element) {
+      if (element && element.dataset && element.dataset.personality) {
+        selectPersonalityByKey(element.dataset.personality);
+      }
     }
 
     // 更新特质值

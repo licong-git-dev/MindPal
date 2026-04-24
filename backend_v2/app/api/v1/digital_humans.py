@@ -886,6 +886,25 @@ async def get_domain_options():
     )
 
 
+@router.get("/options/personalities/grouped", response_model=APIResponse)
+async def get_personalities_grouped():
+    """按大类分组的性格选项 (companion / romantic / ...)
+
+    前端 create-dh-step2.html 按 tab 切换使用。
+    返回格式:
+      {
+        "companion": [{key,name,description,avatar,sample_line,base_traits}, ...],
+        "romantic":  [...]
+      }
+    """
+    personality_engine = get_personality_engine()
+    return APIResponse(
+        code=0,
+        message="success",
+        data={"categories": personality_engine.get_personalities_by_category()}
+    )
+
+
 # ===================== 长期记忆可视化 API =====================
 #
 # 设计原则：
