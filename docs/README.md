@@ -40,6 +40,7 @@
 | [evaluation/](compliance/evaluation/) | 安全评测集运营 SOP + 7 类种子题库 + run_safety_eval.py 运行脚本 | GAP-1 / GAP-2 |
 | [legal/](compliance/legal/) | 服务协议 / 隐私政策 / 未成年声明 三份法律文件模板（待律师审查）| — |
 | [submission/](compliance/submission/) | 公司资质 checklist + 事件处置 SLA + 40 项自检 + 提交包目录 | GAP-8 |
+| [operations/](compliance/operations/) | 🔥 **运营执行包**：分身 agent 策略 + 律所委托 + 项目跟踪 + 网信办提交 + 一页式执行手册 | 跨 GAP |
 
 ### 🛣️ [roadmap/](roadmap/) · 路线与进度
 
