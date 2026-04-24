@@ -21,6 +21,16 @@
 | [BACKEND_IMPLEMENTATION_PLAN.md](technical/BACKEND_IMPLEMENTATION_PLAN.md) | 后端详细实施计划 |
 | [HUNYUAN_INTEGRATION_PLAN.md](technical/HUNYUAN_INTEGRATION_PLAN.md) | 腾讯混元 3D 世界整合方案 |
 
+### 📋 [compliance/](compliance/) · 合规文档（备案 / 隐私 / 内容审核）
+
+| 文档 | 用途 |
+|------|------|
+| [README.md](compliance/README.md) | 合规目录导航 + 核心结论 |
+| [01_BEIAN_OVERVIEW.md](compliance/01_BEIAN_OVERVIEW.md) | 三类备案关系 + MindPal 适用情形判断 |
+| [02_ALGORITHM_SAFETY_SELF_ASSESSMENT.md](compliance/02_ALGORITHM_SAFETY_SELF_ASSESSMENT.md) | ⭐ 算法安全自评估报告完整模板（按 TC260-003）|
+| [03_SUPPORTING_MATERIALS_CHECKLIST.md](compliance/03_SUPPORTING_MATERIALS_CHECKLIST.md) | 证据材料清单（代码 → 材料） |
+| [04_FAQ.md](compliance/04_FAQ.md) | 备案实务 15 问 |
+
 ### 🛣️ [roadmap/](roadmap/) · 路线与进度
 
 | 文档 | 用途 |
