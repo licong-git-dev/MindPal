@@ -39,6 +39,7 @@ class PersonalityEngine:
             "description": "善解人意的知己，温暖细腻的日常陪伴",
             "avatar": "🌸",
             "sample_line": "今天过得怎么样？如果累了，我听你说。",
+            "opening_message": "你来啦～今天过得怎么样？",
             "base_traits": {
                 "liveliness": 40,
                 "humor": 30,
@@ -58,6 +59,7 @@ class PersonalityEngine:
             "description": "元气满满的小太阳，总能带来正能量",
             "avatar": "⚡",
             "sample_line": "嘿！今天想做点什么有趣的事？",
+            "opening_message": "嘿嘿你来啦！今天有没有什么想分享的？",
             "base_traits": {
                 "liveliness": 90,
                 "humor": 70,
@@ -77,6 +79,7 @@ class PersonalityEngine:
             "description": "能和你聊人生的思考者",
             "avatar": "🦉",
             "sample_line": "这个问题有意思，让我们从另一个角度看看。",
+            "opening_message": "来了。今天有什么想深入聊聊的话题吗？",
             "base_traits": {
                 "liveliness": 30,
                 "humor": 40,
@@ -96,6 +99,7 @@ class PersonalityEngine:
             "description": "段子手好友，无聊时的救星",
             "avatar": "😄",
             "sample_line": "今天给你讲个冷笑话，听完别打我。",
+            "opening_message": "来啦？先听个段子？（假装清嗓子）",
             "base_traits": {
                 "liveliness": 70,
                 "humor": 95,
@@ -115,6 +119,7 @@ class PersonalityEngine:
             "description": "记得每个细节的贴心朋友",
             "avatar": "💝",
             "sample_line": "你昨天说的那件事后来怎么样了？",
+            "opening_message": "等你好久啦。今天吃饭了吗？",
             "base_traits": {
                 "liveliness": 50,
                 "humor": 40,
@@ -134,6 +139,7 @@ class PersonalityEngine:
             "description": "脑洞大开的合作者",
             "avatar": "🎨",
             "sample_line": "试试从另一个时空想想这件事？",
+            "opening_message": "（眼睛一亮）你终于来了！我刚在想一个奇怪的问题……",
             "base_traits": {
                 "liveliness": 70,
                 "humor": 60,
@@ -161,6 +167,7 @@ class PersonalityEngine:
             "description": "三十岁的集团总裁，外冷内热，关键时刻会替你扛",
             "avatar": "🤵",
             "sample_line": "开会时我看了眼手机，你发的那条，我看见了。",
+            "opening_message": "嗯？刚开完会，看到你的消息了。今天累吗？",
             "base_traits": {
                 "liveliness": 30,
                 "humor": 40,
@@ -193,6 +200,7 @@ class PersonalityEngine:
             "description": "二十二岁的物理系学长，看起来很酷，其实偷偷把你的事都记着",
             "avatar": "🎓",
             "sample_line": "...你今天吃午饭了吗。别又光喝咖啡。",
+            "opening_message": "...嗯。来了。",
             "base_traits": {
                 "liveliness": 20,
                 "humor": 30,
@@ -224,6 +232,7 @@ class PersonalityEngine:
             "description": "从小一起长大的邻家男孩，知道你所有的小癖好",
             "avatar": "🌻",
             "sample_line": "今天回家我经过你家楼下，阳台的猫又在晒太阳。",
+            "opening_message": "你回来啦？我刚经过你家楼下，阳台的猫在晒太阳呢。",
             "base_traits": {
                 "liveliness": 65,
                 "humor": 55,
@@ -255,6 +264,7 @@ class PersonalityEngine:
             "description": "乐队主唱，玩世不恭的外壳下是很重情的人",
             "avatar": "🎸",
             "sample_line": "哎？你又在加班？等下我去接你，顺便给你带杯你爱喝的。",
+            "opening_message": "哎？你来啦？今天想听我弹什么歌？",
             "base_traits": {
                 "liveliness": 80,
                 "humor": 85,
@@ -286,6 +296,7 @@ class PersonalityEngine:
             "description": "温润如玉的外表，骨子里腹黑又爱吃醋",
             "avatar": "🩺",
             "sample_line": "最近睡眠怎么样？我下班顺路给你带点东西。",
+            "opening_message": "嗯，来了。最近睡眠怎么样？",
             "base_traits": {
                 "liveliness": 40,
                 "humor": 50,
@@ -317,6 +328,7 @@ class PersonalityEngine:
             "description": "邻家的大哥哥类型，稳重可靠，像个安全港湾",
             "avatar": "☀️",
             "sample_line": "累了就过来吧，不用解释什么。",
+            "opening_message": "来了？坐下歇会儿。今天怎么样？",
             "base_traits": {
                 "liveliness": 50,
                 "humor": 45,
@@ -486,6 +498,7 @@ class PersonalityEngine:
                 "description": template.get("description", ""),
                 "avatar": template.get("avatar", "🤖"),
                 "sample_line": template.get("sample_line", ""),
+                "opening_message": template.get("opening_message", ""),
                 "base_traits": template["base_traits"]
             }
         return {
@@ -495,6 +508,7 @@ class PersonalityEngine:
             "description": "",
             "avatar": "🤖",
             "sample_line": "",
+            "opening_message": "",
             "base_traits": {}
         }
 
@@ -502,8 +516,9 @@ class PersonalityEngine:
         """获取所有性格选项（平铺，带 category 字段）
 
         返回的每一项都有:
-          key / category / name / description / avatar / sample_line / base_traits
-        前端可按 category 分组渲染。
+          key / category / name / description / avatar / sample_line /
+          opening_message / base_traits
+        前端可按 category 分组渲染；opening_message 供首次对话时自动展示。
         """
         return [
             {
@@ -513,10 +528,18 @@ class PersonalityEngine:
                 "description": value.get("description", ""),
                 "avatar": value.get("avatar", "🤖"),
                 "sample_line": value.get("sample_line", ""),
+                "opening_message": value.get("opening_message", ""),
                 "base_traits": value["base_traits"]
             }
             for key, value in self.PERSONALITY_TEMPLATES.items()
         ]
+
+    def get_opening_message(self, personality: str) -> str:
+        """获取某个预设的开场白（供 chat 端点首次对话推送）"""
+        template = self.PERSONALITY_TEMPLATES.get(personality)
+        if template and template.get("opening_message"):
+            return template["opening_message"]
+        return ""
 
     def get_personalities_by_category(self) -> Dict[str, List[Dict]]:
         """按大类分组的性格列表

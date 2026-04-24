@@ -919,6 +919,14 @@ async def chat_stream_with_dh(
             # 持久化失败不影响已发给用户的回复
             pass
 
+        # V4 · MoT-3: 返回 top memory 供前端记忆气泡浮出
+        top_memory = None
+        try:
+            if dialogue_context.relevant_memories:
+                top_memory = dialogue_context.relevant_memories[0].get("summary")
+        except Exception:
+            top_memory = None
+
         # done 帧（含合规生成标识 —《深度合成管理规定》§16-17）
         done_data = {
             "full_response": full_response,
@@ -928,6 +936,7 @@ async def chat_stream_with_dh(
             "crisis_detected": metadata["crisis"]["detected"],
             "crisis_level": metadata["crisis"]["level"],
             "memories_used": metadata["memories_used"],
+            "top_memory": top_memory,  # V4
             "model_used": metadata["model"],
             "generated_metadata": {
                 "generated_by": "MindPal AI",
