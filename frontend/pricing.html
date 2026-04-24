@@ -733,8 +733,8 @@
       }
     }
 
-    // 订阅套餐
-    async function subscribePlan(planType) {
+    // 订阅套餐 —— 调用真实后端 /orders 接口创建支付宝订单
+    async function subscribePlan(planType, paymentMethod = 'alipay') {
       // 检查登录状态
       if (!MindPalAuth.isLoggedIn()) {
         alert('请先登录');
@@ -742,36 +742,94 @@
         return;
       }
 
-      // 确定订阅类型
+      // 确定订阅类型（月/年）
       const subscriptionType = currentBilling === 'monthly' ? 'monthly' : 'yearly';
       const price = subscriptionType === 'monthly' ? 19.9 : 199;
 
+      // 映射到后端 RechargeProduct 的 product_id（需要后端预置，见 scripts/seed_products.py）
+      const productId = subscriptionType === 'monthly' ? 'member_monthly' : 'member_yearly';
+
       // 追踪点击付费按钮事件
-      MindPalAnalytics.trackPaymentClick(subscriptionType, price);
+      if (typeof MindPalAnalytics !== 'undefined') {
+        MindPalAnalytics.trackPaymentClick(subscriptionType, price);
+      }
 
       // 确认订阅
       const confirmed = confirm(
-        `确认订阅会员版 (${subscriptionType === 'monthly' ? '月付' : '年付'})?\n` +
-        `价格: ¥${price}\n\n` +
+        `确认订阅会员版 (${subscriptionType === 'monthly' ? '月付 ¥19.9' : '年付 ¥199'})?\n\n` +
+        `支付方式: ${paymentMethod === 'alipay' ? '支付宝' : '微信'}\n` +
         `点击确定后将跳转到支付页面。`
       );
-
       if (!confirmed) return;
 
+      const cta = document.getElementById('memberCTA');
+      const originalText = cta ? cta.textContent : '';
+      if (cta) { cta.disabled = true; cta.textContent = '订单创建中...'; }
+
       try {
-        // TODO: 调用订阅API
-        // const result = await MindPalAPI.subscription.create({
-        //   plan: 'member',
-        //   billing: subscriptionType
-        // });
+        const token = MindPalAuth.getAuthToken();
+        const resp = await fetch(
+          `${MindPalConfig.API_BASE_URL}${MindPalConfig.API.PAYMENT.CREATE_ORDER}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token && !token.startsWith('temp_') ? `Bearer ${token}` : '',
+            },
+            body: JSON.stringify({
+              product_id: productId,
+              quantity: 1,
+              payment_method: paymentMethod,
+            }),
+          }
+        );
 
-        // 暂时跳转到会员中心(订阅功能开发中)
-        alert('订阅功能开发中，敬请期待！');
-        // window.location.href = 'subscription.html';
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          const detail = err.detail || err.message || `HTTP ${resp.status}`;
+          throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+        }
 
+        const result = await resp.json();
+        const data = result.data || {};
+        const orderNo = data.order_no;
+        const payUrl = data.pay_url;
+
+        if (!orderNo) throw new Error('后端未返回订单号');
+
+        // 保存订单号到 sessionStorage，用户回来后可查询状态
+        sessionStorage.setItem('mindpal_pending_order', orderNo);
+
+        if (payUrl) {
+          // 支付宝电脑网页支付 / 当面付会返回 html form 或 qr 链接
+          // 最简做法：新窗口打开支付页
+          window.open(payUrl, '_blank');
+          alert(
+            `支付页已在新窗口打开。\n\n` +
+            `完成支付后请回到本页，点击"我已完成支付"查询订单状态。\n\n` +
+            `订单号: ${orderNo}`
+          );
+          // 跳转到订阅中心供用户查状态
+          window.location.href = `subscription.html?order=${orderNo}`;
+        } else {
+          // 无 pay_url（可能是 wechat 的二维码或未配置支付宝）—— 跳会员中心
+          alert(
+            `订单已创建 (${orderNo})，但未拿到支付链接。\n\n` +
+            `请在会员中心查看订单状态，或联系客服。`
+          );
+          window.location.href = `subscription.html?order=${orderNo}`;
+        }
       } catch (error) {
         console.error('订阅失败:', error);
-        alert('订阅失败: ' + error.message);
+        // 识别"支付未配置"类错误给出友好提示
+        const msg = String(error.message || error);
+        if (msg.includes('Alipay not configured') || msg.includes('not configured')) {
+          alert('支付通道尚未配置，请联系管理员。\n\n详情见 docs/ops/DEPLOYMENT.md 中 ALIPAY 配置章节。');
+        } else {
+          alert('订阅失败: ' + msg);
+        }
+      } finally {
+        if (cta) { cta.disabled = false; cta.textContent = originalText || '立即订阅'; }
       }
     }
 

@@ -119,14 +119,26 @@ async def create_order(
 ):
     """
     创建充值订单
+
+    注：Player 是游戏化模块的实体，但订阅购买不依赖游戏角色。
+    如当前用户没有 Player 记录（例如纯 AI 陪伴用户），自动创建占位记录
+    以满足外键约束。游戏化代码清理后（P2-1）此 fallback 可一起删除。
     """
-    # 获取角色
+    # 获取或创建 Player（占位以满足 order.player_id 外键）
     stmt = select(Player).where(Player.user_id == user_id)
     result = await db.execute(stmt)
     player = result.scalar_one_or_none()
 
     if not player:
-        raise HTTPException(status_code=404, detail="Player not found")
+        # 读 User 获取 username 作为 nickname 默认值
+        user_stmt = select(User).where(User.id == user_id)
+        user_result = await db.execute(user_stmt)
+        user_obj = user_result.scalar_one_or_none()
+        nickname = (user_obj.username if user_obj else None) or f"user_{user_id}"
+
+        player = Player(user_id=user_id, nickname=nickname)
+        db.add(player)
+        await db.flush()  # 取回 id 而不 commit（和下面创建 order 一起 commit）
 
     # 获取商品
     stmt = select(RechargeProduct).where(
