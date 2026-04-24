@@ -343,12 +343,34 @@ yield f"event: done\ndata: {json.dumps({'full_response': ...})}\n\n"
 
 ### P2：清理技术债（与 P1 并行）
 
-#### P2-1. 砍掉游戏化代码【2 天】
-**目标**：产品不是游戏，清掉冲突代码
-- 删除或归档：`backend_v2/app/models/` 的 inventory/quest/social 部分
-- 删除：`api/v1/` 的 inventory/shop/quest/party/leaderboard/achievement/three_keys
-- 保留但改名：`chat.py`（游戏多人聊天）→ 改用于用户群聊或直接删
-- `docs/business/prd-details/` 里 03-13 号的游戏 PRD 移到 `docs/archive/legacy-game-pivot/`
+#### P2-1. 砍掉游戏化代码【✅ 已完成 2026-04-23】
+**目标**：产品不是游戏，清掉冲突代码 / 统一定位
+
+**第一阶段：禁用游戏化 API 路由**
+- [backend_v2/app/api/v1/__init__.py](../../backend_v2/app/api/v1/__init__.py) 大幅简化：
+  从 19 个 router 降到 5 个核心 router（auth / digital_humans / voice /
+  payment / analytics），其余 14 个游戏化 router 不再注册
+- [backend_v2/app/main.py](../../backend_v2/app/main.py) root endpoint 的 endpoints
+  导航同步精简
+- 代码文件仍保留在 `api/v1/` 下，避免其他代码还在 import 时的破坏性崩塌
+
+**第二阶段：归档游戏化 PRD 文档**
+- 新建 [docs/archive/legacy-game-pivot/](../archive/legacy-game-pivot/) 目录
+- `git mv docs/business/prd-details/` → `docs/archive/legacy-game-pivot/prd-details/`
+  （完整 14 份游戏 PRD 一次性归档，保留 git 历史）
+- 归档目录顶部放 README 明确说明：
+  - 为什么归档（方向收敛）
+  - 什么情况下可能再用
+  - 请勿：新代码 import / 当作现行需求 / 向新人推荐
+- 更新 docs/README.md 文档导航，移除 business/prd-details 链接，新增 archive 章节
+
+**未触动**（保留，因为其他路径仍引用 Player 模型作数据 key）:
+- `backend_v2/app/models/player.py` / social.py / inventory.py 等 ORM 文件
+  保留，payment.py 的 Player fallback 仍依赖 Player 记录（见 P0-3）
+- `backend_v2/app/services/npc/` / three_keys/ / achievement_loader.py 保留，
+  供未来可能的"数字人商业化"参考（卡池 / 剧情包 / 等）
+
+**验证**: 5 个保留路由 py_compile 全部通过，active set 校验脚本已通过
 
 #### P2-2. 归档 backend/（Flask MVP）【1 天】
 **做法**：把 `backend/` 目录整个 `git mv` 到 `archive/backend-flask-mvp/`

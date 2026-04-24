@@ -1,51 +1,49 @@
 """
 MindPal Backend V2 - API V1 Package
+
+当前激活的路由仅为 AI 数字人陪伴主链路。游戏化模块（player/quest/
+inventory/shop/party/achievement/leaderboard/three_keys/ws/社交聊天）
+是历史方向摇摆的遗留，不再对外暴露。
+
+相关决策背景见:
+  docs/roadmap/DEEP_AUDIT_V3.md  §"架构重债"
+  docs/roadmap/PRODUCT_STRATEGY_V3.md  §"不做清单"
 """
 
 from fastapi import APIRouter
 
+# ==================== 激活的核心路由（AI 陪伴主链路） ====================
 from app.api.v1.auth import router as auth_router
-from app.api.v1.player import router as player_router
-from app.api.v1.dialogue import router as dialogue_router
-from app.api.v1.inventory import router as inventory_router
-from app.api.v1.shop import router as shop_router
-from app.api.v1.quest import router as quest_router
-from app.api.v1.social import router as social_router
-from app.api.v1.chat import router as chat_router
-from app.api.v1.party import router as party_router
-from app.api.v1.achievement import router as achievement_router
-from app.api.v1.leaderboard import router as leaderboard_router
-from app.api.v1.memory import router as memory_router
-from app.api.v1.ai_service import router as ai_service_router
-from app.api.v1.three_keys import router as three_keys_router
 from app.api.v1.voice import router as voice_router
 from app.api.v1.payment import router as payment_router
-from app.api.v1.ws import router as ws_router
 from app.api.v1.digital_humans import router as digital_humans_router
 from app.api.v1.analytics import router as analytics_router
+
+# ==================== 已禁用的游戏化路由（代码文件保留在 api/v1/ 供将来参考） ====================
+# player_router        / prefix="/player"        角色 CRUD
+# dialogue_router      / prefix="/dialogue"      NPC 对话（已被 digital_humans 替代）
+# inventory_router     / prefix="/inventory"     背包
+# shop_router          / prefix="/shop"          商城
+# quest_router         / prefix="/quests"        任务
+# social_router        / prefix="/social"        游戏社交
+# chat_router          / prefix="/chat"          玩家多人聊天 WebSocket
+# party_router         / prefix="/party"         队伍
+# achievement_router   / prefix="/achievements"  成就
+# leaderboard_router   / prefix="/leaderboard"   排行榜
+# memory_router        / prefix="/memory"        老版 Player-based 记忆
+#                                                （已被 /digital-humans/{id}/memories 替代）
+# ai_service_router    / prefix="/ai"            AI 服务管理（与 LLM 路由耦合）
+# three_keys_router    / prefix="/three-keys"    三钥匙挑战
+# ws_router            /                         WebSocket（游戏 chat 依赖）
 
 # 创建根路由
 api_router = APIRouter()
 
-# 注册子路由
+# 注册核心子路由（仅 AI 陪伴链路）
 api_router.include_router(auth_router, prefix="/auth", tags=["认证"])
-api_router.include_router(player_router, prefix="/player", tags=["角色"])
-api_router.include_router(dialogue_router, prefix="/dialogue", tags=["对话"])
-api_router.include_router(inventory_router, prefix="/inventory", tags=["背包"])
-api_router.include_router(shop_router, prefix="/shop", tags=["商城"])
-api_router.include_router(quest_router, prefix="/quests", tags=["任务"])
-api_router.include_router(social_router, prefix="/social", tags=["社交"])
-api_router.include_router(chat_router, prefix="/chat", tags=["聊天"])
-api_router.include_router(party_router, prefix="/party", tags=["队伍"])
-api_router.include_router(achievement_router, prefix="/achievements", tags=["成就"])
-api_router.include_router(leaderboard_router, prefix="/leaderboard", tags=["排行榜"])
-api_router.include_router(memory_router, prefix="/memory", tags=["记忆"])
-api_router.include_router(ai_service_router, prefix="/ai", tags=["AI服务"])
-api_router.include_router(three_keys_router, prefix="/three-keys", tags=["三钥匙挑战"])
+api_router.include_router(digital_humans_router, prefix="/digital-humans", tags=["数字人"])
 api_router.include_router(voice_router, prefix="/voice", tags=["语音"])
 api_router.include_router(payment_router, prefix="/payment", tags=["支付"])
-api_router.include_router(ws_router, tags=["WebSocket"])
-api_router.include_router(digital_humans_router, prefix="/digital-humans", tags=["数字人"])
 api_router.include_router(analytics_router, prefix="/analytics", tags=["埋点分析"])
 
 

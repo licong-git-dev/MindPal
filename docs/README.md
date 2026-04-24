@@ -49,7 +49,12 @@
 | [DEVELOPMENT_PLAN.md](business/DEVELOPMENT_PLAN.md) | 开发计划 V1 |
 | [DEVELOPMENT_PLAN_V2.md](business/DEVELOPMENT_PLAN_V2.md) | 开发计划 V2 |
 | [MindPaL.pdf](business/MindPaL.pdf) | 完整商业计划书 PDF |
-| [prd-details/](business/prd-details/) | 14 份游戏化 PRD 细化文档 |
+
+### 🗄️ [archive/](archive/) · 已归档（请勿作为现行参考）
+
+| 子目录 | 为什么归档 |
+|--------|-----------|
+| [legacy-game-pivot/](archive/legacy-game-pivot/) | 历史"元宇宙游戏"方向的 14 份 PRD —— P2-1 战略收敛时归档 |
 
 ### 🔬 [research/](research/) · 外部调研
 

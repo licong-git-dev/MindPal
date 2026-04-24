@@ -87,21 +87,10 @@ async def root():
         "docs": "/docs",
         "endpoints": {
             "auth": "/api/v1/auth",
-            "player": "/api/v1/player",
-            "dialogue": "/api/v1/dialogue",
-            "inventory": "/api/v1/inventory",
-            "shop": "/api/v1/shop",
-            "quests": "/api/v1/quests",
-            "social": "/api/v1/social",
-            "chat": "/api/v1/chat",
-            "party": "/api/v1/party",
-            "achievements": "/api/v1/achievements",
-            "leaderboard": "/api/v1/leaderboard",
-            "memory": "/api/v1/memory",
-            "ai": "/api/v1/ai",
-            "three_keys": "/api/v1/three-keys",
+            "digital_humans": "/api/v1/digital-humans",
             "voice": "/api/v1/voice",
             "payment": "/api/v1/payment",
+            "analytics": "/api/v1/analytics",
         }
     }
 
