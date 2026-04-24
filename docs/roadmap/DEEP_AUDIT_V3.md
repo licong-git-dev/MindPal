@@ -283,24 +283,63 @@ yield f"event: done\ndata: {json.dumps({'full_response': ...})}\n\n"
 **为什么押这个**：筑梦岛/星野/Character.AI/豆包都没有可视化记忆 UI，
 这是市场研究确认的差异化护城河（详见本文第一部分）。
 
-#### P1-2. 乙女向 / 角色扮演人格大类【3 天】
+#### P1-2. 乙女向 / 角色扮演人格大类【✅ 已完成 2026-04-23】
 **目标**：新增"浪漫陪伴"人格类别，下 6 个预设男主
-**文件**：[create-dh-step2.html](../../frontend/create-dh-step2.html)
-- 在现有"温柔/活泼/知性…"6 个性格外，加一个"浪漫陪伴"大类
-- 下拉选择：霸总 / 冷漠学长 / 温柔青梅 / 痞帅学长 / 腹黑医生 / 温柔哥哥 （参考筑梦岛）
-- 每个预设对应详细 system prompt 模板（`backend_v2/app/services/personality_engine.py` 扩展）
+**完成文件**：
+- 后端：[backend_v2/app/services/personality_engine.py](../../backend_v2/app/services/personality_engine.py)
+  扩展 `PERSONALITY_TEMPLATES` 字段（+category/description/avatar/sample_line），
+  新增 6 个 `romantic_*` 预设 + 安全红线自动拼接，新增
+  `get_personalities_by_category()` 方法
+- 后端 API：新增 `GET /api/v1/digital-humans/options/personalities/grouped`
+- 前端：[frontend/create-dh-step2.html](../../frontend/create-dh-step2.html)
+  动态 tab 切换（基础陪伴 / 浪漫陪伴）+ 骨架屏 + 年龄 gate + 卡片渲染
+- 前端支撑：config.js 加 `PERSONALITIES_GROUPED` 常量，api.js 加 `getPersonalitiesGrouped()`
 
-**注意**：内容合规设计 —— 免费版对话偏轻度；成人内容强制年龄认证（如果做）。
+**6 个虚构人物预设**：
+- romantic_ceo       陆沉 · 霸总 🤵
+- romantic_senior    江瑾 · 冷漠学长 🎓
+- romantic_childhood 沈星辞 · 温柔青梅 🌻
+- romantic_bad_boy   许南川 · 痞帅学长 🎸
+- romantic_doctor    林砚 · 腹黑医生 🩺
+- romantic_elder     苏屿 · 温柔哥哥 ☀️
 
-#### P1-3. 语音交互最小版【5 天】
+每个预设 system prompt 含：背景 / 性格 / 说话风格 / 互动 / 绝不做 五大章，
+自动拼接 `_ROMANTIC_SAFETY_RULES`（6 条硬约束：禁色情/暴力/未成年/违法/等）。
+
+#### P1-3. 语音交互最小版【✅ 已完成 2026-04-23】
 **目标**：用户能用语音发消息 + 听 AI 语音回复
-- 复用 [voice/asr.py](../../backend_v2/app/services/voice/asr.py) 和 [voice/tts.py](../../backend_v2/app/services/voice/tts.py)
-- 前端 chat.html 加麦克风按钮 + 音频波形 + 自动播放回复
+**完成文件**：
+- 前端 [frontend/js/api.js](../../frontend/js/api.js) 新增 `voice` 模块：
+  `asrUpload(blob, format, sampleRate)` / `ttsSynthesize(text, voice, format)` / `getVoices()`
+- 前端 [frontend/chat.html](../../frontend/chat.html)：
+  - `toggleVoiceInput()` 真实 MediaRecorder 录音 → 停止后上传 `/voice/asr/upload`
+    → 文本填入输入框（用户可编辑后再发送）
+  - 每条 AI 消息追加扬声器按钮 🔊 → 点击调 `/voice/tts` 下载 Blob → `<audio>.play()`
+  - 录音中 UI：红色 + `pulseRec` 脉冲光晕
+  - 浏览器不支持 MediaRecorder / 拒绝麦克风权限都有友好提示
 
-#### P1-4. Redis LLM 缓存【2 天】
-**目标**：降 30%+ LLM 成本
-- 用户消息 hash → 先查缓存 → 命中则直接返回
-- 对通用 QA 型问题有效（"你几岁？"等）；情感/记忆相关的不缓存
+**已知限制**：浏览器默认 webm/opus，阿里云 ASR 主要支持 wav/mp3/pcm；
+生产前需要前端 Web Audio API 转 wav 或后端加 ffmpeg 转换层。
+
+#### P1-4. Redis LLM 缓存【✅ 已完成 2026-04-23】
+**目标**：降 20-30% LLM 调用成本
+**完成文件**：
+- [backend_v2/app/core/cache.py](../../backend_v2/app/core/cache.py) 新建（350+ 行）
+  - 三后端抽象：`NullCache` / `InMemoryCache` / `RedisCache`
+  - Key 生成：`llm_cache_key(model, messages, system_prompt, temperature)`
+    → sha256 稳定 hash，浮点温度规范化到 3 位小数
+  - Skip 策略：`should_skip_cache()` — 危机模式 / 高温 / 极短极长消息
+  - 流式兼容：`fake_stream_from_cache()` 把缓存文本按 16 字符分段回放
+- digital_humans.py 的 chat 和 chat_stream 都集成了缓存查/写
+- SSE start 帧新增 `cache_hit: bool` 字段供前端监控
+- .env.example 补 `REDIS_URL` / `CACHE_ENABLED` / `CACHE_TTL_SECONDS`
+
+**功能测试已过**：key 稳定性、skip 策略、TTL 过期、NullCache fallback 全部绿灯。
+
+**预期收益**：
+- 高频问候"你好"、"在吗"命中率 > 50%
+- 相同预设的常见提问（"你是谁"、"几岁"）几乎 100% 命中
+- 浪漫预设开场白场景大量命中
 
 ### P2：清理技术债（与 P1 并行）
 
