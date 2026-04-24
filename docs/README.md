@@ -21,7 +21,9 @@
 | [BACKEND_IMPLEMENTATION_PLAN.md](technical/BACKEND_IMPLEMENTATION_PLAN.md) | 后端详细实施计划 |
 | [HUNYUAN_INTEGRATION_PLAN.md](technical/HUNYUAN_INTEGRATION_PLAN.md) | 腾讯混元 3D 世界整合方案 |
 
-### 📋 [compliance/](compliance/) · 合规文档（备案 / 隐私 / 内容审核）
+### 📋 [compliance/](compliance/) · 合规文档（备案 / 隐私 / 内容审核 / 评测 / 提交）
+
+**顶层指引**：
 
 | 文档 | 用途 |
 |------|------|
@@ -30,6 +32,14 @@
 | [02_ALGORITHM_SAFETY_SELF_ASSESSMENT.md](compliance/02_ALGORITHM_SAFETY_SELF_ASSESSMENT.md) | ⭐ 算法安全自评估报告完整模板（按 TC260-003）|
 | [03_SUPPORTING_MATERIALS_CHECKLIST.md](compliance/03_SUPPORTING_MATERIALS_CHECKLIST.md) | 证据材料清单（代码 → 材料） |
 | [04_FAQ.md](compliance/04_FAQ.md) | 备案实务 15 问 |
+
+**子目录**：
+
+| 目录 | 内容 | 对应 GAP |
+|------|------|---------|
+| [evaluation/](compliance/evaluation/) | 安全评测集运营 SOP + 7 类种子题库 + run_safety_eval.py 运行脚本 | GAP-1 / GAP-2 |
+| [legal/](compliance/legal/) | 服务协议 / 隐私政策 / 未成年声明 三份法律文件模板（待律师审查）| — |
+| [submission/](compliance/submission/) | 公司资质 checklist + 事件处置 SLA + 40 项自检 + 提交包目录 | GAP-8 |
 
 ### 🛣️ [roadmap/](roadmap/) · 路线与进度
 

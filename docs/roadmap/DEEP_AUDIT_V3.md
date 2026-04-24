@@ -430,11 +430,42 @@ P0 阻塞修复       ████████████████  5/5 ✅
 P1 差异化尖刀     ████████████████  4/4 ✅
 P2 技术债清理     ████████████████  2/2 ✅
 P3 合规准备       ████████████████  3/3 ✅（代码 + 文档层面）
-
-代码 / 文档层面的 V3 工作全部收尾。
-剩下的 P3-1 正式提交、P3-2 真实阿里云接入、评测集建立、法律文件编写
-等属于"运维 / 法务 / 运营"工作，不属于代码仓交付范畴。
+P3-1 GAP 9 个     ████████████████  9/9 ✅（工程 6 + 文档 3）
 ```
+
+## 七、P3-1 的 9 个 GAP 全部落地
+
+| GAP | 内容 | 交付 |
+|-----|------|------|
+| GAP-1 | 安全评测集题库 | [evaluation/datasets/*.yaml](../compliance/evaluation/datasets/) 7 类种子题库 + SOP |
+| GAP-2 | 完整评测报告 | [scripts/run_safety_eval.py](../../backend_v2/scripts/run_safety_eval.py) 自动评测脚本 |
+| GAP-3 | 生成内容标识 | digital_humans chat/stream 加 generated_metadata |
+| GAP-4 | 实名认证 | [services/verification/](../../backend_v2/app/services/verification/) + [api/v1/verification.py](../../backend_v2/app/api/v1/verification.py) |
+| GAP-5 | 青少年模式 | [core/minor_mode.py](../../backend_v2/app/core/minor_mode.py) + User 字段 + 3 道运行时守卫 |
+| GAP-6 | 投诉举报入口 | [api/v1/report.py](../../backend_v2/app/api/v1/report.py) + account-data.html 投诉区 |
+| GAP-7 | 管理员告警通道 | crisis_handler._notify_admin 4 类 webhook |
+| GAP-8 | 事件处置 SLA | [submission/INCIDENT_RESPONSE_SLA.md](../compliance/submission/INCIDENT_RESPONSE_SLA.md) |
+| GAP-9 | 网站算法公示 | [frontend/legal.html](../../frontend/legal.html) + 所有页面 footer |
+
+## 八、剩余的外部动作（代码仓无法完成）
+
+这些**不是**代码交付项，而是公司运营/法务/管理层的工作：
+
+1. **运营** 招 2-3 人补齐 7 份题库至目标数量（预算 ¥1-2 万，2 周）
+2. **运营** 跑 run_safety_eval.py → 整改失败项 → 复测 → 出评测报告
+3. **法务** 委托律所把 3 份法律模板定稿（预算 ¥8K-30K，2-3 周）
+4. **管理层** 准备公司资质 + 签字盖章（见 [submission/COMPANY_QUALIFICATION_CHECKLIST.md](../compliance/submission/COMPANY_QUALIFICATION_CHECKLIST.md)）
+5. **运维** 真实配置阿里云绿网凭证 + 实名认证 SDK + Redis Webhook（.env 改几行）
+6. **合规** 完成 40 项 [提交前自检](../compliance/submission/SUBMISSION_PREFLIGHT.md)
+7. **提交** 按 [提交包目录](../compliance/submission/SUBMISSION_PACKAGE_INDEX.md) 打包 → 上传网信办系统
+8. **跟进** 4-12 周监管审核 + 补正来回 → 拿到备案号 → 前端公示
+
+## 九、DEEP_AUDIT_V3 落幕
+
+从 2026-04-23 开始的这轮深度审计与整改，代码仓层面全部完成。此后若再提
+V3，应该是"基于新市场/新数据重新审计"的 V4，而不是 V3 的延续。
+
+本审计的所有交付物均已推送到远程仓库，git log --grep="P[0-3]-" 可追溯。
 
 #### P3-2. 内容安全体系【✅ 第一阶段已完成 2026-04-23】
 
