@@ -27,10 +27,11 @@ const MindPalAPI = {
       switch (type) {
         case 'start':   h.onStart  && h.onStart(data);  break;
         case 'delta':   h.onDelta  && h.onDelta(data);  break;
-        case 'crisis':  h.onCrisis && h.onCrisis(data); break;
-        case 'meta':    h.onMeta   && h.onMeta(data);   break;
-        case 'done':    h.onDone   && h.onDone(data);   break;
-        case 'error':   h.onError  && h.onError(data);  break;
+        case 'crisis':     h.onCrisis && h.onCrisis(data); break;
+        case 'meta':       h.onMeta   && h.onMeta(data);   break;
+        case 'moderation': h.onModeration && h.onModeration(data); break;
+        case 'done':       h.onDone   && h.onDone(data);   break;
+        case 'error':      h.onError  && h.onError(data);  break;
         default:        h.onEvent  && h.onEvent(type, data);
       }
     };
@@ -364,6 +365,9 @@ const MindPalAPI = {
           },
           onMeta: (data) => {
             cbs.onMeta && cbs.onMeta(data || {});
+          },
+          onModeration: (data) => {
+            cbs.onModeration && cbs.onModeration(data || {});
           },
           onDone: (data) => {
             const payload = data || {};

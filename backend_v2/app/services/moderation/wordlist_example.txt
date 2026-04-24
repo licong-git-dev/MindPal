@@ -1,0 +1,48 @@
+# MindPal 内容审核词库（示例格式）
+#
+# 用法:
+#   1. 复制一份作为真实词库: cp wordlist_example.txt /etc/mindpal/moderation/wordlist.txt
+#   2. .env 中设置 MODERATION_WORDLIST_PATH=/etc/mindpal/moderation/wordlist.txt
+#   3. 重启服务后新词库生效
+#
+# 格式规范:
+#   - 以 # 开头是注释
+#   - 空行忽略
+#   - 每行一个词
+#   - 可用 [CATEGORY] 标记分段（CATEGORY 对应 ModerationCategory 枚举值）
+#   - 未标记类别的词默认归入 illegal
+#
+# 可选类别（小写）:
+#   politics       政治敏感
+#   porn           色情低俗
+#   violence       暴力血腥
+#   illegal        违法犯罪
+#   hate           仇恨/歧视
+#   minor          未成年相关不当
+#   contact_scam   诱导脱离平台
+#   prompt_injection  提示词注入
+#
+# 真实词库建议从权威来源同步并持续更新:
+#   - 中国互联网违法和不良信息举报中心公布的关键词指南
+#   - 阿里云绿网 / 腾讯云天御 导出词库
+#   - 业务方自己维护的领域敏感词
+
+[politics]
+# 此处填写政治敏感词（此文件为示例，不含实际词汇）
+# 每个词占一行
+# 例如：xxx
+
+[porn]
+# 色情词
+
+[violence]
+# 暴力词
+
+[illegal]
+# 违法关键词
+
+[hate]
+# 歧视词
+
+[minor]
+# 未成年相关不当词

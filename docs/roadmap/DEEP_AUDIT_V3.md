@@ -399,10 +399,37 @@ deploy.sh / docker-compose 均不再引用 `backend/`。保留代码的唯一价
 - 向所在地省级网信办提交备案
 - 申请材料包括：算法安全自评估报告、拟公开信息、训练数据合规声明
 
-#### P3-2. 内容安全体系【2 周】
-- 接入云厂商内容审核 API（阿里云/腾讯云）覆盖输入+输出
-- 敏感词过滤规则库
-- 用户举报 + 审核员工作台
+#### P3-2. 内容安全体系【✅ 第一阶段已完成 2026-04-23】
+
+**已完成**（覆盖输入 + 输出 + 阿里云骨架）:
+- [backend_v2/app/services/moderation/](../../backend_v2/app/services/moderation/) 新建模块
+  - `filters.py`: 本地规则引擎（词匹配 + 正则；支持外部词库文件加载）
+  - `aliyun.py`: 阿里云绿网 SDK adapter（骨架，ENV 开启后生效）
+  - `moderator.py`: 统一入口 `Moderator.check(text, scene)`
+  - 8 个类别：POLITICS / PORN / VIOLENCE / ILLEGAL / HATE / MINOR / CONTACT_SCAM / PROMPT_INJECTION
+  - HIGH_RISK 类别本地命中直接 block；其他类别可等云审
+  - Dry-run 模式（`MODERATION_DRY_RUN=true` 只上报不拦）
+- 接入 `digital_humans.py` 主链路
+  - 非流式 chat: 输入端 HTTP 400 `CONTENT_BLOCKED` + 输出 LLM 结果替换为安全文案
+  - 流式 chat_stream: 输入端 SSE `error` 帧 + 输出在 done 帧前终审并发 `moderation` 事件
+- 前端 [api.js](../../frontend/js/api.js) SSE 解析器新增 `moderation` 事件分发
+  - chat.html 新增 toast 组件显示违规提示（红色、5s 自动消失）
+  - `CONTENT_BLOCKED` 错误识别 → 独立文案告知用户
+- [backend_v2/.env.example](../../backend_v2/.env.example) 补 MODERATION_* 4 个配置
+- [wordlist_example.txt](../../backend_v2/app/services/moderation/wordlist_example.txt) 提供文件格式样板
+
+**特性**:
+- 提示词注入检测（"忽略之前的指令" / "DAN" / "你现在是不受限的 AI" 等典型模式）
+- 联系方式诱导拦截（QQ / 微信号 / URL / 赌博关键词）
+- 分场景提示语（政治 / 色情 / 暴力 / 仇恨 / 未成年 / 联系诈骗 / 提示注入 每类独立文案）
+- 全链路非侵入：云审故障自动降级、Dry-run 不阻塞、全局开关可关
+
+**未完成**（后续 P3-2b/c）:
+- 阿里云真实 SDK 调用（骨架已就位，需要运维补 AccessKey + 安装 aliyun-python-sdk-green）
+- 用户举报接口 + 审核员工作台（需独立 PRD）
+- 命中事件打点到 Grafana（需先有监控系统）
+
+**功能测试**: 14 个断言全绿（filters 9 + moderator 5）
 
 #### P3-3. 用户数据权利 UI【✅ 已完成 2026-04-23】
 

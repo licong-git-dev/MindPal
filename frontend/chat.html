@@ -806,6 +806,35 @@
       if (banner) banner.hidden = true;
     }
 
+    // ===== 内容审核违规提示 =====
+    function showModerationToast(msg) {
+      let toast = document.getElementById('moderationToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'moderationToast';
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 120px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(239, 68, 68, 0.95);
+          color: #fff;
+          padding: 12px 20px;
+          border-radius: 10px;
+          font-size: 14px;
+          z-index: 2500;
+          max-width: 90%;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+          line-height: 1.5;
+        `;
+        document.body.appendChild(toast);
+      }
+      toast.textContent = msg || '内容不合适，已被过滤。';
+      toast.style.display = 'block';
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { toast.style.display = 'none'; }, 5000);
+    }
+
     function showQuotaModal(reason, upgradeUrl) {
       const modal = document.getElementById('quotaModal');
       const reasonEl = document.getElementById('quotaModalReason');
@@ -868,6 +897,12 @@
           showCrisisBanner(data);
         },
 
+        // 内容审核 — AI 输出被替换时的通知
+        onModeration: (data) => {
+          const cat = data && data.category ? data.category : 'content';
+          showModerationToast(`回复内容触发审核（${cat}），已替换为安全提示。`);
+        },
+
         // 消息完成
         onComplete: (data) => {
           if (data.session_id) sessionId = data.session_id;
@@ -908,6 +943,13 @@
 
           if (errObj && (errObj.error === 'quota_exceeded' || errObj.code === 'QUOTA_EXCEEDED')) {
             showQuotaModal(errObj.reason, errObj.upgrade_url);
+            if (messageElement) messageElement.remove();
+            return;
+          }
+
+          // 内容审核拦截用户输入
+          if (errObj && (errObj.error === 'content_blocked' || errObj.code === 'CONTENT_BLOCKED')) {
+            showModerationToast(errObj.user_message || '这条消息触发内容审核，请换个说法。');
             if (messageElement) messageElement.remove();
             return;
           }

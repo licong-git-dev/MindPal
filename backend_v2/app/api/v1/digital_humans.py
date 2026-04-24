@@ -34,6 +34,7 @@ from app.services.personality_engine import get_personality_engine
 from app.services.llm import get_llm_router
 from app.services.dialogue import get_enhanced_processor
 from app.services.memory import get_memory_retriever
+from app.services.moderation import get_moderator, SAFE_FALLBACK_REPLY
 
 router = APIRouter()
 
@@ -397,6 +398,20 @@ async def chat_with_dh(
     if not guard.check():
         raise guard.as_http_402()
 
+    # === 内容审核：用户输入过滤（P3-2）===
+    moderator = get_moderator()
+    mod_input = await moderator.check(body.message, scene="user_input")
+    if mod_input.blocked:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "CONTENT_BLOCKED",
+                "category": mod_input.category.value,
+                "reason": mod_input.reason,
+                "user_message": mod_input.user_message,
+            }
+        )
+
     # 获取或创建会话
     session_id = body.session_id or str(uuid.uuid4())
 
@@ -514,6 +529,13 @@ async def chat_with_dh(
             except Exception:
                 pass
 
+    # === 内容审核：LLM 输出过滤（P3-2，非流式）===
+    mod_output = await moderator.check(ai_response or "", scene="llm_output")
+    output_blocked = mod_output.blocked
+    if output_blocked:
+        # 替换为安全兜底文案，不把违规内容写回前端或数据库
+        ai_response = mod_output.user_message or SAFE_FALLBACK_REPLY
+
     # 保存 AI 回复（含情感标记）
     ai_msg = DHMessage(
         session_id=session_id,
@@ -619,6 +641,21 @@ async def chat_stream_with_dh(
         async def quota_error_stream():
             yield f"event: error\ndata: {json.dumps(err_payload, ensure_ascii=False)}\n\n"
         return StreamingResponse(quota_error_stream(), media_type="text/event-stream")
+
+    # === 内容审核：用户输入过滤（P3-2，流式）===
+    moderator = get_moderator()
+    mod_input = await moderator.check(body.message, scene="user_input")
+    if mod_input.blocked:
+        err_payload = {
+            "error": "content_blocked",
+            "code": "CONTENT_BLOCKED",
+            "category": mod_input.category.value,
+            "reason": mod_input.reason,
+            "user_message": mod_input.user_message,
+        }
+        async def blocked_stream():
+            yield f"event: error\ndata: {json.dumps(err_payload, ensure_ascii=False)}\n\n"
+        return StreamingResponse(blocked_stream(), media_type="text/event-stream")
 
     # 获取或创建会话
     session_id = body.session_id or str(uuid.uuid4())
@@ -766,8 +803,30 @@ async def chat_stream_with_dh(
             full_response = fallback
             yield f"event: delta\ndata: {json.dumps({'content': fallback}, ensure_ascii=False)}\n\n"
 
-        # 写入缓存（只在真实生成且无 skip 时写）
-        if not cache_hit and cache_key and full_response and not skip_reason:
+        # === 内容审核：LLM 输出过滤（流式，在 done 帧前终审）===
+        output_mod = await moderator.check(full_response or "", scene="llm_output")
+        output_blocked = output_mod.blocked
+        persisted_response = full_response
+        if output_blocked:
+            # 替换为安全文案，通过 SSE moderation 事件告知前端本次回复被替换
+            persisted_response = output_mod.user_message or SAFE_FALLBACK_REPLY
+            mod_payload = json.dumps({
+                "category": output_mod.category.value,
+                "replaced": True,
+                "reason": output_mod.reason,
+            }, ensure_ascii=False)
+            yield f"event: moderation\ndata: {mod_payload}\n\n"
+            # 告诉前端"上面显示的内容请作废，以这条安全文案为准"
+            delta_payload = json.dumps({
+                "content": "\n\n[系统提示] " + persisted_response,
+                "replace_full_response": True,
+            }, ensure_ascii=False)
+            yield f"event: delta\ndata: {delta_payload}\n\n"
+            full_response = persisted_response
+
+        # 写入缓存（只在真实生成 + 无 skip + 未被 moderation 替换时写）
+        if (not cache_hit and cache_key and full_response
+                and not skip_reason and not output_blocked):
             try:
                 await cache.set(cache_key, full_response)
             except Exception:
