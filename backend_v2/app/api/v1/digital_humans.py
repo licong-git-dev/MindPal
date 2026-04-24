@@ -30,6 +30,7 @@ from app.core.cache import (
     should_skip_cache,
     fake_stream_from_cache,
 )
+from app.core.minor_mode import get_minor_mode_guard
 from app.services.personality_engine import get_personality_engine
 from app.services.llm import get_llm_router
 from app.services.dialogue import get_enhanced_processor
@@ -570,6 +571,16 @@ async def chat_with_dh(
 
     # 返回结构化元数据
     metadata = processor.get_response_metadata(dialogue_context)
+
+    # 生成内容标识（合规：《深度合成管理规定》§16-17）
+    generated_metadata = {
+        "generated_by": "MindPal AI",
+        "model": llm_service.get_model_name(),
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "content_type": "text_generation",
+        "is_ai_generated": True,
+    }
+
     return APIResponse(
         code=0,
         message="success",
@@ -583,6 +594,7 @@ async def chat_with_dh(
             "crisis_resources": crisis_response.get("resources") if crisis_response else None,
             "memories_used": metadata["memories_used"],
             "model_used": metadata["model"],
+            "generated_metadata": generated_metadata,
         }
     )
 
@@ -656,6 +668,48 @@ async def chat_stream_with_dh(
         async def blocked_stream():
             yield f"event: error\ndata: {json.dumps(err_payload, ensure_ascii=False)}\n\n"
         return StreamingResponse(blocked_stream(), media_type="text/event-stream")
+
+    # === 青少年模式守卫（GAP-5）===
+    minor_guard = get_minor_mode_guard()
+    personality_check = await minor_guard.check_personality(user_id, dh.personality, db)
+    if not personality_check.allowed:
+        err_payload = {
+            "error": "minor_mode_blocked",
+            "code": "MINOR_MODE_BLOCKED",
+            "reason": personality_check.reason,
+            "user_message": personality_check.user_message,
+        }
+        async def mm_blocked():
+            yield f"event: error\ndata: {json.dumps(err_payload, ensure_ascii=False)}\n\n"
+        return StreamingResponse(mm_blocked(), media_type="text/event-stream")
+
+    time_check = await minor_guard.check_time_window(user_id, db)
+    if not time_check.allowed:
+        err_payload = {
+            "error": "minor_mode_blocked",
+            "code": "MINOR_MODE_BLOCKED",
+            "reason": time_check.reason,
+            "user_message": time_check.user_message,
+        }
+        async def tm_blocked():
+            yield f"event: error\ndata: {json.dumps(err_payload, ensure_ascii=False)}\n\n"
+        return StreamingResponse(tm_blocked(), media_type="text/event-stream")
+
+    quota_check = await minor_guard.check_daily_quota(user_id, db)
+    if not quota_check.allowed:
+        err_payload = {
+            "error": "minor_mode_blocked",
+            "code": "MINOR_MODE_BLOCKED",
+            "reason": quota_check.reason,
+            "user_message": quota_check.user_message,
+            "remaining_minutes": quota_check.remaining_minutes,
+        }
+        async def quota_blocked():
+            yield f"event: error\ndata: {json.dumps(err_payload, ensure_ascii=False)}\n\n"
+        return StreamingResponse(quota_blocked(), media_type="text/event-stream")
+
+    # 记录使用时长（近似：每次对话 1 分钟）
+    await minor_guard.record_usage(user_id, minutes_used=1)
 
     # 获取或创建会话
     session_id = body.session_id or str(uuid.uuid4())
@@ -865,7 +919,7 @@ async def chat_stream_with_dh(
             # 持久化失败不影响已发给用户的回复
             pass
 
-        # done 帧
+        # done 帧（含合规生成标识 —《深度合成管理规定》§16-17）
         done_data = {
             "full_response": full_response,
             "session_id": session_id,
@@ -875,6 +929,14 @@ async def chat_stream_with_dh(
             "crisis_level": metadata["crisis"]["level"],
             "memories_used": metadata["memories_used"],
             "model_used": metadata["model"],
+            "generated_metadata": {
+                "generated_by": "MindPal AI",
+                "model": llm_service.get_model_name(),
+                "generated_at": datetime.utcnow().isoformat() + "Z",
+                "content_type": "text_generation",
+                "is_ai_generated": True,
+                "moderation_applied": output_blocked,
+            },
         }
         yield f"event: done\ndata: {json.dumps(done_data, ensure_ascii=False)}\n\n"
 

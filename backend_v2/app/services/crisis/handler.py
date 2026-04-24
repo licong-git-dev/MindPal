@@ -308,13 +308,71 @@ class CrisisHandler:
         }
 
     async def _notify_admin(self, event_id: int):
-        """通知管理员（TODO: 实现实际的通知逻辑）"""
-        # 可以集成：
-        # - 邮件通知
-        # - 短信通知
-        # - Webhook (钉钉/企业微信/Slack)
-        # - 推送通知
-        print(f"[CRISIS ALERT] Event {event_id} requires immediate attention!")
+        """通知管理员 — 支持 webhook（Slack/钉钉/飞书/企业微信统一格式）。
+
+        配置（.env）:
+          CRISIS_WEBHOOK_URL      —— webhook 接收端
+          CRISIS_WEBHOOK_TYPE     —— slack | dingtalk | feishu | wechat_work（默认 slack）
+          CRISIS_NOTIFY_EMAILS    —— 逗号分隔的备用邮件列表（保留字段，实际发邮件由
+                                     外部 SMTP 服务完成；此处只打日志等待后续接入）
+
+        发送失败不抛异常（告警不能阻塞主链路）。
+        """
+        import os
+        import httpx
+
+        url = os.getenv("CRISIS_WEBHOOK_URL", "").strip()
+        fmt = os.getenv("CRISIS_WEBHOOK_TYPE", "slack").strip().lower()
+
+        msg_text = f"🚨 [MindPal Crisis Alert] Event #{event_id} 需要立即关注"
+        msg_detail = f"请管理员登录后台核查并联系当事人。详情 ID: {event_id}"
+
+        # 控制台日志（始终写，方便本地追溯）
+        print(f"[CRISIS ALERT] {msg_text} - {msg_detail}")
+
+        if not url:
+            return  # 未配置 webhook，只打日志
+
+        # 各家 webhook 的 payload 格式不同
+        if fmt == "dingtalk":
+            payload = {
+                "msgtype": "markdown",
+                "markdown": {
+                    "title": msg_text,
+                    "text": f"## {msg_text}\n\n{msg_detail}",
+                },
+            }
+        elif fmt == "feishu":
+            payload = {
+                "msg_type": "text",
+                "content": {"text": f"{msg_text}\n\n{msg_detail}"},
+            }
+        elif fmt == "wechat_work":
+            payload = {
+                "msgtype": "markdown",
+                "markdown": {
+                    "content": f"## {msg_text}\n\n{msg_detail}",
+                },
+            }
+        else:
+            # Slack / generic webhook
+            payload = {
+                "text": msg_text,
+                "blocks": [
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": f"*{msg_text}*\n{msg_detail}"},
+                    }
+                ],
+            }
+
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.post(url, json=payload)
+                if resp.status_code >= 400:
+                    print(f"[CRISIS ALERT] webhook failed: {resp.status_code} {resp.text[:200]}")
+        except Exception as e:
+            print(f"[CRISIS ALERT] webhook exception: {e}")
 
 
 # 单例实例

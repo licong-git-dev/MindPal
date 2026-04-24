@@ -264,6 +264,49 @@
         <button id="btnClearMemories" class="btn btn-warning" onclick="onClearMemories()">清空长期记忆</button>
       </section>
 
+      <!-- 投诉举报 -->
+      <section class="section">
+        <h2><span class="icon">🚨</span>投诉举报</h2>
+        <p>
+          如果遇到不当内容、骚扰、危机干预失败等情况，请在此提交举报。
+          我们承诺 <strong>24 小时内首次响应、7 天内处理完毕</strong>。
+          紧急情况（自杀/自残相关）请直接拨打
+          <a href="tel:4001619995" style="color:var(--color-primary-1);">400-161-9995</a>（全国心理援助热线）。
+        </p>
+
+        <form id="reportForm" onsubmit="onSubmitReport(event)" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+          <select id="reportCategory" required
+            style="padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid rgba(148,163,184,0.3);border-radius:8px;color:#f1f5f9;font-size:14px;">
+            <option value="">选择举报类别...</option>
+            <option value="inappropriate_content">不当内容（色情/暴力/政治敏感）</option>
+            <option value="harassment">骚扰或诱导</option>
+            <option value="privacy_leak">隐私泄露</option>
+            <option value="impersonation">冒充他人</option>
+            <option value="crisis_failure">危机干预失败（AI 没识别危险）</option>
+            <option value="system_bug">系统故障</option>
+            <option value="other">其他</option>
+          </select>
+
+          <textarea id="reportDescription" required
+            minlength="10" maxlength="2000"
+            placeholder="请描述具体情况（至少 10 字，最多 2000 字）..."
+            style="padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid rgba(148,163,184,0.3);border-radius:8px;color:#f1f5f9;font-size:14px;min-height:90px;resize:vertical;"></textarea>
+
+          <textarea id="reportContext"
+            maxlength="2000"
+            placeholder="（可选）粘贴相关对话片段帮助我们定位问题..."
+            style="padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid rgba(148,163,184,0.3);border-radius:8px;color:#f1f5f9;font-size:13px;min-height:60px;resize:vertical;"></textarea>
+
+          <button type="submit" class="btn btn-primary" id="reportSubmitBtn">提交举报</button>
+        </form>
+
+        <div style="margin-top:14px;font-size:12px;color:var(--color-text-secondary);">
+          <a href="javascript:void(0)" onclick="loadMyReports()" style="color:var(--color-primary-1);">查看我的历史举报</a>
+        </div>
+
+        <div id="myReportsList" style="margin-top:12px;display:none;"></div>
+      </section>
+
       <!-- 注销账户 -->
       <section class="section">
         <h2><span class="icon">❌</span>注销账户</h2>
@@ -454,6 +497,73 @@
       } finally {
         btn.disabled = false;
         btn.textContent = '确认注销';
+      }
+    }
+
+    // ======== 投诉举报 ========
+    async function onSubmitReport(e) {
+      e.preventDefault();
+      const btn = document.getElementById('reportSubmitBtn');
+      const category = document.getElementById('reportCategory').value;
+      const description = document.getElementById('reportDescription').value.trim();
+      const context_snippet = document.getElementById('reportContext').value.trim() || null;
+
+      if (!category || description.length < 10) {
+        showToast('请选择类别并至少填写 10 字描述', true);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '提交中...';
+      try {
+        const resp = await MindPalAPI.reports.create({
+          category,
+          description,
+          context_snippet,
+          target_type: 'system',
+        });
+        if (resp.code !== 0) throw new Error(resp.message || '提交失败');
+        showToast(`举报已提交 #${resp.data.id} · ${resp.data.sla_message}`);
+        document.getElementById('reportForm').reset();
+      } catch (err) {
+        showToast('提交失败：' + (err.message || err), true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '提交举报';
+      }
+    }
+
+    async function loadMyReports() {
+      const wrap = document.getElementById('myReportsList');
+      wrap.style.display = 'block';
+      wrap.innerHTML = '<div class="skeleton"></div>';
+      try {
+        const resp = await MindPalAPI.reports.listMine({ limit: 20 });
+        const items = (resp.data && resp.data.items) || [];
+        if (items.length === 0) {
+          wrap.innerHTML = '<div style="padding:10px;font-size:13px;color:var(--color-text-secondary);">暂无历史举报</div>';
+          return;
+        }
+        const statusMap = {
+          pending: '待处理', reviewing: '审核中', resolved: '已解决', dismissed: '无效',
+        };
+        const catMap = {
+          inappropriate_content: '不当内容', harassment: '骚扰/诱导',
+          privacy_leak: '隐私泄露', impersonation: '冒充他人',
+          crisis_failure: '危机干预失败', system_bug: '系统故障', other: '其他',
+        };
+        wrap.innerHTML = items.map(r => `
+          <div style="padding:10px 12px;background:rgba(15,23,42,0.4);border-radius:8px;margin-bottom:8px;font-size:13px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="color:var(--color-text-primary);">#${r.id} · ${escapeHtml(catMap[r.category] || r.category)}</span>
+              <span style="color:var(--color-primary-1);">${escapeHtml(statusMap[r.status] || r.status)}</span>
+            </div>
+            <div style="color:var(--color-text-secondary);">${escapeHtml(r.description).slice(0, 100)}${r.description.length > 100 ? '...' : ''}</div>
+            <div style="color:var(--color-text-disabled);font-size:11px;margin-top:4px;">${new Date(r.created_at).toLocaleString('zh-CN')}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        wrap.innerHTML = `<div style="color:var(--color-text-secondary);font-size:13px;">加载失败：${escapeHtml(err.message || String(err))}</div>`;
       }
     }
 

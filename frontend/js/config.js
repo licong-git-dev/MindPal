@@ -92,6 +92,13 @@ const MindPalConfig = {
       TEST_ADD_GOLD: '/api/v1/payment/test/add-gold'
     },
 
+    // 投诉举报（《生成式人工智能服务管理暂行办法》§15）
+    REPORTS: {
+      CREATE:  '/api/v1/reports',
+      MINE:    '/api/v1/reports/mine',
+      DETAIL:  (id) => `/api/v1/reports/${id}`,
+    },
+
     // 账户数据权利（PIPL §44/45/47）
     ACCOUNT: {
       DATA_SUMMARY:   '/api/v1/account/data-summary',

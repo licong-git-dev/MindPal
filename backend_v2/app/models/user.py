@@ -28,6 +28,14 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # 青少年模式（GAP-5）—— 用户可自主开启；若实名认证检测到 < 18 岁则强制开启
+    # 青少年模式下限制：
+    #   - 禁用浪漫陪伴人格
+    #   - 每日对话时长上限 40 分钟
+    #   - 22:00-06:00 禁用
+    minor_mode_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    minor_mode_forced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     # 时间戳
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

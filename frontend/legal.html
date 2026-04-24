@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>法律条款 - MindPal</title>
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .legal-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      padding-bottom: 60px;
+    }
+    .legal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .legal-header h1 { flex: 1; margin: 0; font-size: 16px; color: var(--color-text-primary); }
+    .legal-header .back-btn {
+      background: rgba(255,255,255,0.08);
+      color: var(--color-text-primary);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .legal-body {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.06);
+      color: var(--color-text-secondary);
+      border: 1px solid rgba(148,163,184,0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .tab-btn.active {
+      background: var(--color-primary-1);
+      color: #fff;
+      border-color: var(--color-primary-1);
+    }
+
+    .tab-content {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 16px;
+      padding: 24px;
+      color: var(--color-text-primary);
+      line-height: 1.8;
+      font-size: 14px;
+    }
+    .tab-content[hidden] { display: none; }
+    .tab-content h2 { font-size: 18px; margin-top: 0; }
+    .tab-content h3 { font-size: 16px; margin-top: 20px; color: var(--color-primary-1); }
+    .tab-content p { margin: 10px 0; color: var(--color-text-primary); }
+    .tab-content ul { padding-left: 20px; color: var(--color-text-secondary); }
+    .tab-content li { margin-bottom: 6px; }
+    .tab-content a { color: var(--color-primary-1); }
+    .placeholder-note {
+      background: rgba(251, 191, 36, 0.1);
+      border-left: 3px solid #fbbf24;
+      padding: 10px 14px;
+      margin: 16px 0;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #fde68a;
+    }
+
+    .beian-footer {
+      text-align: center;
+      padding: 30px 20px;
+      color: var(--color-text-disabled);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .beian-footer a { color: var(--color-text-secondary); text-decoration: none; }
+    .beian-footer a:hover { color: var(--color-primary-1); }
+  </style>
+</head>
+<body>
+  <div class="legal-page page-transition">
+    <header class="legal-header">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <h1>法律条款</h1>
+    </header>
+
+    <div class="legal-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="service" onclick="switchTab('service')">服务协议</button>
+        <button class="tab-btn" data-tab="privacy" onclick="switchTab('privacy')">隐私政策</button>
+        <button class="tab-btn" data-tab="minor" onclick="switchTab('minor')">未成年人保护</button>
+        <button class="tab-btn" data-tab="algorithm" onclick="switchTab('algorithm')">算法说明</button>
+      </div>
+
+      <!-- 服务协议 -->
+      <div class="tab-content" id="tab-service">
+        <div class="placeholder-note">
+          ⚠️ 此为合规骨架文本，正式上线前须由执业律师审查/重写。
+          模板依据见 <code>docs/compliance/legal/SERVICE_AGREEMENT_TEMPLATE.md</code>。
+        </div>
+        <h2>MindPal 服务协议</h2>
+        <p><strong>最后更新</strong>：YYYY-MM-DD</p>
+
+        <h3>1. 接受条款</h3>
+        <p>您使用 MindPal 即视为同意本协议。如不同意，请立即停止使用。</p>
+
+        <h3>2. 服务内容</h3>
+        <p>MindPal 是一款基于生成式人工智能的 AI 数字人陪伴平台，为 <strong>18 岁以上</strong>成年用户提供 AI 对话、记忆、语音交互等服务。</p>
+
+        <h3>3. 用户行为规范</h3>
+        <ul>
+          <li>不得利用服务从事违反法律、法规、公序良俗的活动</li>
+          <li>不得通过服务传播色情、暴力、恐怖、仇恨等违法违规内容</li>
+          <li>不得进行 prompt 注入攻击或其他恶意行为</li>
+          <li>不得将 AI 输出用于医疗、法律、金融等专业决策</li>
+        </ul>
+
+        <h3>4. AI 生成内容免责</h3>
+        <p>AI 生成内容可能不准确、不完整或存在偏见。重要决策请咨询专业人士。MindPal 不对 AI 生成内容的真实性、准确性承担责任。</p>
+
+        <h3>5. 费用与会员</h3>
+        <p>基础功能免费。会员服务详见<a href="pricing.html">定价页</a>。会员服务一经订阅不予退款（法律法规另有规定的除外）。</p>
+
+        <h3>6. 服务终止</h3>
+        <p>您可随时在<a href="account-data.html">我的数据</a>页面注销账号。我们保留因违规行为终止您使用服务的权利。</p>
+
+        <h3>7. 争议解决</h3>
+        <p>本协议适用中华人民共和国法律。争议由公司所在地人民法院管辖。</p>
+
+        <h3>8. 联系方式</h3>
+        <p>运营主体：🟨 [公司全称]<br>
+           邮箱：🟨 support@[域名]<br>
+           电话：🟨 400-XXX-XXXX</p>
+      </div>
+
+      <!-- 隐私政策 -->
+      <div class="tab-content" id="tab-privacy" hidden>
+        <div class="placeholder-note">
+          ⚠️ 此为合规骨架文本，正式上线前须由执业律师审查/重写。
+          模板依据见 <code>docs/compliance/legal/PRIVACY_POLICY_TEMPLATE.md</code>。
+        </div>
+        <h2>MindPal 隐私政策</h2>
+        <p><strong>最后更新</strong>：YYYY-MM-DD</p>
+
+        <h3>1. 引言</h3>
+        <p>本政策依据《个人信息保护法》（PIPL）、《数据安全法》制定，说明 MindPal 如何收集、使用、存储、共享、保护您的个人信息。</p>
+
+        <h3>2. 我们收集什么</h3>
+        <ul>
+          <li><strong>账号信息</strong>：手机号、邮箱、密码哈希</li>
+          <li><strong>数字人资料</strong>：您创建的数字人名字、性格、头像等</li>
+          <li><strong>对话内容</strong>：您与数字人的所有消息（含情感标记）</li>
+          <li><strong>长期记忆</strong>：系统基于对话自动生成的摘要，用于"越聊越懂你"</li>
+          <li><strong>订单信息</strong>：会员订阅和支付流水（支付通道：支付宝/微信）</li>
+          <li><strong>设备信息</strong>：浏览器类型、IP 地址（用于安全风控）</li>
+        </ul>
+
+        <h3>3. 我们如何使用</h3>
+        <ul>
+          <li>提供 AI 对话服务（必要）</li>
+          <li>维护长期记忆（用户授权的功能）</li>
+          <li>安全审核（输入 + 输出双向过滤）</li>
+          <li>心理危机干预（自动识别并提供帮助热线）</li>
+          <li>改进服务（匿名化统计，不含个人可识别信息）</li>
+        </ul>
+        <p><strong>我们不会把您的对话用于 AI 模型训练</strong>。</p>
+
+        <h3>4. 共享与委托</h3>
+        <ul>
+          <li>基础模型调用：阿里云通义千问 API（数据处理遵循阿里云的隐私政策，已备案）</li>
+          <li>语音合成/识别：阿里云智能语音服务</li>
+          <li>支付处理：支付宝 / 微信支付</li>
+          <li>以上第三方均为 <strong>《个人信息保护法》第二十一条下的受托处理者</strong>，有书面合同约束</li>
+        </ul>
+
+        <h3>5. 您的权利（PIPL §44-47）</h3>
+        <p>您可随时在 <a href="account-data.html">我的数据</a> 页面行使以下权利：</p>
+        <ul>
+          <li>📊 <strong>查看</strong>存储了哪些信息（§44 知情权）</li>
+          <li>⬇️ <strong>导出</strong>完整数据 JSON 副本（§45 查阅复制权）</li>
+          <li>🧠 <strong>删除</strong>所有长期记忆（§47 删除权）</li>
+          <li>❌ <strong>注销</strong>账号及全部数据（§47 删除权）</li>
+        </ul>
+
+        <h3>6. 存储期限</h3>
+        <ul>
+          <li>活跃账号：对话和记忆无限期保存</li>
+          <li>不活跃 12 个月：发送清理提醒</li>
+          <li>已注销账号：立即级联删除</li>
+          <li>订单记录：因财务合规要求保留 5 年（可假名化）</li>
+        </ul>
+
+        <h3>7. 未成年人保护</h3>
+        <p>本服务面向 <strong>18 周岁及以上</strong> 成年用户。如我们发现注册用户为未成年，将立即限制功能、引导其监护人介入。详见 <a href="javascript:switchTab('minor')">未成年人保护声明</a>。</p>
+
+        <h3>8. 境外传输</h3>
+        <p>除通过阿里云/Anthropic 合规通道的模型调用外，我们不向境外传输个人信息。</p>
+
+        <h3>9. 安全措施</h3>
+        <ul>
+          <li>密码 bcrypt 加密存储</li>
+          <li>JWT Token 有效期 7 天</li>
+          <li>HTTPS 全链路加密</li>
+          <li>数据库访问控制</li>
+          <li>关键操作审计日志</li>
+        </ul>
+
+        <h3>10. 投诉与举报</h3>
+        <p>如对隐私处理有疑问或投诉，请在 <a href="account-data.html">我的数据 → 投诉举报</a> 提交，或发送邮件至 🟨 privacy@[域名]。我们承诺 <strong>24 小时内首次响应、7 天内处理完毕</strong>。</p>
+
+        <h3>11. 政策更新</h3>
+        <p>本政策可能不定期更新。重大变更会通过站内通知告知。</p>
+      </div>
+
+      <!-- 未成年人保护 -->
+      <div class="tab-content" id="tab-minor" hidden>
+        <div class="placeholder-note">
+          ⚠️ 此为合规骨架文本，正式上线前须由执业律师审查/重写。
+          模板依据见 <code>docs/compliance/legal/MINOR_PROTECTION_TEMPLATE.md</code>。
+        </div>
+        <h2>未成年人保护声明</h2>
+        <p><strong>最后更新</strong>：YYYY-MM-DD</p>
+
+        <h3>1. 服务面向年龄</h3>
+        <p>MindPal <strong>仅面向 18 周岁及以上成年用户</strong>。若您为未成年人，请立即停止使用并联系监护人。</p>
+
+        <h3>2. 我们如何识别未成年人</h3>
+        <ul>
+          <li>注册时用户声明并确认 18+</li>
+          <li>实名认证（运营商三要素）时校验身份证出生年月（GAP-4 完成后启用）</li>
+          <li>对话监测触发词（如"我上高中"）时人工复核</li>
+        </ul>
+
+        <h3>3. 发现未成年用户的处置</h3>
+        <ul>
+          <li>立即禁用账号</li>
+          <li>通知监护人（通过注册手机回访）</li>
+          <li>级联删除已积累数据</li>
+          <li>开发<strong>青少年模式</strong>提供适龄体验（规划中，GAP-5）</li>
+        </ul>
+
+        <h3>4. 青少年模式承诺</h3>
+        <p>青少年模式开放后，将禁用浪漫向人格预设、限制每日使用时长至 40 分钟、22:00-06:00 禁用，并引入监护人可查看对话摘要的功能。</p>
+
+        <h3>5. 监护人通道</h3>
+        <p>如您是未成年监护人，发现孩子使用 MindPal，请通过 🟨 guardian@[域名] 联系我们立即处理。</p>
+
+        <h3>6. 举报</h3>
+        <p>如发现涉及未成年人不当内容，请在 <a href="account-data.html">投诉举报</a> 选择"危机干预失败"类别提交，或直接拨打 12355（青少年心理援助热线）。</p>
+      </div>
+
+      <!-- 算法说明 -->
+      <div class="tab-content" id="tab-algorithm" hidden>
+        <h2>算法公示</h2>
+        <p><strong>深度合成算法备案号</strong>：🟨 网信算备[编号]（备案号到手后更新）</p>
+        <p><strong>生成式 AI 服务备案号</strong>：🟨 [编号]</p>
+
+        <h3>基础模型</h3>
+        <ul>
+          <li>文本生成：阿里云通义千问（qwen-max / qwen-plus / qwen-turbo） · 供应商备案号：网信算备310104946258101240016号</li>
+          <li>语音合成：阿里云智能语音交互</li>
+          <li>语音识别：阿里云智能语音交互</li>
+          <li>Embedding：阿里云 text-embedding-v2</li>
+        </ul>
+
+        <h3>算法机理</h3>
+        <p>我们通过 API 调用阿里云等已备案的基础大模型，<strong>不做任何二次训练或微调</strong>。用户对话<strong>不用于训练</strong>。</p>
+
+        <h3>内容审核机制</h3>
+        <ul>
+          <li>本地规则引擎（词库 + 正则）—— 毫秒级响应</li>
+          <li>阿里云绿网二审 —— 低风险内容云端复核</li>
+          <li>高风险（政治/色情/未成年/仇恨/违法）本地直接拦截</li>
+          <li>生成内容携带 AI 标识元数据</li>
+        </ul>
+
+        <h3>心理危机干预</h3>
+        <p>系统自动识别自杀/自残倾向表达，立即切换安全响应模式并展示心理援助热线：</p>
+        <ul>
+          <li>全国心理援助热线：<a href="tel:4001619995">400-161-9995</a></li>
+          <li>北京心理危机研究与干预中心：<a href="tel:01082951332">010-82951332</a></li>
+          <li>生命热线：<a href="tel:4008211215">400-821-1215</a></li>
+          <li>青少年心理援助热线：<a href="tel:12355">12355</a></li>
+        </ul>
+
+        <h3>用户可选择机制</h3>
+        <p>用户可随时在<a href="account-data.html">我的数据</a>清空长期记忆或注销账号。</p>
+      </div>
+
+      <div class="beian-footer">
+        <p>
+          🟨 网信算备[编号] · 🟨 ICP 备 [编号]
+          · <a href="javascript:history.back()">返回</a>
+        </p>
+        <p>运营主体：🟨 [公司全称] · 📧 🟨 support@[域名]</p>
+        <p>服务对象：仅限年满 18 周岁的中国大陆境内用户</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === name);
+      });
+      document.querySelectorAll('.tab-content').forEach(c => {
+        c.hidden = c.id !== `tab-${name}`;
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 支持 URL hash 直达: legal.html#privacy
+    (function init() {
+      const hash = location.hash.replace('#', '');
+      if (['service', 'privacy', 'minor', 'algorithm'].includes(hash)) {
+        switchTab(hash);
+      }
+    })();
+  </script>
+</body>
+</html>

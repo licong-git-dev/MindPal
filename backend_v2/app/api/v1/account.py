@@ -47,6 +47,11 @@ class PasswordVerifyBody(BaseModel):
     password: str = Field(..., min_length=1, description="当前账号密码")
 
 
+class MinorModeToggleBody(BaseModel):
+    """青少年模式开关"""
+    enabled: bool = Field(..., description="是否开启青少年模式")
+
+
 # ==================== 辅助函数 ====================
 
 async def _get_user(user_id: int, db: AsyncSession) -> User:
@@ -105,6 +110,34 @@ async def _count_user_memories(user_id: int) -> int:
 
 
 # ==================== 端点 1：数据摘要 ====================
+
+@router.post("/minor-mode", response_model=APIResponse)
+async def toggle_minor_mode(
+    body: MinorModeToggleBody,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """开启/关闭青少年模式（对应 GAP-5）。
+
+    注：若用户是被系统强制开启（实名认证显示未成年），本端点无法关闭，返回 403。
+    """
+    user = await _get_user(user_id, db)
+    if getattr(user, "minor_mode_forced", False) and not body.enabled:
+        raise HTTPException(
+            status_code=403,
+            detail="青少年模式已由系统强制开启，无法自行关闭。"
+        )
+    user.minor_mode_enabled = body.enabled
+    await db.commit()
+    return APIResponse(
+        code=0,
+        message="success",
+        data={
+            "minor_mode_enabled": user.minor_mode_enabled,
+            "minor_mode_forced": user.minor_mode_forced,
+        }
+    )
+
 
 @router.get("/data-summary", response_model=APIResponse)
 async def get_data_summary(

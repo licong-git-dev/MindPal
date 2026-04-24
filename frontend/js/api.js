@@ -644,6 +644,36 @@ const MindPalAPI = {
   },
 
   /**
+   * 投诉举报 API（《生成式人工智能服务管理暂行办法》§15）
+   */
+  reports: {
+    /**
+     * 创建举报
+     * @param {Object} body - { category, description, target_type, target_id, context_snippet, reporter_email }
+     */
+    async create(body) {
+      return await MindPalAPI.request(MindPalConfig.API.REPORTS.CREATE, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+    },
+
+    async listMine(opts = {}) {
+      const params = new URLSearchParams();
+      if (opts.limit != null) params.set('limit', opts.limit);
+      if (opts.offset != null) params.set('offset', opts.offset);
+      const qs = params.toString();
+      return await MindPalAPI.request(
+        `${MindPalConfig.API.REPORTS.MINE}${qs ? '?' + qs : ''}`
+      );
+    },
+
+    async get(id) {
+      return await MindPalAPI.request(MindPalConfig.API.REPORTS.DETAIL(id));
+    },
+  },
+
+  /**
    * 账户数据权利 API（PIPL §44/45/47）
    *
    * - dataSummary(): 查看我的数据概览（类别 + 数量）
