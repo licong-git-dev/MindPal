@@ -27,6 +27,7 @@ from app.core.quota import QuotaGuard, DEFAULT_CHAT_TOKENS
 from app.services.personality_engine import get_personality_engine
 from app.services.llm import get_llm_router
 from app.services.dialogue import get_enhanced_processor
+from app.services.memory import get_memory_retriever
 
 router = APIRouter()
 
@@ -882,4 +883,193 @@ async def get_domain_options():
         code=0,
         message="success",
         data={"items": personality_engine.get_all_domains()}
+    )
+
+
+# ===================== 长期记忆可视化 API =====================
+#
+# 设计原则：
+#  - 路径: /digital-humans/{dh_id}/memories/*
+#  - 不依赖 Player 模型（与游戏 NPC 的 memory.py 解耦）
+#  - 底层用 user_id + npc_key="dh_{dh_id}" 作为 vector_store 的过滤键
+#  - 用户只能操作自己的数字人记忆（通过 DigitalHuman.user_id 验证）
+
+async def _verify_dh_ownership(
+    dh_id: int,
+    user_id: int,
+    db: AsyncSession
+) -> DigitalHuman:
+    """验证数字人属于当前用户，否则 404。"""
+    stmt = select(DigitalHuman).where(
+        and_(
+            DigitalHuman.id == dh_id,
+            DigitalHuman.user_id == user_id,
+            DigitalHuman.is_active == True,
+        )
+    )
+    result = await db.execute(stmt)
+    dh = result.scalar_one_or_none()
+    if not dh:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Digital human not found"
+        )
+    return dh
+
+
+@router.get("/{dh_id}/memories", response_model=APIResponse)
+async def list_dh_memories(
+    dh_id: int,
+    limit: int = Query(20, ge=1, le=100, description="每页数量"),
+    offset: int = Query(0, ge=0, description="偏移量"),
+    emotion: Optional[str] = Query(None, description="按情感筛选 (joy/sadness/anger/fear/surprise/disgust/love/neutral)"),
+    q: Optional[str] = Query(None, description="语义搜索关键词，若提供则走向量搜索而非时间线"),
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """列出数字人的长期记忆（时间线 / 按情感 / 语义搜索）
+
+    优先级: q > emotion > 时间线全部
+    """
+    await _verify_dh_ownership(dh_id, user_id, db)
+    retriever = get_memory_retriever()
+    npc_key = _dh_context_key(dh_id)
+
+    if q:
+        # 语义搜索分支
+        memories = await retriever.retrieve_relevant(
+            player_id=user_id,
+            npc_id=npc_key,
+            query=q,
+            limit=limit,
+            score_threshold=0.0,
+        )
+        mode = "semantic"
+    else:
+        # 时间线列表（可按 emotion 过滤）
+        memories = await retriever.list_memories(
+            player_id=user_id,
+            npc_id=npc_key,
+            limit=limit,
+            offset=offset,
+            emotion=emotion,
+            order_desc=True,
+        )
+        mode = "timeline"
+
+    total = await retriever.get_memory_count(user_id, npc_key)
+
+    items = []
+    for mem in memories:
+        md = mem.metadata or {}
+        items.append({
+            "id": mem.id,
+            "summary": mem.summary,
+            "emotion": mem.emotion,
+            "importance": md.get("importance", 0.5),
+            "relevance_score": round(mem.relevance_score, 3) if mode == "semantic" else None,
+            "user_message": md.get("user_message"),
+            "npc_response": md.get("npc_response"),
+            "created_at": mem.created_at.isoformat() if mem.created_at else None,
+            "session_id": md.get("session_id"),
+        })
+
+    return APIResponse(
+        code=0,
+        message="success",
+        data={
+            "dh_id": dh_id,
+            "mode": mode,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "emotion_filter": emotion,
+            "query": q,
+            "items": items,
+        }
+    )
+
+
+@router.get("/{dh_id}/memories/stats", response_model=APIResponse)
+async def get_dh_memory_stats(
+    dh_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """数字人记忆统计：总数 + 按情感分组"""
+    await _verify_dh_ownership(dh_id, user_id, db)
+    retriever = get_memory_retriever()
+    npc_key = _dh_context_key(dh_id)
+
+    total = await retriever.get_memory_count(user_id, npc_key)
+    by_emotion = await retriever.count_memories_by_emotion(user_id, npc_key)
+
+    return APIResponse(
+        code=0,
+        message="success",
+        data={
+            "dh_id": dh_id,
+            "total": total,
+            "by_emotion": by_emotion,
+        }
+    )
+
+
+@router.delete("/{dh_id}/memories/{memory_id}", response_model=APIResponse)
+async def delete_dh_memory(
+    dh_id: int,
+    memory_id: str,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除单条数字人记忆"""
+    await _verify_dh_ownership(dh_id, user_id, db)
+    retriever = get_memory_retriever()
+
+    # 记忆 id 格式: mem_{player_id}_{npc_id}_{hex8}，验证归属
+    expected_prefix = f"mem_{user_id}_{_dh_context_key(dh_id)}_"
+    if not memory_id.startswith(expected_prefix):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete memory that does not belong to this digital human"
+        )
+
+    success = await retriever.delete_memory(memory_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Memory not found"
+        )
+
+    return APIResponse(
+        code=0,
+        message="success",
+        data={"deleted": True, "memory_id": memory_id}
+    )
+
+
+@router.delete("/{dh_id}/memories", response_model=APIResponse)
+async def clear_dh_memories(
+    dh_id: int,
+    confirm: bool = Query(False, description="必须传 true 才实际删除"),
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """清空数字人的所有长期记忆（不可恢复，需二次确认）"""
+    await _verify_dh_ownership(dh_id, user_id, db)
+
+    if not confirm:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please pass ?confirm=true to actually delete all memories"
+        )
+
+    retriever = get_memory_retriever()
+    npc_key = _dh_context_key(dh_id)
+    deleted = await retriever.delete_all_memories(user_id, npc_key)
+
+    return APIResponse(
+        code=0,
+        message="success",
+        data={"deleted": deleted, "dh_id": dh_id}
     )

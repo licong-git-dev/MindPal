@@ -61,8 +61,28 @@ class VectorStoreBase:
         """获取文档"""
         raise NotImplementedError
 
-    async def count(self) -> int:
-        """文档数量"""
+    async def count(self, filter_metadata: Optional[Dict[str, Any]] = None) -> int:
+        """文档数量（可按元数据过滤）"""
+        raise NotImplementedError
+
+    async def list_by_metadata(
+        self,
+        filter_metadata: Optional[Dict[str, Any]] = None,
+        limit: int = 50,
+        offset: int = 0,
+        order_desc: bool = True,
+    ) -> List[VectorDocument]:
+        """按元数据过滤列出文档（按 created_at 排序，默认最新在前）
+
+        用途：可视化记忆浏览（非语义搜索，纯时间线/列表）。
+        """
+        raise NotImplementedError
+
+    async def delete_by_metadata(
+        self,
+        filter_metadata: Dict[str, Any],
+    ) -> int:
+        """按元数据过滤批量删除，返回删除数量。"""
         raise NotImplementedError
 
 
@@ -189,9 +209,49 @@ class InMemoryVectorStore(VectorStoreBase):
         """获取文档"""
         return self._documents.get(doc_id)
 
-    async def count(self) -> int:
-        """文档数量"""
-        return len(self._documents)
+    @staticmethod
+    def _match_filter(doc: VectorDocument, filter_metadata: Optional[Dict[str, Any]]) -> bool:
+        if not filter_metadata:
+            return True
+        return all(doc.metadata.get(k) == v for k, v in filter_metadata.items())
+
+    async def count(self, filter_metadata: Optional[Dict[str, Any]] = None) -> int:
+        """文档数量（可按元数据过滤）"""
+        if not filter_metadata:
+            return len(self._documents)
+        return sum(1 for doc in self._documents.values() if self._match_filter(doc, filter_metadata))
+
+    async def list_by_metadata(
+        self,
+        filter_metadata: Optional[Dict[str, Any]] = None,
+        limit: int = 50,
+        offset: int = 0,
+        order_desc: bool = True,
+    ) -> List[VectorDocument]:
+        """按元数据过滤列出文档（按 created_at 排序）"""
+        filtered = [
+            doc for doc in self._documents.values()
+            if self._match_filter(doc, filter_metadata)
+        ]
+        filtered.sort(key=lambda d: d.created_at, reverse=order_desc)
+        return filtered[offset:offset + limit]
+
+    async def delete_by_metadata(
+        self,
+        filter_metadata: Dict[str, Any],
+    ) -> int:
+        """按元数据批量删除。"""
+        if not filter_metadata:
+            return 0
+        to_delete = [
+            doc_id for doc_id, doc in self._documents.items()
+            if self._match_filter(doc, filter_metadata)
+        ]
+        for doc_id in to_delete:
+            del self._documents[doc_id]
+        if to_delete:
+            self._save_to_disk()
+        return len(to_delete)
 
 
 class ChromaVectorStore(VectorStoreBase):
@@ -316,10 +376,60 @@ class ChromaVectorStore(VectorStoreBase):
             )
         return None
 
-    async def count(self) -> int:
-        """文档数量"""
+    async def count(self, filter_metadata: Optional[Dict[str, Any]] = None) -> int:
+        """文档数量（ChromaDB 通过 get(where=) 过滤）"""
         collection = self._get_collection()
-        return collection.count()
+        if not filter_metadata:
+            return collection.count()
+        # Chroma 没有直接的条件 count，用 get() 后取长度
+        result = collection.get(where=filter_metadata, include=[])
+        return len(result.get("ids", []))
+
+    async def list_by_metadata(
+        self,
+        filter_metadata: Optional[Dict[str, Any]] = None,
+        limit: int = 50,
+        offset: int = 0,
+        order_desc: bool = True,
+    ) -> List[VectorDocument]:
+        """按元数据列出文档（Chroma 本身无排序支持，取回后本地排序）"""
+        collection = self._get_collection()
+        result = collection.get(
+            where=filter_metadata or {},
+            include=["embeddings", "documents", "metadatas"]
+        )
+        ids = result.get("ids", [])
+        docs: List[VectorDocument] = []
+        for i, doc_id in enumerate(ids):
+            metadata = result["metadatas"][i] if result.get("metadatas") else {}
+            created_at_str = metadata.get("created_at")
+            created_at = (
+                datetime.fromisoformat(created_at_str)
+                if created_at_str else datetime.utcnow()
+            )
+            docs.append(VectorDocument(
+                id=doc_id,
+                text=result["documents"][i] if result.get("documents") else "",
+                vector=result["embeddings"][i] if result.get("embeddings") else [],
+                metadata=metadata,
+                created_at=created_at,
+            ))
+        docs.sort(key=lambda d: d.created_at, reverse=order_desc)
+        return docs[offset:offset + limit]
+
+    async def delete_by_metadata(
+        self,
+        filter_metadata: Dict[str, Any],
+    ) -> int:
+        """按元数据批量删除"""
+        if not filter_metadata:
+            return 0
+        collection = self._get_collection()
+        result = collection.get(where=filter_metadata, include=[])
+        ids = result.get("ids", [])
+        if ids:
+            collection.delete(ids=ids)
+        return len(ids)
 
 
 class VectorStore:
@@ -367,8 +477,23 @@ class VectorStore:
     async def get(self, doc_id: str) -> Optional[VectorDocument]:
         return await self._store.get(doc_id)
 
-    async def count(self) -> int:
-        return await self._store.count()
+    async def count(self, filter_metadata: Optional[Dict[str, Any]] = None) -> int:
+        return await self._store.count(filter_metadata)
+
+    async def list_by_metadata(
+        self,
+        filter_metadata: Optional[Dict[str, Any]] = None,
+        limit: int = 50,
+        offset: int = 0,
+        order_desc: bool = True,
+    ) -> List[VectorDocument]:
+        return await self._store.list_by_metadata(filter_metadata, limit, offset, order_desc)
+
+    async def delete_by_metadata(
+        self,
+        filter_metadata: Dict[str, Any],
+    ) -> int:
+        return await self._store.delete_by_metadata(filter_metadata)
 
 
 # 便捷函数

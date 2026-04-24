@@ -220,9 +220,78 @@ class MemoryRetriever:
         return await self.store.delete(memory_id)
 
     async def get_memory_count(self, player_id: int, npc_id: str) -> int:
-        """获取记忆数量"""
-        # 简化实现：返回总数
-        return await self.store.count()
+        """获取特定 player+npc 的记忆数量"""
+        return await self.store.count({"player_id": player_id, "npc_id": npc_id})
+
+    async def list_memories(
+        self,
+        player_id: int,
+        npc_id: str,
+        limit: int = 50,
+        offset: int = 0,
+        emotion: Optional[str] = None,
+        order_desc: bool = True,
+    ) -> List[RetrievedMemory]:
+        """按时间列出特定 player+npc 的记忆（非语义搜索）
+
+        - emotion 可选，筛选特定情感
+        - 默认最新在前（order_desc=True）
+        """
+        filter_metadata: Dict[str, Any] = {"player_id": player_id, "npc_id": npc_id}
+        if emotion:
+            filter_metadata["emotion"] = emotion
+
+        docs = await self.store.list_by_metadata(
+            filter_metadata=filter_metadata,
+            limit=limit,
+            offset=offset,
+            order_desc=order_desc,
+        )
+
+        memories: List[RetrievedMemory] = []
+        for doc in docs:
+            created_at = doc.created_at
+            memories.append(RetrievedMemory(
+                id=doc.id,
+                content=doc.text,
+                summary=doc.metadata.get("summary", ""),
+                relevance_score=1.0,  # 非语义搜索，无相关度
+                emotion=doc.metadata.get("emotion"),
+                created_at=created_at,
+                metadata=doc.metadata,
+            ))
+        return memories
+
+    async def count_memories_by_emotion(
+        self,
+        player_id: int,
+        npc_id: str,
+    ) -> Dict[str, int]:
+        """按情感类别统计记忆数量
+
+        Returns: {"joy": 10, "sadness": 3, "neutral": 22, ...}
+        """
+        # 取一大批，本地分组统计。足以应付普通用户规模。
+        docs = await self.store.list_by_metadata(
+            filter_metadata={"player_id": player_id, "npc_id": npc_id},
+            limit=10000,
+            offset=0,
+        )
+        counts: Dict[str, int] = {}
+        for doc in docs:
+            emo = doc.metadata.get("emotion") or "neutral"
+            counts[emo] = counts.get(emo, 0) + 1
+        return counts
+
+    async def delete_all_memories(
+        self,
+        player_id: int,
+        npc_id: str,
+    ) -> int:
+        """删除特定 player+npc 的所有记忆，返回删除数量"""
+        return await self.store.delete_by_metadata(
+            {"player_id": player_id, "npc_id": npc_id}
+        )
 
     async def build_context(
         self,
