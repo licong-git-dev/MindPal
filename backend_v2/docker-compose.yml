@@ -79,6 +79,46 @@ services:
       - mindpal_network
     restart: unless-stopped
 
+  # ROI-7 主动消息生成器（每天 10:00 跑一次）
+  # 使用 entrypoint 守护进程：sleep 到下个 10 点 → 跑 → 再 sleep
+  # 不引入 celery beat / supervisord 等额外依赖，保留运维简单度
+  proactive_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mindpal_proactive_worker
+    command: >
+      sh -c '
+        while true; do
+          NOW=$$(date +%s);
+          NEXT=$$(date -d "today 10:00" +%s);
+          if [ "$$NEXT" -le "$$NOW" ]; then
+            NEXT=$$(date -d "tomorrow 10:00" +%s);
+          fi;
+          SLEEP=$$((NEXT - NOW));
+          echo "[proactive_worker] sleeping $$SLEEP seconds until next 10:00";
+          sleep $$SLEEP;
+          python -m scripts.generate_proactive_messages || echo "[proactive_worker] run failed";
+        done
+      '
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://mindpal:mindpal123@postgres:5432/mindpal
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    networks:
+      - mindpal_network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
