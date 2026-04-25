@@ -11,6 +11,7 @@ from app.models.quest import Quest, QuestProgress, Achievement, PlayerAchievemen
 from app.models.social import Friendship, BlockedPlayer, ChatMessage, Party, PartyMember
 from app.models.payment import Order, PaymentLog, VIPSubscription, RechargeProduct
 from app.models.digital_human import DigitalHuman, DHConversation, DHMessage
+from app.models.proactive import ProactiveMessage
 from app.models.report import UserReport, ReportCategory, ReportStatus, ReportTargetType
 
 __all__ = [
@@ -40,6 +41,7 @@ __all__ = [
     "DigitalHuman",
     "DHConversation",
     "DHMessage",
+    "ProactiveMessage",
     "UserReport",
     "ReportCategory",
     "ReportStatus",

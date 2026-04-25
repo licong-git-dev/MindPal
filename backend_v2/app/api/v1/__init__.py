@@ -21,6 +21,7 @@ from app.api.v1.analytics import router as analytics_router
 from app.api.v1.account import router as account_router
 from app.api.v1.report import router as report_router
 from app.api.v1.verification import router as verification_router
+from app.api.v1.proactive import router as proactive_router
 
 # ==================== 已禁用的游戏化路由（代码文件保留在 api/v1/ 供将来参考） ====================
 # player_router        / prefix="/player"        角色 CRUD
@@ -51,6 +52,7 @@ api_router.include_router(analytics_router, prefix="/analytics", tags=["埋点�
 api_router.include_router(account_router, prefix="/account", tags=["账户数据权利"])
 api_router.include_router(report_router, prefix="/reports", tags=["投诉举报"])
 api_router.include_router(verification_router, prefix="/verification", tags=["实名认证"])
+api_router.include_router(proactive_router, prefix="/proactive", tags=["主动消息"])
 
 
 __all__ = ["api_router"]

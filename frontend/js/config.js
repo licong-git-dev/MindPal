@@ -107,6 +107,13 @@ const MindPalConfig = {
       DELETE:         '/api/v1/account?confirm=true',
     },
 
+    // 主动消息（ROI-7：数字人主动问候，拉次留）
+    PROACTIVE: {
+      MINE:    '/api/v1/proactive/mine',
+      ACK:     (id) => `/api/v1/proactive/${id}/ack`,
+      DISMISS: (id) => `/api/v1/proactive/${id}/dismiss`,
+    },
+
     // 数据埋点相关
     ANALYTICS: {
       TRACK: '/api/v1/analytics/track',

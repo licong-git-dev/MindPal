@@ -741,6 +741,36 @@ const MindPalAPI = {
   },
 
   /**
+   * 主动消息 API（ROI-7：数字人主动问候）
+   *
+   * - listMine({dhId}): 拉未读+未过期的主动消息（可按 dh_id 筛）
+   * - ack(id):          打开 chat 时调用，标记已读
+   * - dismiss(id):      用户点 × 关闭，不进 chat
+   */
+  proactive: {
+    async listMine(opts = {}) {
+      const params = new URLSearchParams();
+      if (opts.dhId != null) params.set('dh_id', opts.dhId);
+      const qs = params.toString();
+      return await MindPalAPI.request(
+        `${MindPalConfig.API.PROACTIVE.MINE}${qs ? '?' + qs : ''}`
+      );
+    },
+
+    async ack(id) {
+      return await MindPalAPI.request(MindPalConfig.API.PROACTIVE.ACK(id), {
+        method: 'POST',
+      });
+    },
+
+    async dismiss(id) {
+      return await MindPalAPI.request(MindPalConfig.API.PROACTIVE.DISMISS(id), {
+        method: 'POST',
+      });
+    },
+  },
+
+  /**
    * 订阅系统API
    */
   subscription: {

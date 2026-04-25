@@ -143,6 +143,33 @@
       margin-bottom: var(--spacing-2xl);
     }
 
+    /* V4 · ROI-7 主动消息红点徽标 */
+    .dh-card { position: relative; }
+    .dh-proactive-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 7px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #ef4444, #ec4899);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+      pointer-events: none;
+      z-index: 2;
+      animation: dh-badge-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes dh-badge-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
     /* 创建新数字人卡片 */
     .create-dh-card {
       display: flex;
@@ -366,6 +393,22 @@
     if (!MindPalAuth.requireLogin(window.location.href)) {
       // 如果未登录,requireLogin会自动跳转,这里不需要继续执行
       throw new Error('需要登录');
+    }
+
+    // 主动消息缓存：{dh_id: count}
+    let proactiveByDh = {};
+
+    // 拉主动消息（失败不阻塞列表渲染）
+    async function loadProactive() {
+      try {
+        const resp = await MindPalAPI.proactive.listMine();
+        if (resp && resp.code === 0 && resp.data) {
+          proactiveByDh = resp.data.by_dh || {};
+        }
+      } catch (e) {
+        console.warn('加载主动消息失败（不影响主流程）:', e);
+        proactiveByDh = {};
+      }
     }
 
     // 加载数字人列表
@@ -596,6 +639,16 @@
       card.appendChild(info);
       card.appendChild(actions);
 
+      // V4 · 主动消息红点
+      const proactiveCount = proactiveByDh[dh.id] || 0;
+      if (proactiveCount > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'dh-proactive-badge';
+        badge.textContent = proactiveCount > 9 ? '9+' : String(proactiveCount);
+        badge.title = `TA 想跟你说 ${proactiveCount} 句话`;
+        card.appendChild(badge);
+      }
+
       return card;
     }
 
@@ -631,6 +684,8 @@
 
     // 页面加载时加载列表和检查配额
     window.addEventListener('load', async function() {
+      // 先拉主动消息（失败不影响列表）
+      await loadProactive();
       await loadDigitalHumans();
       await checkQuota();
     });

@@ -778,6 +778,46 @@
 
       // V4 · 初始化好感度进度条
       renderAffinity(getAffinity());
+
+      // V4 · ROI-7 主动消息：进入对话时一次性推送 + 自动 ack
+      try {
+        await pushProactiveMessages();
+      } catch (e) {
+        console.warn('主动消息推送失败（不影响对话）:', e);
+      }
+    }
+
+    // V4 · 把当前数字人的未读主动消息以系统提示的方式推到对话流
+    async function pushProactiveMessages() {
+      if (!dhId) return;
+      const resp = await MindPalAPI.proactive.listMine({ dhId });
+      if (!resp || resp.code !== 0 || !resp.data) return;
+      const items = resp.data.items || [];
+      if (items.length === 0) return;
+
+      // 按时间正序插入（最早的先说）
+      items.sort((a, b) => {
+        const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return ta - tb;
+      });
+
+      for (const it of items) {
+        const proactiveMsg = {
+          role: 'assistant',
+          content: it.content,
+          timestamp: it.created_at || new Date().toISOString(),
+          isProactive: true,
+          scenario: it.scenario,
+        };
+        messages.push(proactiveMsg);
+      }
+      renderMessages();
+
+      // 全部 ack（用户已经看到了）
+      for (const it of items) {
+        MindPalAPI.proactive.ack(it.id).catch(() => {});
+      }
     }
 
     // 渲染消息
