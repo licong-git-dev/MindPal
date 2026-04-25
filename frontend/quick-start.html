@@ -346,6 +346,14 @@
   </div>
 
   <script>
+    // V4 · C1 来自 share-landing 的邀请：保留推荐人标记到下次注册/登录
+    (function captureRef() {
+      try {
+        const ref = new URLSearchParams(window.location.search).get('ref');
+        if (ref) localStorage.setItem('mindpal_referred_by', ref);
+      } catch (_) {}
+    })();
+
     if (!MindPalAuth.isLoggedIn()) {
       window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
     }

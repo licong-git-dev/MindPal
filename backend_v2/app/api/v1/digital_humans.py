@@ -194,7 +194,8 @@ async def get_digital_human(
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
-    """获取数字人详情"""
+    """获取数字人详情。允许：① 主人；② 当前 active CpBond 的 partner（C2 双人共养）"""
+    # 主人路径
     stmt = select(DigitalHuman).where(
         and_(
             DigitalHuman.id == dh_id,
@@ -204,6 +205,24 @@ async def get_digital_human(
     result = await db.execute(stmt)
     dh = result.scalar_one_or_none()
 
+    is_partner = False
+    if not dh:
+        # CP partner 路径
+        from app.models.cp import CpBond
+        from sqlalchemy import or_
+        bond_q = await db.execute(
+            select(CpBond).where(
+                CpBond.dh_id == dh_id,
+                CpBond.status == "active",
+                or_(CpBond.user_a == user_id, CpBond.user_b == user_id),
+            )
+        )
+        bond = bond_q.scalar_one_or_none()
+        if bond:
+            dh_q = await db.execute(select(DigitalHuman).where(DigitalHuman.id == dh_id))
+            dh = dh_q.scalar_one_or_none()
+            is_partner = True
+
     if not dh:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -212,6 +231,7 @@ async def get_digital_human(
 
     data = dh.to_dict()
     data["personality_display"] = dh.get_personality_display()
+    data["is_cp_partner_view"] = is_partner
 
     return APIResponse(
         code=0,

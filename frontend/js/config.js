@@ -108,6 +108,14 @@ const MindPalConfig = {
       DELETE:         '/api/v1/account?confirm=true',
     },
 
+    // 双人共养 CP（C2：两个用户共享同一个数字人）
+    CP: {
+      INVITE:        '/api/v1/cp/invitations',
+      ACCEPT:        '/api/v1/cp/invitations/accept',
+      MY_BONDS:      '/api/v1/cp/bonds',
+      LEAVE:         (bondId) => `/api/v1/cp/bonds/${bondId}`,
+    },
+
     // 主动消息（ROI-7：数字人主动问候，拉次留）
     PROACTIVE: {
       MINE:    '/api/v1/proactive/mine',

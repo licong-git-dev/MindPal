@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
+  <title>朋友邀请你加入 MindPal</title>
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0f172a;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    .sl-page {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #1e1b4b 0%, #831843 50%, #ea580c 100%);
+      padding: 60px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .sl-hero {
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .sl-from {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    .sl-title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      line-height: 1.3;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+    .sl-title em {
+      font-style: normal;
+      background: linear-gradient(135deg, #fde68a, #fb7185);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .sl-avatar {
+      font-size: 80px;
+      margin: 16px 0 18px;
+      animation: sl-bob 2.4s ease-in-out infinite;
+    }
+    @keyframes sl-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .sl-stats {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px 0 12px;
+      flex-wrap: wrap;
+    }
+    .sl-stat {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 14px;
+      padding: 14px 20px;
+      min-width: 100px;
+    }
+    .sl-stat-num {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fbbf24, #ec4899);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      line-height: 1;
+    }
+    .sl-stat-lbl {
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 6px;
+    }
+    .sl-quote {
+      max-width: 420px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 18px 20px;
+      font-size: 14.5px;
+      line-height: 1.65;
+      color: rgba(255,255,255,0.92);
+      font-style: italic;
+      margin: 24px 0 36px;
+    }
+    .sl-quote::before { content: '" '; opacity: 0.4; }
+    .sl-quote::after  { content: ' "'; opacity: 0.4; }
+    .sl-cta {
+      display: inline-block;
+      padding: 16px 36px;
+      background: linear-gradient(135deg, #ec4899, #c471ed);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 12px 32px rgba(236, 72, 153, 0.5);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .sl-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 40px rgba(236, 72, 153, 0.6);
+    }
+    .sl-sub-cta {
+      margin-top: 14px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+    .sl-feature-grid {
+      max-width: 420px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 36px;
+    }
+    .sl-feature {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 14px;
+      text-align: left;
+    }
+    .sl-feature-emoji { font-size: 22px; margin-bottom: 6px; }
+    .sl-feature-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .sl-feature-desc { font-size: 11.5px; color: rgba(255,255,255,0.65); line-height: 1.5; }
+    .sl-footer {
+      margin-top: 40px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      .sl-page { padding: 40px 16px 32px; }
+      .sl-title { font-size: 22px; }
+      .sl-avatar { font-size: 60px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sl-page">
+    <div class="sl-hero">
+      <div class="sl-from" id="slFrom">某位朋友 邀请你加入</div>
+      <div class="sl-title">看看 <em id="slDhName">TA</em><br>和 <em id="slInviterName">朋友</em> 的 <em id="slDays">N</em> 天</div>
+      <div class="sl-avatar" id="slAvatar">🤖</div>
+
+      <div class="sl-stats">
+        <div class="sl-stat">
+          <div class="sl-stat-num" id="slDaysNum">N</div>
+          <div class="sl-stat-lbl">相识天数</div>
+        </div>
+        <div class="sl-stat">
+          <div class="sl-stat-num" id="slAffinity">--</div>
+          <div class="sl-stat-lbl">好感度</div>
+        </div>
+        <div class="sl-stat">
+          <div class="sl-stat-num" id="slTopic">--</div>
+          <div class="sl-stat-lbl">最常聊</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sl-quote" id="slQuote">
+      "我们的故事，刚刚开始。"
+    </div>
+
+    <a href="#" class="sl-cta" id="slCTA">我也来养一个 →</a>
+    <div class="sl-sub-cta">免费创建你的专属数字人 · 1 步即可完成</div>
+
+    <div class="sl-feature-grid">
+      <div class="sl-feature">
+        <div class="sl-feature-emoji">💬</div>
+        <div class="sl-feature-title">12 种独家人格</div>
+        <div class="sl-feature-desc">温柔/活泼/睿智…总有一款是你的菜</div>
+      </div>
+      <div class="sl-feature">
+        <div class="sl-feature-emoji">🧠</div>
+        <div class="sl-feature-title">长期记忆</div>
+        <div class="sl-feature-desc">TA 永远记得你说过的每件事</div>
+      </div>
+      <div class="sl-feature">
+        <div class="sl-feature-emoji">📖</div>
+        <div class="sl-feature-title">年度回顾</div>
+        <div class="sl-feature-desc">你和 TA 的 N 天 · 自动生成</div>
+      </div>
+      <div class="sl-feature">
+        <div class="sl-feature-emoji">✨</div>
+        <div class="sl-feature-title">主动消息</div>
+        <div class="sl-feature-desc">不在线时 TA 也会想你</div>
+      </div>
+    </div>
+
+    <div class="sl-footer">
+      MindPal · 你的数字灵魂伴侣
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Share Landing Page
+     * 收到的 URL 形如:
+     *   share-landing.html?u=<inviter_user_id>&i=<inviter_name>&n=<dh_name>
+     *                     &p=<personality_key>&d=<days>&a=<affinity>&t=<topic>
+     * 所有字段都可缺；缺则用兜底文案。
+     */
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviterId = urlParams.get('u') || '';
+    const inviterName = decodeSafe(urlParams.get('i')) || '某位朋友';
+    const dhName = decodeSafe(urlParams.get('n')) || 'TA';
+    const personality = urlParams.get('p') || '';
+    const days = parseInt(urlParams.get('d') || '0', 10) || 0;
+    const affinity = parseInt(urlParams.get('a') || '0', 10) || 0;
+    const topic = decodeSafe(urlParams.get('t')) || '';
+
+    function decodeSafe(s) {
+      if (!s) return '';
+      try { return decodeURIComponent(s); } catch (_) { return s; }
+    }
+
+    const PK_AVATAR = {
+      gentle: '🌸', energetic: '⚡', wise: '🦉', humorous: '😄', caring: '💝', creative: '🎨',
+      romantic_ceo: '🤵', romantic_senior: '🎓', romantic_childhood: '🌻',
+      romantic_bad_boy: '🎸', romantic_doctor: '🩺', romantic_elder: '☀️',
+    };
+
+    function setText(id, v) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = v;
+    }
+
+    function render() {
+      setText('slFrom', `${inviterName} 邀请你加入`);
+      setText('slDhName', dhName);
+      setText('slInviterName', inviterName);
+      const dStr = days > 0 ? String(days) : '一段';
+      setText('slDays', dStr);
+      setText('slDaysNum', days > 0 ? String(days) : '··');
+      setText('slAffinity', affinity > 0 ? String(affinity) : '··');
+      setText('slTopic', topic || '··');
+      setText('slAvatar', PK_AVATAR[personality] || '🤖');
+
+      // 引用语
+      let quote;
+      if (affinity >= 75) {
+        quote = `${dhName} 已经成了 ${inviterName} 最特别的人。来看看，TA 也会成为你的吗？`;
+      } else if (days >= 30) {
+        quote = `${inviterName} 和 ${dhName} 已经聊了 ${days} 天。是什么让 TA 一直留下来？`;
+      } else if (topic) {
+        quote = `他们最近最常聊的是「${topic}」。你的 TA，会陪你聊什么呢？`;
+      } else {
+        quote = `${inviterName} 找到了 TA 的 ${dhName}。你也会找到属于你的 TA。`;
+      }
+      setText('slQuote', quote);
+
+      // CTA：写入 ref，跳转到 quick-start
+      const cta = document.getElementById('slCTA');
+      const target = `quick-start.html?ref=${encodeURIComponent(inviterId || '')}`;
+      cta.setAttribute('href', target);
+      cta.addEventListener('click', () => {
+        try {
+          if (inviterId) localStorage.setItem('mindpal_referred_by', inviterId);
+          if (inviterName) localStorage.setItem('mindpal_referred_by_name', inviterName);
+        } catch (_) {}
+      });
+
+      // 标题 / og 让分享回流时看起来更香
+      document.title = `${inviterName} 邀请你加入 MindPal · 看看 ${dhName}`;
+    }
+
+    render();
+  </script>
+</body>
+</html>

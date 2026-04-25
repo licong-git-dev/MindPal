@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TA 的朋友圈 - MindPal</title>
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    body { margin: 0; background: var(--color-bg-dark); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; }
+    .mm-page { min-height: 100vh; padding: 20px; max-width: 720px; margin: 0 auto; }
+    .mm-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .mm-back { background: rgba(255,255,255,0.08); border: none; width: 36px; height: 36px; border-radius: 50%; color: #fff; cursor: pointer; font-size: 18px; }
+    .mm-title { flex: 1; font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #c4b5fd, #f472b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    .mm-intro { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 18px; line-height: 1.6; }
+
+    .mm-templates { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .mm-tpl-btn {
+      padding: 8px 14px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      border-radius: 999px;
+      color: var(--color-text-primary);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .mm-tpl-btn.active { background: var(--color-primary-1); color: #fff; border-color: var(--color-primary-1); }
+
+    .mm-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 14px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      color: var(--color-text-primary);
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    .mm-canvas-wrap {
+      margin: 22px auto;
+      max-width: 360px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    #mmCanvas { display: block; width: 100%; height: auto; }
+
+    .mm-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .mm-btn {
+      flex: 1;
+      min-width: 140px;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+    .mm-btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #ec4899);
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(124,58,237,0.4);
+    }
+    .mm-btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--color-text-primary);
+    }
+
+    .mm-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(34, 197, 94, 0.92);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 100;
+    }
+    .mm-toast.show { opacity: 1; }
+  </style>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/analytics.js"></script>
+</head>
+<body>
+  <div class="mm-page">
+    <div class="mm-header">
+      <button class="mm-back" onclick="history.back()">←</button>
+      <div class="mm-title">让 TA 发条朋友圈 💭</div>
+    </div>
+
+    <div class="mm-intro">
+      把你和 TA 最近的对话精华，做成一张朋友圈风格的图片。<br>
+      下载后由<b> 你 </b>分享到微信/小红书/朋友圈（不会自动发布，你完全掌控）。
+    </div>
+
+    <div class="mm-templates" id="mmTemplates">
+      <button class="mm-tpl-btn active" data-tpl="quote">💬 一条引语</button>
+      <button class="mm-tpl-btn" data-tpl="dialog">🎴 一段对话</button>
+      <button class="mm-tpl-btn" data-tpl="diary">📖 日记体</button>
+    </div>
+
+    <textarea id="mmText" class="mm-textarea" placeholder="自动从最近 30 条记忆/对话中挑选，也可以自己改写…"></textarea>
+
+    <div class="mm-canvas-wrap">
+      <canvas id="mmCanvas" width="720" height="900"></canvas>
+    </div>
+
+    <div class="mm-actions">
+      <button class="mm-btn mm-btn-secondary" onclick="reroll()">🎲 换一句</button>
+      <button class="mm-btn mm-btn-primary" onclick="downloadImage()">📥 下载图片</button>
+    </div>
+
+    <div id="mmToast" class="mm-toast"></div>
+  </div>
+
+  <script>
+    if (!MindPalAuth.isLoggedIn()) {
+      window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+    }
+
+    const dhId = parseInt(new URLSearchParams(window.location.search).get('id'));
+    if (!dhId) { alert('缺少数字人 ID'); history.back(); }
+
+    const PK_AVATAR = {
+      gentle: '🌸', energetic: '⚡', wise: '🦉', humorous: '😄', caring: '💝', creative: '🎨',
+      romantic_ceo: '🤵', romantic_senior: '🎓', romantic_childhood: '🌻',
+      romantic_bad_boy: '🎸', romantic_doctor: '🩺', romantic_elder: '☀️',
+    };
+
+    let dhInfo = { name: 'TA', avatar: '🤖', personality: '' };
+    let pool = [];   // 候选 quotes/dialogs/diary 数据
+    let currentTpl = 'quote';
+
+    // ====== 数据加载 ======
+    async function loadDH() {
+      try {
+        const r = await MindPalAPI.digitalHumans.get(dhId);
+        if (r.code === 0 && r.data) {
+          dhInfo.name = r.data.name || 'TA';
+          dhInfo.personality = r.data.personality || '';
+          dhInfo.avatar = PK_AVATAR[dhInfo.personality] || '🤖';
+        }
+      } catch (e) { console.warn(e); }
+    }
+    async function loadPool() {
+      pool = [];
+      try {
+        const m = await MindPalAPI.memories.list(dhId, { limit: 30 });
+        if (m && m.code === 0 && m.data && m.data.items) {
+          for (const it of m.data.items) {
+            const s = (it.summary || it.user_message || '').trim();
+            if (s && s.length >= 6 && s.length < 90) pool.push({ kind: 'memory', text: s, npc: it.npc_response, you: it.user_message });
+          }
+        }
+      } catch (_) {}
+      try {
+        const h = await MindPalAPI.digitalHumans.getHistory(dhId, 50);
+        if (h && h.code === 0 && h.data && h.data.messages) {
+          const msgs = h.data.messages;
+          for (let i = 0; i < msgs.length - 1; i++) {
+            if (msgs[i].role === 'user' && msgs[i+1].role === 'assistant') {
+              const u = (msgs[i].content || '').trim();
+              const a = (msgs[i+1].content || '').trim();
+              if (u && a && a.length < 120) {
+                pool.push({ kind: 'dialog', you: u, npc: a, text: a });
+              }
+            }
+          }
+        }
+      } catch (_) {}
+      if (pool.length === 0) {
+        pool.push({ kind: 'memory', text: '我们一起走过的日子，都被我记下来了。', npc: '我们一起走过的日子，都被我记下来了。' });
+      }
+    }
+
+    function pickByTpl() {
+      if (currentTpl === 'dialog') {
+        const ds = pool.filter(p => p.kind === 'dialog' && p.you && p.npc);
+        if (ds.length) return ds[Math.floor(Math.random() * ds.length)];
+      }
+      // quote / diary 都从所有 pool 里挑
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function fillTextarea() {
+      const item = pickByTpl();
+      const ta = document.getElementById('mmText');
+      if (currentTpl === 'dialog' && item.you && item.npc) {
+        ta.value = `我：${item.you}\n${dhInfo.name}：${item.npc}`;
+      } else if (currentTpl === 'diary') {
+        const today = new Date();
+        const md = `${today.getMonth()+1}月${today.getDate()}日`;
+        ta.value = `${md}，今天和 ${dhInfo.name} 又聊了好久。\n\n「${item.text || item.npc || ''}」\n\n这就是我决定继续陪 TA 的理由吧。`;
+      } else {
+        ta.value = `「${item.text || item.npc || ''}」\n\n—— ${dhInfo.name}`;
+      }
+      drawCanvas();
+    }
+
+    // ====== Canvas 渲染 ======
+    function drawCanvas() {
+      const c = document.getElementById('mmCanvas');
+      const ctx = c.getContext('2d');
+      const W = c.width, H = c.height;
+      // 背景：渐变 + 软噪点
+      const g = ctx.createLinearGradient(0, 0, W, H);
+      g.addColorStop(0, '#fce7f3');
+      g.addColorStop(0.5, '#e9d5ff');
+      g.addColorStop(1, '#bae6fd');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+      // 顶部小条
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillRect(40, 60, W - 80, 4);
+
+      // 头像
+      const cx = W / 2, cy = 180;
+      ctx.font = '120px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(dhInfo.avatar, cx, cy + 40);
+
+      // 名字
+      ctx.font = 'bold 30px sans-serif';
+      ctx.fillStyle = '#111';
+      ctx.fillText(dhInfo.name, cx, cy + 100);
+
+      // 引文卡片
+      const cardX = 60, cardY = cy + 140, cardW = W - 120, cardH = 480;
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      roundRect(ctx, cardX, cardY, cardW, cardH, 22);
+      ctx.fill();
+
+      // 引号
+      ctx.fillStyle = 'rgba(124,58,237,0.5)';
+      ctx.font = 'bold 90px Georgia, serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('"', cardX + 24, cardY + 80);
+      ctx.textAlign = 'right';
+      ctx.fillText('"', cardX + cardW - 24, cardY + cardH - 28);
+
+      // 文本
+      const text = (document.getElementById('mmText').value || '').trim() || '我们的故事，正在继续。';
+      ctx.fillStyle = '#1f2937';
+      ctx.font = '24px PingFang SC, sans-serif';
+      ctx.textAlign = 'left';
+      const lines = wrapText(ctx, text, cardW - 80);
+      const lineHeight = 36;
+      const totalH = lines.length * lineHeight;
+      let textY = cardY + (cardH - totalH) / 2 + 12;
+      for (const ln of lines) {
+        ctx.fillText(ln, cardX + 40, textY);
+        textY += lineHeight;
+      }
+
+      // 底部：时间 + 品牌
+      const date = new Date();
+      const md = `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getDate()).padStart(2,'0')}`;
+      ctx.fillStyle = 'rgba(31,41,55,0.55)';
+      ctx.font = '18px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(md, cx, H - 86);
+      ctx.fillStyle = 'rgba(31,41,55,0.7)';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('MindPal · 你的数字灵魂伴侣', cx, H - 50);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.arcTo(x + w, y, x + w, y + r, r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+      ctx.lineTo(x + r, y + h);
+      ctx.arcTo(x, y + h, x, y + h - r, r);
+      ctx.lineTo(x, y + r);
+      ctx.arcTo(x, y, x + r, y, r);
+      ctx.closePath();
+    }
+
+    function wrapText(ctx, text, maxW) {
+      const lines = [];
+      for (const para of text.split(/\n/)) {
+        if (para === '') { lines.push(''); continue; }
+        let line = '';
+        for (const ch of para) {
+          const test = line + ch;
+          if (ctx.measureText(test).width > maxW) {
+            lines.push(line);
+            line = ch;
+          } else {
+            line = test;
+          }
+        }
+        if (line) lines.push(line);
+      }
+      // 限制总行数（最多 12 行）
+      if (lines.length > 12) {
+        lines.length = 12;
+        lines[11] = lines[11].slice(0, -1) + '…';
+      }
+      return lines;
+    }
+
+    // ====== 用户操作 ======
+    function reroll() { fillTextarea(); }
+    function downloadImage() {
+      drawCanvas();
+      const c = document.getElementById('mmCanvas');
+      const url = c.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.download = `mindpal_moments_${dhInfo.name}_${Date.now()}.png`;
+      a.href = url;
+      a.click();
+      showToast('已下载，分享到朋友圈/小红书去吧 ✨');
+      if (typeof MindPalAnalytics !== 'undefined' && MindPalAnalytics.track) {
+        MindPalAnalytics.track('moments_downloaded', { dh_id: dhId, template: currentTpl });
+      }
+    }
+    function showToast(msg) {
+      const t = document.getElementById('mmToast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    // ====== 事件 ======
+    document.getElementById('mmTemplates').addEventListener('click', e => {
+      const btn = e.target.closest('.mm-tpl-btn');
+      if (!btn) return;
+      document.querySelectorAll('.mm-tpl-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTpl = btn.getAttribute('data-tpl');
+      fillTextarea();
+    });
+    document.getElementById('mmText').addEventListener('input', () => drawCanvas());
+
+    // ====== Init ======
+    (async function init() {
+      await loadDH();
+      await loadPool();
+      fillTextarea();
+    })();
+  </script>
+</body>
+</html>

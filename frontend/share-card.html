@@ -254,6 +254,9 @@
           <button class="sc-btn sc-btn-secondary" id="copyBtn" onclick="copyImage()" disabled>
             📋 复制到剪贴板
           </button>
+          <button class="sc-btn sc-btn-secondary" id="copyLinkBtn" onclick="copyInviteLink()">
+            🔗 复制邀请链接
+          </button>
         </div>
       </div>
     </div>
@@ -543,6 +546,46 @@
           showToast('复制失败，请改用下载功能', true);
         }
       }, 'image/png');
+    }
+
+    // V4 · C1 复制邀请链接（朋友扫码 / 点开 → share-landing 预览页）
+    async function copyInviteLink() {
+      const user = MindPalAuth.getCurrentUser() || {};
+      const inviterId = user.id || user.user_id || user.phone || '';
+      const inviterName = user.username || user.nickname || '朋友';
+
+      // 拉一些可选数据让落地页更有内容
+      let days = 0, affinity = 0, topic = '';
+      try {
+        const dh = await MindPalAPI.digitalHumans.get(dhId);
+        if (dh.code === 0 && dh.data) {
+          if (dh.data.created_at) {
+            days = Math.max(1, Math.floor((Date.now() - new Date(dh.data.created_at).getTime()) / 86400000));
+          }
+        }
+        affinity = parseInt(localStorage.getItem(`mindpal_affinity_${dhId}`) || '0', 10) || 0;
+      } catch (_) {}
+
+      const params = new URLSearchParams();
+      if (inviterId) params.set('u', String(inviterId));
+      params.set('i', inviterName);
+      params.set('n', dhInfo.name || 'TA');
+      // 从 dhInfo 里没有 personality 字段，但 avatar 间接表达
+      params.set('d', String(days || 0));
+      if (affinity > 0) params.set('a', String(affinity));
+      const base = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}share-landing.html`;
+      const url = `${base}?${params.toString()}`;
+
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('邀请链接已复制：粘贴到微信/朋友圈');
+        if (typeof MindPalAnalytics !== 'undefined' && MindPalAnalytics.track) {
+          MindPalAnalytics.track('invite_link_copied', { dh_id: dhId, days, affinity });
+        }
+      } catch (e) {
+        // fallback：弹出 prompt 让用户手动复制
+        prompt('请手动复制以下邀请链接：', url);
+      }
     }
 
     (async function init() {

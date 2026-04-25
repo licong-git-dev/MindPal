@@ -745,6 +745,37 @@ const MindPalAPI = {
   },
 
   /**
+   * CP 双人共养 API（C2）
+   *
+   * - createInvitation(dhId): 主人发起邀请，返回 6 位 code + ttl
+   * - acceptInvitation(code): 输入 code 加入对方的 DH
+   * - listBonds():            我参与的 bond 列表
+   * - leaveBond(bondId):      退出
+   */
+  cp: {
+    async createInvitation(dhId) {
+      return await MindPalAPI.request(MindPalConfig.API.CP.INVITE, {
+        method: 'POST',
+        body: JSON.stringify({ dh_id: dhId }),
+      });
+    },
+    async acceptInvitation(code) {
+      return await MindPalAPI.request(MindPalConfig.API.CP.ACCEPT, {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      });
+    },
+    async listBonds() {
+      return await MindPalAPI.request(MindPalConfig.API.CP.MY_BONDS);
+    },
+    async leaveBond(bondId) {
+      return await MindPalAPI.request(MindPalConfig.API.CP.LEAVE(bondId), {
+        method: 'DELETE',
+      });
+    },
+  },
+
+  /**
    * 主动消息 API（ROI-7：数字人主动问候）
    *
    * - listMine({dhId}): 拉未读+未过期的主动消息（可按 dh_id 筛）

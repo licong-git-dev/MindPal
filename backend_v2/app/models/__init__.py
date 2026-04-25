@@ -12,6 +12,7 @@ from app.models.social import Friendship, BlockedPlayer, ChatMessage, Party, Par
 from app.models.payment import Order, PaymentLog, VIPSubscription, RechargeProduct
 from app.models.digital_human import DigitalHuman, DHConversation, DHMessage
 from app.models.proactive import ProactiveMessage
+from app.models.cp import CpInvitation, CpBond
 from app.models.report import UserReport, ReportCategory, ReportStatus, ReportTargetType
 
 __all__ = [
@@ -42,6 +43,8 @@ __all__ = [
     "DHConversation",
     "DHMessage",
     "ProactiveMessage",
+    "CpInvitation",
+    "CpBond",
     "UserReport",
     "ReportCategory",
     "ReportStatus",

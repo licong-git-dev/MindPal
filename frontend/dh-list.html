@@ -306,6 +306,9 @@
         <div class="logo-text">MindPal</div>
       </div>
       <div class="top-actions">
+        <button class="btn btn-secondary" onclick="onAcceptCP()" title="输入伙伴的邀请码加入 TA 的数字人">
+          💕 加入 CP
+        </button>
         <button class="btn btn-icon" onclick="window.location.href='account-data.html'" title="我的数据">
           🔒
         </button>
@@ -623,6 +626,24 @@
         window.location.href = `memory.html?id=${dh.id}`;
       });
 
+      const cpButton = document.createElement('button');
+      cpButton.className = 'btn btn-small btn-secondary';
+      cpButton.textContent = '💕 邀请共养';
+      cpButton.title = '邀请你的好友/恋人共同陪伴 TA';
+      cpButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        onInviteCP(dh.id, dh.name);
+      });
+
+      const momentsButton = document.createElement('button');
+      momentsButton.className = 'btn btn-small btn-secondary';
+      momentsButton.textContent = '💭 朋友圈';
+      momentsButton.title = '把和 TA 的精华做成朋友圈风格的图片';
+      momentsButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        window.location.href = `moments.html?id=${dh.id}`;
+      });
+
       const deleteButton = document.createElement('button');
       deleteButton.className = 'btn btn-small btn-secondary';
       deleteButton.textContent = '删除';
@@ -633,6 +654,8 @@
 
       actions.appendChild(chatButton);
       actions.appendChild(memoryButton);
+      actions.appendChild(momentsButton);
+      actions.appendChild(cpButton);
       actions.appendChild(deleteButton);
 
       card.appendChild(avatar);
@@ -682,8 +705,69 @@
       }
     }
 
+    // V4 · C2 邀请伙伴共养 TA
+    async function onInviteCP(dhId, dhName) {
+      try {
+        const resp = await MindPalAPI.cp.createInvitation(dhId);
+        if (resp.code !== 0) throw new Error(resp.message || '创建邀请失败');
+        const code = resp.data.code;
+        const ttlDays = resp.data.ttl_days || 7;
+        const inviterName = (MindPalAuth.getCurrentUser() || {}).username || '朋友';
+        const link = buildAcceptLink(code);
+        const text = `「${inviterName}」邀请你共同陪伴 TA 的数字人「${dhName}」💕\n\n邀请码：${code}（${ttlDays} 天内有效）\n\n或点击：${link}`;
+        let copied = false;
+        try { await navigator.clipboard.writeText(text); copied = true; } catch (_) {}
+        alert(
+          `邀请码：${code}\n` +
+          `${copied ? '（已复制完整邀请文案到剪贴板，可直接粘贴到微信）\n' : ''}` +
+          `让对方在「💕 加入 CP」入口输入这个码即可。`
+        );
+      } catch (err) {
+        const msg = String(err.message || err);
+        if (msg.includes('already has')) {
+          alert('这个数字人已经有 CP 伙伴啦，再生成新邀请前需要先解除现有关系。');
+        } else {
+          alert('生成邀请失败：' + msg);
+        }
+      }
+    }
+
+    function buildAcceptLink(code) {
+      const base = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}`;
+      return `${base}dh-list.html?cp=${encodeURIComponent(code)}`;
+    }
+
+    // V4 · C2 输入邀请码加入对方的 TA
+    async function onAcceptCP(prefilledCode) {
+      const code = prefilledCode || prompt('请输入伙伴给你的邀请码（6 位）：');
+      if (!code) return;
+      try {
+        const resp = await MindPalAPI.cp.acceptInvitation(code.trim().toUpperCase());
+        if (resp.code !== 0) throw new Error(resp.message || '接受失败');
+        const d = resp.data;
+        alert(
+          `🎉 已成为「${d.partner_name || '伙伴'}」和 TA 的数字人「${d.dh_name || '数字人'}」的共同陪伴者！\n\n` +
+          `点击确定后将打开你们的对话。`
+        );
+        window.location.href = `chat.html?id=${d.dh_id}`;
+      } catch (err) {
+        const msg = String(err.message || err);
+        if (msg.includes('expired') || msg.includes('410')) alert('邀请码已过期，请让对方重新生成。');
+        else if (msg.includes('cannot accept your own')) alert('你不能接受自己的邀请码 :)');
+        else if (msg.includes('not found')) alert('邀请码不存在，请检查后重试。');
+        else if (msg.includes('already has')) alert('这个数字人已经有 CP 伙伴了。');
+        else alert('接受失败：' + msg);
+      }
+    }
+
     // 页面加载时加载列表和检查配额
     window.addEventListener('load', async function() {
+      // V4 · C2 如果 URL 里带 ?cp=CODE，自动弹接受流程
+      try {
+        const cp = new URLSearchParams(window.location.search).get('cp');
+        if (cp) onAcceptCP(cp);
+      } catch (_) {}
+
       // 先拉主动消息（失败不影响列表）
       await loadProactive();
       await loadDigitalHumans();
