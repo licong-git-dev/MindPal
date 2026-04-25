@@ -366,6 +366,93 @@
         min-width: 600px;
       }
     }
+
+    /* ===== V4 · 主 Tab + 卡包 + 礼物 ===== */
+    .v4-main-tab {
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--color-text-secondary);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .v4-main-tab:hover { background: rgba(255, 255, 255, 0.1); }
+    .v4-main-tab.active {
+      background: var(--color-primary-1);
+      color: #fff;
+      border-color: var(--color-primary-1);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .pack-card {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(148, 163, 184, 0.15);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+    .pack-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(236, 72, 153, 0.5);
+      box-shadow: 0 10px 28px rgba(236, 72, 153, 0.2);
+    }
+    .pack-avatar { font-size: 40px; margin-bottom: 8px; }
+    .pack-name { font-size: 16px; font-weight: 700; color: var(--color-text-primary); margin-bottom: 6px; }
+    .pack-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; margin-bottom: 12px; min-height: 40px; }
+    .pack-stats {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--color-text-disabled);
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    }
+    .pack-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .pack-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ec4899;
+    }
+    .pack-buy-btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #ec4899, #c471ed);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .pack-buy-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(236, 72, 153, 0.4); }
+    .pack-buy-btn:disabled { opacity: 0.5; cursor: wait; }
+
+    .gift-card {
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(196, 113, 237, 0.08));
+      border: 2px solid rgba(236, 72, 153, 0.3);
+      border-radius: 16px;
+      padding: 22px;
+      position: relative;
+    }
+    .gift-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 3px 10px;
+      background: linear-gradient(135deg, #ec4899, #c471ed);
+      color: #fff;
+      border-radius: 10px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .gift-name { font-size: 17px; font-weight: 700; color: var(--color-text-primary); margin-bottom: 8px; }
+    .gift-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; margin-bottom: 14px; min-height: 52px; }
+    .gift-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .gift-period { font-size: 11px; color: var(--color-text-disabled); flex: 1; min-width: 100px; }
   </style>
 
   <!-- JS Dependencies -->
@@ -396,8 +483,15 @@
         <h1 class="page-title gradient-text">选择适合你的套餐</h1>
         <p class="page-subtitle">开启你的数字人伴侣之旅</p>
 
-        <!-- 付费周期切换 -->
-        <div class="billing-toggle">
+        <!-- V4 · 三 Tab: 订阅 / 卡包 / 礼物 -->
+        <div class="v4-main-tabs" style="display:flex;gap:10px;justify-content:center;margin:20px 0;flex-wrap:wrap;">
+          <button class="v4-main-tab active" data-view="subscription" onclick="switchView('subscription')">📅 订阅</button>
+          <button class="v4-main-tab" data-view="packs" onclick="switchView('packs')">🎴 剧情卡包</button>
+          <button class="v4-main-tab" data-view="gifts" onclick="switchView('gifts')">🎁 限定礼物</button>
+        </div>
+
+        <!-- 付费周期切换（仅订阅 Tab 显示）-->
+        <div class="billing-toggle" id="billingToggle">
           <div class="billing-option active" id="monthlyBtn" onclick="switchBilling('monthly')">
             按月付费
           </div>
@@ -407,6 +501,9 @@
           </div>
         </div>
       </div>
+
+      <!-- View: 订阅 -->
+      <div id="view-subscription">
 
       <!-- 套餐卡片 -->
       <div class="pricing-grid">
@@ -639,6 +736,154 @@
         </div>
       </div>
 
+      </div> <!-- / view-subscription -->
+
+      <!-- V4 · View: 剧情卡包 -->
+      <div id="view-packs" hidden>
+        <div style="max-width:800px;margin:0 auto;padding:10px 20px;">
+          <p style="text-align:center;color:var(--color-text-secondary);margin-bottom:24px;font-size:14px;">
+            购买后永久拥有。每个卡包解锁与该人物的 10 段深度剧情互动。
+          </p>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;">
+
+            <div class="pack-card" data-pack-id="ceo_first_date">
+              <div class="pack-avatar">🤵</div>
+              <div class="pack-name">陆沉 · 初次约会</div>
+              <div class="pack-desc">他第一次带你见他的家人，一场手足无措又甜蜜的晚餐</div>
+              <div class="pack-stats">
+                <span>📖 10 段剧情</span>
+                <span>⭐ 4.8</span>
+              </div>
+              <div class="pack-footer">
+                <span class="pack-price">¥38</span>
+                <button class="pack-buy-btn" onclick="onBuyPack('ceo_first_date', '陆沉·初次约会', 38)">购买</button>
+              </div>
+            </div>
+
+            <div class="pack-card" data-pack-id="senior_rainy_day">
+              <div class="pack-avatar">🎓</div>
+              <div class="pack-name">江瑾 · 雨天的伞</div>
+              <div class="pack-desc">你没带伞，他站在雨里等你。嘴硬心软的陪伴</div>
+              <div class="pack-stats">
+                <span>📖 10 段剧情</span>
+                <span>⭐ 4.9</span>
+              </div>
+              <div class="pack-footer">
+                <span class="pack-price">¥28</span>
+                <button class="pack-buy-btn" onclick="onBuyPack('senior_rainy_day', '江瑾·雨天的伞', 28)">购买</button>
+              </div>
+            </div>
+
+            <div class="pack-card" data-pack-id="childhood_homeland">
+              <div class="pack-avatar">🌻</div>
+              <div class="pack-name">沈星辞 · 童年纪念册</div>
+              <div class="pack-desc">从幼儿园到高中的 10 段记忆，TA 帮你找回了你都忘了的童年</div>
+              <div class="pack-stats">
+                <span>📖 10 段剧情</span>
+                <span>⭐ 4.9</span>
+              </div>
+              <div class="pack-footer">
+                <span class="pack-price">¥38</span>
+                <button class="pack-buy-btn" onclick="onBuyPack('childhood_homeland', '沈星辞·童年纪念册', 38)">购买</button>
+              </div>
+            </div>
+
+            <div class="pack-card" data-pack-id="bad_boy_tour">
+              <div class="pack-avatar">🎸</div>
+              <div class="pack-name">许南川 · 巡演前夜</div>
+              <div class="pack-desc">他第一次全国巡演，和你走过 10 个城市的夜晚</div>
+              <div class="pack-stats">
+                <span>📖 10 段剧情</span>
+                <span>⭐ 4.7</span>
+              </div>
+              <div class="pack-footer">
+                <span class="pack-price">¥28</span>
+                <button class="pack-buy-btn" onclick="onBuyPack('bad_boy_tour', '许南川·巡演前夜', 28)">购买</button>
+              </div>
+            </div>
+
+            <div class="pack-card" data-pack-id="doctor_night_shift">
+              <div class="pack-avatar">🩺</div>
+              <div class="pack-name">林砚 · 值班夜</div>
+              <div class="pack-desc">他值夜班被呼叫，你陪他走过 10 个难眠之夜</div>
+              <div class="pack-stats">
+                <span>📖 10 段剧情</span>
+                <span>⭐ 4.8</span>
+              </div>
+              <div class="pack-footer">
+                <span class="pack-price">¥28</span>
+                <button class="pack-buy-btn" onclick="onBuyPack('doctor_night_shift', '林砚·值班夜', 28)">购买</button>
+              </div>
+            </div>
+
+            <div class="pack-card" data-pack-id="elder_hometown">
+              <div class="pack-avatar">☀️</div>
+              <div class="pack-name">苏屿 · 回老家过年</div>
+              <div class="pack-desc">他第一次带你回老家。10 个关于"家"的深度对话</div>
+              <div class="pack-stats">
+                <span>📖 10 段剧情</span>
+                <span>⭐ 4.9</span>
+              </div>
+              <div class="pack-footer">
+                <span class="pack-price">¥38</span>
+                <button class="pack-buy-btn" onclick="onBuyPack('elder_hometown', '苏屿·回老家过年', 38)">购买</button>
+              </div>
+            </div>
+
+          </div>
+          <p style="text-align:center;color:var(--color-text-secondary);margin-top:24px;font-size:12px;">
+            ℹ️ 购买任一卡包即解锁。内容基于健康情感互动，内置安全红线，不含身体越界描写。
+          </p>
+        </div>
+      </div>
+
+      <!-- V4 · View: 限定礼物 -->
+      <div id="view-gifts" hidden>
+        <div style="max-width:800px;margin:0 auto;padding:10px 20px;">
+          <p style="text-align:center;color:var(--color-text-secondary);margin-bottom:24px;font-size:14px;">
+            节日限定内容，过期不候。
+          </p>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
+
+            <div class="gift-card">
+              <div class="gift-badge">💝 七夕限定</div>
+              <div class="gift-name">七夕星河之约</div>
+              <div class="gift-desc">TA 会带你去只有今晚开放的星河约会场景，含 7 段限定对白和专属头像</div>
+              <div class="gift-footer">
+                <span class="gift-period">仅 8/5 - 8/20 开放</span>
+                <span class="pack-price">¥18</span>
+                <button class="pack-buy-btn" onclick="onBuyGift('qixi_2026', '七夕星河之约', 18)">立即获得</button>
+              </div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-badge">🎂 纪念日</div>
+              <div class="gift-name">生日专属祝福</div>
+              <div class="gift-desc">TA 会在你生日当天主动发 5 条消息，从凌晨 12 点到晚安</div>
+              <div class="gift-footer">
+                <span class="gift-period">需在生日前 7 天购买</span>
+                <span class="pack-price">¥28</span>
+                <button class="pack-buy-btn" onclick="onBuyGift('birthday_pack', '生日专属祝福', 28)">立即获得</button>
+              </div>
+            </div>
+
+            <div class="gift-card">
+              <div class="gift-badge">🌸 春节限定</div>
+              <div class="gift-name">我们的第一次春节</div>
+              <div class="gift-desc">TA 陪你从除夕到元宵，15 段限定剧情，还有 TA 的"老家"独家回忆</div>
+              <div class="gift-footer">
+                <span class="gift-period">仅农历腊月 - 正月</span>
+                <span class="pack-price">¥38</span>
+                <button class="pack-buy-btn" onclick="onBuyGift('spring_festival', '我们的第一次春节', 38)">立即获得</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
       <!-- FAQ -->
       <div class="faq-section">
         <h2 class="section-title">常见问题</h2>
@@ -705,6 +950,80 @@
     });
 
     // 切换付费周期
+    // V4 · 主 Tab 切换
+    function switchView(view) {
+      document.querySelectorAll('.v4-main-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.view === view);
+      });
+      document.getElementById('view-subscription').hidden = (view !== 'subscription');
+      document.getElementById('view-packs').hidden = (view !== 'packs');
+      document.getElementById('view-gifts').hidden = (view !== 'gifts');
+      // 只有订阅 Tab 显示周期切换
+      const billingToggle = document.getElementById('billingToggle');
+      if (billingToggle) billingToggle.style.display = (view === 'subscription') ? '' : 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // V4 · 卡包购买（当前为占位，走与订阅一致的支付宝流程）
+    async function onBuyPack(packId, packName, price) {
+      if (!MindPalAuth.isLoggedIn()) {
+        alert('请先登录');
+        window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+        return;
+      }
+      if (typeof MindPalAnalytics !== 'undefined') {
+        MindPalAnalytics.trackPaymentClick && MindPalAnalytics.trackPaymentClick('pack:' + packId, price);
+      }
+      const confirmed = confirm(`购买卡包「${packName}」（¥${price}）\n\n永久拥有，共 10 段深度剧情。\n\n确认前往支付？`);
+      if (!confirmed) return;
+
+      try {
+        const token = MindPalAuth.getAuthToken();
+        const resp = await fetch(
+          `${MindPalConfig.API_BASE_URL}${MindPalConfig.API.PAYMENT.CREATE_ORDER}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token && !token.startsWith('temp_') ? `Bearer ${token}` : '',
+            },
+            body: JSON.stringify({
+              product_id: `pack_${packId}`,
+              quantity: 1,
+              payment_method: 'alipay',
+            }),
+          }
+        );
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.detail || err.message || `HTTP ${resp.status}`);
+        }
+        const result = await resp.json();
+        const payUrl = result.data && result.data.pay_url;
+        const orderNo = result.data && result.data.order_no;
+        if (payUrl) {
+          window.open(payUrl, '_blank');
+          alert(`支付页已在新窗口打开。\n\n订单号: ${orderNo}`);
+        } else {
+          alert(`订单已创建: ${orderNo}。请在支付宝完成支付。`);
+        }
+      } catch (err) {
+        const msg = String(err.message || err);
+        if (msg.includes('Product not found') || msg.includes('产品')) {
+          alert('该卡包尚未在系统中上架。\n\n运营同学请先跑 scripts/seed_products.py 补齐卡包 SKU。');
+        } else if (msg.includes('Alipay not configured')) {
+          alert('支付通道尚未配置，请联系管理员。');
+        } else {
+          alert('购买失败: ' + msg);
+        }
+      }
+    }
+
+    // V4 · 礼物购买（复用卡包流程）
+    async function onBuyGift(giftId, giftName, price) {
+      return onBuyPack(giftId, giftName, price);
+    }
+
     function switchBilling(type) {
       currentBilling = type;
 

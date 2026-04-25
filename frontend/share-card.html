@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分享卡片 - MindPal</title>
+
+  <!--
+    V4 · ROI-6 · 对话美化分享卡
+    - 用户选 3-5 条对话 → 前端 Canvas 生成 9:16 精美图片 → 下载 / 复制到剪贴板
+    - 小红书 / 朋友圈 友好
+    - 完全前端生成，不需要后端服务
+  -->
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .sc-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      padding-bottom: 40px;
+    }
+    .sc-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .sc-header .back-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--color-text-primary);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .sc-header h1 { flex: 1; margin: 0; font-size: 16px; color: var(--color-text-primary); }
+
+    .sc-body {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+    }
+    @media (max-width: 800px) {
+      .sc-body { grid-template-columns: 1fr; }
+    }
+
+    .sc-msg-picker {
+      background: var(--color-bg-card);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .sc-msg-picker h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 6px;
+    }
+    .sc-hint {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin: 0 0 14px;
+    }
+    .sc-msg-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .sc-msg-item:hover { background: rgba(0, 0, 0, 0.35); }
+    .sc-msg-item.selected {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.1);
+    }
+    .sc-msg-role {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      flex-shrink: 0;
+      min-width: 32px;
+      padding-top: 2px;
+    }
+    .sc-msg-role.user { color: #93c5fd; }
+    .sc-msg-role.assistant { color: #fca5a5; }
+    .sc-msg-content {
+      flex: 1;
+      font-size: 13px;
+      color: var(--color-text-primary);
+      line-height: 1.5;
+    }
+    .sc-msg-time {
+      font-size: 11px;
+      color: var(--color-text-disabled);
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+
+    .sc-preview {
+      position: sticky;
+      top: 80px;
+      background: var(--color-bg-card);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 16px;
+      padding: 18px;
+      align-self: start;
+    }
+    .sc-preview h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 12px;
+    }
+    .sc-canvas-wrap {
+      width: 100%;
+      aspect-ratio: 9/16;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #previewCanvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .sc-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sc-btn {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .sc-btn:not(:disabled):hover { transform: translateY(-1px); }
+    .sc-btn-primary { background: var(--color-primary-1); color: #fff; }
+    .sc-btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--color-text-primary); }
+    .sc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .sc-select-count {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .sc-theme-picker {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .sc-theme-btn {
+      flex: 1;
+      min-width: 60px;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--color-text-secondary);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .sc-theme-btn.active {
+      border-color: var(--color-primary-1);
+      color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .sc-toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(34, 197, 94, 0.92);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 3000;
+    }
+    .sc-toast[hidden] { display: none; }
+  </style>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+</head>
+<body>
+  <div class="sc-page page-transition">
+    <header class="sc-header">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <h1>生成分享卡</h1>
+    </header>
+
+    <div class="sc-body">
+      <!-- 左：消息选择 -->
+      <div class="sc-msg-picker">
+        <h2>选择要展示的对话</h2>
+        <p class="sc-hint">勾选 1-5 条对话。会保留顺序，按时间正序展示。</p>
+        <div id="msgList">
+          <div class="sc-hint">加载中...</div>
+        </div>
+      </div>
+
+      <!-- 右：预览 + 操作 -->
+      <div class="sc-preview">
+        <h2>预览</h2>
+        <div class="sc-select-count" id="selectCount">已选 0 条</div>
+
+        <div class="sc-theme-picker">
+          <button class="sc-theme-btn active" data-theme="gradient" onclick="switchTheme('gradient')">渐变粉</button>
+          <button class="sc-theme-btn" data-theme="dark" onclick="switchTheme('dark')">深夜蓝</button>
+          <button class="sc-theme-btn" data-theme="warm" onclick="switchTheme('warm')">暖阳黄</button>
+        </div>
+
+        <div class="sc-canvas-wrap">
+          <canvas id="previewCanvas" width="540" height="960"></canvas>
+        </div>
+
+        <div class="sc-actions">
+          <button class="sc-btn sc-btn-primary" id="downloadBtn" onclick="downloadImage()" disabled>
+            📥 下载图片
+          </button>
+          <button class="sc-btn sc-btn-secondary" id="copyBtn" onclick="copyImage()" disabled>
+            📋 复制到剪贴板
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="sc-toast" hidden></div>
+
+  <script>
+    if (!MindPalAuth.isLoggedIn()) {
+      window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const dhId = parseInt(urlParams.get('id'));
+    if (!dhId) { alert('缺少数字人 ID'); history.back(); }
+
+    let allMessages = [];
+    let selectedIds = new Set();
+    let dhInfo = { name: '数字人', avatar: '🤖' };
+    let currentTheme = 'gradient';
+
+    const THEMES = {
+      gradient: {
+        bg: (ctx, w, h) => {
+          const g = ctx.createLinearGradient(0, 0, 0, h);
+          g.addColorStop(0, '#fce7f3');
+          g.addColorStop(0.5, '#fbcfe8');
+          g.addColorStop(1, '#c471ed');
+          return g;
+        },
+        titleColor: '#831843',
+        userBubble: '#8b5cf6',
+        aiBubble: '#ffffff',
+        userText: '#ffffff',
+        aiText: '#1f2937',
+        footerColor: 'rgba(131, 24, 67, 0.7)',
+      },
+      dark: {
+        bg: () => '#0f172a',
+        titleColor: '#c4b5fd',
+        userBubble: '#6366f1',
+        aiBubble: '#1e293b',
+        userText: '#ffffff',
+        aiText: '#f1f5f9',
+        footerColor: 'rgba(196, 181, 253, 0.6)',
+      },
+      warm: {
+        bg: (ctx, w, h) => {
+          const g = ctx.createLinearGradient(0, 0, 0, h);
+          g.addColorStop(0, '#fef3c7');
+          g.addColorStop(1, '#fbbf24');
+          return g;
+        },
+        titleColor: '#78350f',
+        userBubble: '#ea580c',
+        aiBubble: '#ffffff',
+        userText: '#ffffff',
+        aiText: '#1f2937',
+        footerColor: 'rgba(120, 53, 15, 0.7)',
+      },
+    };
+
+    function showToast(msg, isErr) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.background = isErr ? 'rgba(239, 68, 68, 0.92)' : 'rgba(34, 197, 94, 0.92)';
+      t.hidden = false;
+      setTimeout(() => { t.hidden = true; }, 2500);
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    async function loadDH() {
+      try {
+        const resp = await MindPalAPI.digitalHumans.get(dhId);
+        if (resp.code === 0 && resp.data) {
+          dhInfo.name = resp.data.name || '数字人';
+          const pkIconMap = {
+            gentle: '🌸', energetic: '⚡', wise: '🦉', humorous: '😄', caring: '💝', creative: '🎨',
+            romantic_ceo: '🤵', romantic_senior: '🎓', romantic_childhood: '🌻',
+            romantic_bad_boy: '🎸', romantic_doctor: '🩺', romantic_elder: '☀️',
+          };
+          dhInfo.avatar = pkIconMap[resp.data.personality] || '🤖';
+        }
+      } catch (e) { console.warn(e); }
+    }
+
+    async function loadMessages() {
+      try {
+        const resp = await MindPalAPI.digitalHumans.getHistory(dhId, 50);
+        if (resp.code === 0 && resp.data && resp.data.messages) {
+          allMessages = resp.data.messages;
+        } else {
+          const cached = localStorage.getItem(`mindpal_messages_${dhId}`);
+          if (cached) allMessages = JSON.parse(cached);
+        }
+      } catch (e) {
+        const cached = localStorage.getItem(`mindpal_messages_${dhId}`);
+        if (cached) allMessages = JSON.parse(cached);
+      }
+      renderMessageList();
+    }
+
+    function renderMessageList() {
+      const container = document.getElementById('msgList');
+      if (!allMessages.length) {
+        container.innerHTML = '<div class="sc-hint" style="padding:20px;">还没有对话记录。先去聊聊吧～</div>';
+        return;
+      }
+      container.innerHTML = allMessages.map((m, i) => {
+        const roleLabel = m.role === 'user' ? '你' : dhInfo.name;
+        const roleClass = m.role === 'user' ? 'user' : 'assistant';
+        const time = m.timestamp ? new Date(m.timestamp).toLocaleDateString('zh-CN') : '';
+        const selected = selectedIds.has(i) ? 'selected' : '';
+        return `
+          <div class="sc-msg-item ${selected}" onclick="toggleSelect(${i})">
+            <span class="sc-msg-role ${roleClass}">${roleLabel}</span>
+            <span class="sc-msg-content">${escapeHtml(m.content || '').slice(0, 100)}</span>
+            <span class="sc-msg-time">${time}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleSelect(idx) {
+      if (selectedIds.has(idx)) {
+        selectedIds.delete(idx);
+      } else if (selectedIds.size < 5) {
+        selectedIds.add(idx);
+      } else {
+        showToast('最多选 5 条', true);
+        return;
+      }
+      renderMessageList();
+      updateCount();
+      drawCanvas();
+    }
+
+    function updateCount() {
+      document.getElementById('selectCount').textContent = `已选 ${selectedIds.size} / 5 条`;
+      const hasSelection = selectedIds.size > 0;
+      document.getElementById('downloadBtn').disabled = !hasSelection;
+      document.getElementById('copyBtn').disabled = !hasSelection;
+    }
+
+    function switchTheme(t) {
+      currentTheme = t;
+      document.querySelectorAll('.sc-theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === t));
+      drawCanvas();
+    }
+
+    // 按选中顺序（保留时间正序）获取消息
+    function getSelectedMessages() {
+      const arr = [];
+      [...selectedIds].sort((a, b) => a - b).forEach(i => {
+        if (allMessages[i]) arr.push(allMessages[i]);
+      });
+      return arr;
+    }
+
+    function wrapText(ctx, text, maxWidth) {
+      const lines = [];
+      let current = '';
+      for (const ch of text) {
+        const test = current + ch;
+        if (ctx.measureText(test).width > maxWidth) {
+          if (current) lines.push(current);
+          current = ch;
+        } else {
+          current = test;
+        }
+      }
+      if (current) lines.push(current);
+      return lines;
+    }
+
+    function drawCanvas() {
+      const canvas = document.getElementById('previewCanvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const theme = THEMES[currentTheme];
+
+      // 背景
+      ctx.fillStyle = theme.bg(ctx, W, H);
+      ctx.fillRect(0, 0, W, H);
+
+      // 顶部标题区
+      ctx.fillStyle = theme.titleColor;
+      ctx.font = 'bold 36px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${dhInfo.avatar} ${dhInfo.name}`, W / 2, 80);
+      ctx.font = '20px -apple-system, sans-serif';
+      ctx.globalAlpha = 0.7;
+      ctx.fillText('我和 TA 的小小故事', W / 2, 114);
+      ctx.globalAlpha = 1;
+
+      // 消息气泡
+      const msgs = getSelectedMessages();
+      const padding = 40;
+      const bubbleMaxWidth = W - padding * 2 - 60;
+      let y = 170;
+      ctx.textAlign = 'left';
+
+      for (const msg of msgs) {
+        const isUser = msg.role === 'user';
+        const bubble = isUser ? theme.userBubble : theme.aiBubble;
+        const textColor = isUser ? theme.userText : theme.aiText;
+        ctx.font = '20px -apple-system, sans-serif';
+        const text = (msg.content || '').slice(0, 200);
+        const lines = wrapText(ctx, text, bubbleMaxWidth);
+        const lineH = 30;
+        const bubbleH = lines.length * lineH + 28;
+
+        const bubbleW = Math.min(bubbleMaxWidth, Math.max(...lines.map(l => ctx.measureText(l).width)) + 36);
+        const bubbleX = isUser ? (W - padding - bubbleW) : padding;
+
+        // 气泡阴影
+        ctx.shadowColor = 'rgba(0,0,0,0.15)';
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetY = 4;
+
+        // 气泡背景
+        ctx.fillStyle = bubble;
+        roundRect(ctx, bubbleX, y, bubbleW, bubbleH, 18);
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 文字
+        ctx.fillStyle = textColor;
+        lines.forEach((line, i) => {
+          ctx.fillText(line, bubbleX + 18, y + 26 + i * lineH);
+        });
+
+        y += bubbleH + 18;
+        if (y > H - 180) break; // 空间留给底部
+      }
+
+      // 底部品牌区
+      ctx.fillStyle = theme.footerColor;
+      ctx.font = '18px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('MindPal · 你的数字灵魂伴侣', W / 2, H - 50);
+      ctx.font = '14px -apple-system, sans-serif';
+      ctx.globalAlpha = 0.5;
+      ctx.fillText('扫码下载 App · 找到专属于你的 TA', W / 2, H - 24);
+      ctx.globalAlpha = 1;
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function downloadImage() {
+      const canvas = document.getElementById('previewCanvas');
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.download = `mindpal_${dhInfo.name}_${Date.now()}.png`;
+      a.href = url;
+      a.click();
+      showToast('已下载分享卡');
+
+      if (typeof MindPalAnalytics !== 'undefined' && MindPalAnalytics.track) {
+        MindPalAnalytics.track('share_card_downloaded', { dh_id: dhId, msg_count: selectedIds.size, theme: currentTheme });
+      }
+    }
+
+    async function copyImage() {
+      const canvas = document.getElementById('previewCanvas');
+      canvas.toBlob(async (blob) => {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          showToast('已复制到剪贴板，可粘贴到微信/小红书');
+          if (typeof MindPalAnalytics !== 'undefined' && MindPalAnalytics.track) {
+            MindPalAnalytics.track('share_card_copied', { dh_id: dhId });
+          }
+        } catch (e) {
+          showToast('复制失败，请改用下载功能', true);
+        }
+      }, 'image/png');
+    }
+
+    (async function init() {
+      await loadDH();
+      await loadMessages();
+      drawCanvas();
+      updateCount();
+    })();
+  </script>
+
+  <footer style="text-align:center;padding:16px 20px;color:var(--color-text-disabled);font-size:11px;">
+    <a href="legal.html#service" style="color:var(--color-text-secondary);">服务协议</a> ·
+    <a href="legal.html#privacy" style="color:var(--color-text-secondary);">隐私政策</a>
+  </footer>
+</body>
+</html>

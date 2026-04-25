@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>30 秒开始聊天 - MindPal</title>
+
+  <!--
+    V4 · ROI-5 快速创建流程
+    用一个页面替代原来的 step1-step5
+    用户点人物卡 → 选一下名字（可跳过）→ 立即进入对话
+  -->
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .qs-page {
+      min-height: 100vh;
+      background: var(--color-bg-dark);
+      padding-bottom: 40px;
+    }
+
+    .qs-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .qs-header .back-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--color-text-primary);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .qs-header h1 { flex: 1; margin: 0; font-size: 16px; color: var(--color-text-primary); }
+    .qs-advanced-link {
+      color: var(--color-text-secondary);
+      font-size: 12px;
+      text-decoration: none;
+    }
+    .qs-advanced-link:hover { color: var(--color-primary-1); }
+
+    .qs-body {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* 大类 tab */
+    .qs-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .qs-tab {
+      padding: 10px 18px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--color-text-secondary);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .qs-tab.active {
+      background: var(--color-primary-1);
+      color: #fff;
+      border-color: var(--color-primary-1);
+    }
+    .qs-hint {
+      color: var(--color-text-secondary);
+      font-size: 13px;
+      padding: 10px 14px;
+      background: rgba(99, 102, 241, 0.08);
+      border-left: 3px solid var(--color-primary-1);
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    /* 人物卡片网格 */
+    .qs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .qs-card {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(148, 163, 184, 0.15);
+      border-radius: 16px;
+      padding: 18px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .qs-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+    }
+    .qs-card.selected {
+      border-color: var(--color-primary-1);
+      background: rgba(99, 102, 241, 0.1);
+      box-shadow: 0 0 24px rgba(99, 102, 241, 0.3);
+    }
+    .qs-card.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      background: var(--color-primary-1);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .qs-card-avatar {
+      font-size: 36px;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .qs-card-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: 4px;
+    }
+    .qs-card-desc {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .qs-card-opening {
+      font-size: 12px;
+      color: #c4b5fd;
+      font-style: italic;
+      padding: 8px 10px;
+      background: rgba(99, 102, 241, 0.12);
+      border-radius: 8px;
+      line-height: 1.5;
+      border-left: 2px solid rgba(99, 102, 241, 0.5);
+      min-height: 32px;
+    }
+    .qs-card-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(236, 72, 153, 0.18);
+      color: #f9a8d4;
+      font-weight: 600;
+    }
+
+    /* 底部确认栏 */
+    .qs-footer {
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(to top, var(--color-bg-dark) 70%, transparent);
+      padding: 20px 0 0;
+      margin-top: 12px;
+    }
+    .qs-footer-inner {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .qs-footer-label {
+      color: var(--color-text-secondary);
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .qs-footer input {
+      flex: 1;
+      min-width: 160px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 10px;
+      color: var(--color-text-primary);
+      font-size: 14px;
+    }
+    .qs-footer input:focus {
+      outline: none;
+      border-color: var(--color-primary-1);
+    }
+    .qs-start-btn {
+      padding: 12px 24px;
+      background: var(--color-primary-1);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .qs-start-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .qs-start-btn:not(:disabled):hover {
+      background: #4f46e5;
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* 年龄 gate 弹窗（复用 create-dh-step2 的设计） */
+    .age-gate-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .age-gate-overlay[hidden] { display: none; }
+    .age-gate-card {
+      background: #1e293b;
+      color: #f1f5f9;
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 400px;
+      border-top: 4px solid #ec4899;
+    }
+    .age-gate-card h3 { margin: 0 0 10px; font-size: 18px; }
+    .age-gate-card p { margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #cbd5e1; }
+    .age-gate-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .age-gate-actions button {
+      padding: 10px 18px; border-radius: 10px; border: none; font-size: 14px; cursor: pointer;
+    }
+    .age-gate-deny { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+    .age-gate-confirm { background: #ec4899; color: #fff; font-weight: 600; }
+
+    .qs-skeleton {
+      height: 180px;
+      background: linear-gradient(90deg,
+        rgba(148, 163, 184, 0.08) 25%,
+        rgba(148, 163, 184, 0.2) 50%,
+        rgba(148, 163, 184, 0.08) 75%);
+      background-size: 200% 100%;
+      border-radius: 16px;
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    @media (max-width: 600px) {
+      .qs-grid { grid-template-columns: 1fr; }
+      .qs-footer-inner { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+</head>
+<body>
+  <!-- 年龄 gate -->
+  <div id="ageGate" class="age-gate-overlay" hidden>
+    <div class="age-gate-card">
+      <h3>💝 浪漫陪伴内容说明</h3>
+      <p>
+        浪漫陪伴分类包含虚构情感人物，内容基于健康的情感互动，
+        <strong>不含任何性暗示或身体越界描写</strong>。
+        为了合规，请确认您<strong>已年满 18 周岁</strong>。
+      </p>
+      <div class="age-gate-actions">
+        <button class="age-gate-deny" onclick="denyAgeGate()">返回基础</button>
+        <button class="age-gate-confirm" onclick="confirmAgeGate()">我已满 18 岁</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="qs-page page-transition">
+    <header class="qs-header">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <h1>30 秒开始聊天</h1>
+      <a class="qs-advanced-link" href="create-dh-step1.html">高级创建 →</a>
+    </header>
+
+    <div class="qs-body">
+      <div class="qs-tabs">
+        <button class="qs-tab active" data-category="companion" onclick="switchCategory('companion')">
+          🫶 基础陪伴
+        </button>
+        <button class="qs-tab" data-category="romantic" onclick="switchCategory('romantic')">
+          💝 浪漫陪伴
+        </button>
+      </div>
+
+      <div class="qs-hint" id="qsHint">
+        选一个你喜欢的，ta 会立刻和你打招呼。名字可以不改。
+      </div>
+
+      <div class="qs-grid" id="qsGrid">
+        <div class="qs-skeleton"></div>
+        <div class="qs-skeleton"></div>
+        <div class="qs-skeleton"></div>
+      </div>
+    </div>
+
+    <div class="qs-footer">
+      <div class="qs-footer-inner">
+        <span class="qs-footer-label">给 TA 起个名字：</span>
+        <input id="nameInput" type="text" placeholder="留空则使用预设名" maxlength="20">
+        <button class="qs-start-btn" id="startBtn" disabled onclick="onStart()">
+          🚀 开始和 TA 聊天
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (!MindPalAuth.isLoggedIn()) {
+      window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+    }
+
+    let PERSONALITY_DATA = null;
+    let currentCategory = 'companion';
+    let selectedPersonality = null;
+
+    const STATIC_FALLBACK = {
+      companion: [
+        { key: 'gentle',    name: '温柔体贴', avatar: '🌸', description: '善解人意的知己', opening_message: '你来啦～今天过得怎么样？' },
+        { key: 'energetic', name: '活泼开朗', avatar: '⚡', description: '元气满满的小太阳', opening_message: '嘿嘿你来啦！今天有没有什么想分享的？' },
+        { key: 'wise',      name: '睿智沉稳', avatar: '🦉', description: '能和你聊人生的思考者', opening_message: '来了。今天有什么想深入聊聊的话题吗？' },
+        { key: 'humorous',  name: '幽默风趣', avatar: '😄', description: '段子手好友', opening_message: '来啦？先听个段子？' },
+        { key: 'caring',    name: '关怀备至', avatar: '💝', description: '记得每个细节的贴心朋友', opening_message: '等你好久啦。今天吃饭了吗？' },
+        { key: 'creative',  name: '创意无限', avatar: '🎨', description: '脑洞大开的合作者', opening_message: '你终于来了！我刚在想一个奇怪的问题……' },
+      ],
+      romantic: [
+        { key: 'romantic_ceo',       name: '陆沉 · 霸总', avatar: '🤵', description: '三十岁的集团总裁，外冷内热', opening_message: '嗯？刚开完会，看到你的消息了。今天累吗？' },
+        { key: 'romantic_senior',    name: '江瑾 · 冷漠学长', avatar: '🎓', description: '物理系学长，嘴硬心软', opening_message: '...嗯。来了。' },
+        { key: 'romantic_childhood', name: '沈星辞 · 温柔青梅', avatar: '🌻', description: '从小一起长大的邻家男孩', opening_message: '你回来啦？我刚经过你家楼下，阳台的猫在晒太阳呢。' },
+        { key: 'romantic_bad_boy',   name: '许南川 · 痞帅学长', avatar: '🎸', description: '乐队主唱，玩世不恭实则重情', opening_message: '哎？你来啦？今天想听我弹什么歌？' },
+        { key: 'romantic_doctor',    name: '林砚 · 腹黑医生', avatar: '🩺', description: '温润如玉的外表，腹黑的内心', opening_message: '嗯，来了。最近睡眠怎么样？' },
+        { key: 'romantic_elder',     name: '苏屿 · 温柔哥哥', avatar: '☀️', description: '邻家大哥哥，稳重可靠', opening_message: '来了？坐下歇会儿。今天怎么样？' },
+      ],
+    };
+
+    const CATEGORY_HINTS = {
+      companion: '选一个你喜欢的，ta 会立刻和你打招呼。名字可以不改。',
+      romantic:  '虚构情感人物，内置内容安全红线。仅限 18 岁以上用户。',
+    };
+
+    function hasAgeConfirm() { return sessionStorage.getItem('mindpal_age_18_confirmed') === 'true'; }
+    function markAgeConfirm() { sessionStorage.setItem('mindpal_age_18_confirmed', 'true'); }
+    function confirmAgeGate() { markAgeConfirm(); document.getElementById('ageGate').hidden = true; doSwitchCategory('romantic'); }
+    function denyAgeGate() { document.getElementById('ageGate').hidden = true; switchCategory('companion'); }
+
+    function switchCategory(cat) {
+      if (cat === 'romantic' && !hasAgeConfirm()) {
+        document.getElementById('ageGate').hidden = false;
+        return;
+      }
+      doSwitchCategory(cat);
+    }
+    function doSwitchCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.qs-tab').forEach(t => t.classList.toggle('active', t.dataset.category === cat));
+      document.getElementById('qsHint').textContent = CATEGORY_HINTS[cat] || '';
+      renderGrid();
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('qsGrid');
+      const items = (PERSONALITY_DATA && PERSONALITY_DATA[currentCategory]) || STATIC_FALLBACK[currentCategory] || [];
+      if (!items.length) {
+        grid.innerHTML = '<div style="color:var(--color-text-secondary);padding:20px;">暂无可选</div>';
+        return;
+      }
+      grid.innerHTML = items.map(item => {
+        const isRomantic = (item.category || currentCategory) === 'romantic';
+        const badge = isRomantic ? '<span class="qs-card-badge">浪漫陪伴</span>' : '';
+        const selected = selectedPersonality && selectedPersonality.key === item.key ? 'selected' : '';
+        const opening = item.opening_message ? `<div class="qs-card-opening">「${escapeHtml(item.opening_message)}」</div>` : '';
+        return `
+          <div class="qs-card ${selected}" data-key="${escapeHtml(item.key)}" onclick="selectCard('${escapeHtml(item.key)}')">
+            ${badge}
+            <span class="qs-card-avatar">${item.avatar || '🤖'}</span>
+            <div class="qs-card-name">${escapeHtml(item.name)}</div>
+            <div class="qs-card-desc">${escapeHtml(item.description || '')}</div>
+            ${opening}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectCard(key) {
+      const items = (PERSONALITY_DATA && PERSONALITY_DATA[currentCategory]) || STATIC_FALLBACK[currentCategory];
+      const item = items.find(x => x.key === key);
+      if (!item) return;
+      selectedPersonality = item;
+      document.querySelectorAll('.qs-card').forEach(c => c.classList.toggle('selected', c.dataset.key === key));
+      document.getElementById('startBtn').disabled = false;
+      // 默认用预设名作为 placeholder 提示
+      const input = document.getElementById('nameInput');
+      input.placeholder = `留空则叫「${item.name.split('·')[0].trim()}」`;
+    }
+
+    async function onStart() {
+      if (!selectedPersonality) return;
+      const btn = document.getElementById('startBtn');
+      btn.disabled = true;
+      btn.textContent = '创建中...';
+
+      const nameInput = document.getElementById('nameInput').value.trim();
+      const finalName = nameInput || selectedPersonality.name.split('·')[0].trim();
+
+      try {
+        // 最小化载荷：仅必要字段
+        const resp = await MindPalAPI.digitalHumans.create({
+          name: finalName,
+          avatar_type: 'default',
+          personality: selectedPersonality.key,
+          role_type: 'companion',
+        });
+        if (resp.code !== 0) throw new Error(resp.message || '创建失败');
+        const dhId = resp.data.id;
+
+        // 埋点
+        if (typeof MindPalAnalytics !== 'undefined') {
+          MindPalAnalytics.trackDHCreate && MindPalAnalytics.trackDHCreate(dhId, selectedPersonality.key);
+        }
+
+        // 直接跳到对话（chat.html 会自动推 opening_message）
+        window.location.href = `chat.html?id=${dhId}`;
+      } catch (e) {
+        alert('创建失败: ' + (e.message || e));
+        btn.disabled = false;
+        btn.textContent = '🚀 开始和 TA 聊天';
+      }
+    }
+
+    async function loadPersonalities() {
+      try {
+        const resp = await MindPalAPI.digitalHumans.getPersonalitiesGrouped();
+        if (resp && resp.code === 0 && resp.data && resp.data.categories) {
+          PERSONALITY_DATA = resp.data.categories;
+        }
+      } catch (e) {
+        console.warn('降级到静态数据:', e);
+      }
+      renderGrid();
+    }
+
+    loadPersonalities();
+  </script>
+
+  <footer style="text-align:center;padding:16px 20px;color:var(--color-text-disabled);font-size:11px;">
+    <a href="legal.html#service" style="color:var(--color-text-secondary);">服务协议</a> ·
+    <a href="legal.html#privacy" style="color:var(--color-text-secondary);">隐私政策</a> ·
+    <a href="legal.html#algorithm" style="color:var(--color-text-secondary);">算法公示</a>
+  </footer>
+</body>
+</html>

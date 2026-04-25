@@ -573,6 +573,9 @@
       </div>
 
       <div class="header-actions">
+        <button class="btn btn-icon" onclick="goToShareCard()" title="生成分享卡">
+          💝
+        </button>
         <button class="btn btn-icon" onclick="goToMemory()" title="查看记忆">
           🧠
         </button>
@@ -1353,6 +1356,11 @@
     // 跳转到记忆时间线
     function goToMemory() {
       window.location.href = `memory.html?id=${dhId}`;
+    }
+
+    // V4 · 跳转到分享卡生成页
+    function goToShareCard() {
+      window.location.href = `share-card.html?id=${dhId}`;
     }
 
     // 设置
