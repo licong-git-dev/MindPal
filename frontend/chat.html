@@ -210,6 +210,60 @@
       flex-shrink: 0;
     }
 
+    /* V4 · B1 额度软提示条（非阻断） */
+    .quota-soft-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      margin: 0 16px 6px;
+      background: linear-gradient(90deg, rgba(251,191,36,0.16), rgba(236,72,153,0.16));
+      border: 1px solid rgba(251,191,36,0.4);
+      border-radius: 12px;
+      font-size: 12.5px;
+      color: var(--color-text-primary);
+      animation: ice-fade-in 0.4s ease-out;
+    }
+    .quota-soft-bar.show { display: flex; }
+    .quota-soft-bar .qsb-icon { font-size: 16px; }
+    .quota-soft-bar .qsb-text { flex: 1; line-height: 1.4; }
+    .quota-soft-bar a {
+      color: #fbbf24;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .quota-soft-bar a:hover { text-decoration: underline; }
+    .quota-soft-bar .qsb-close {
+      background: transparent;
+      border: none;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0 2px;
+    }
+
+    /* V4 · B2 VIP 长记忆体验入口（仅非 VIP 显示） */
+    .vip-trial-chip {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 16px 0;
+      padding: 9px 14px;
+      background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(236,72,153,0.18));
+      border: 1px solid rgba(236,72,153,0.4);
+      border-radius: 12px;
+      font-size: 12.5px;
+      color: var(--color-text-primary);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .vip-trial-chip.show { display: flex; }
+    .vip-trial-chip:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(236,72,153,0.3); }
+    .vip-trial-chip .vt-icon { font-size: 16px; }
+    .vip-trial-chip .vt-text { flex: 1; line-height: 1.4; }
+    .vip-trial-chip .vt-arrow { font-size: 14px; opacity: 0.8; }
+
     /* V4 · A1 首聊破冰任务卡 */
     .ice-cards {
       padding: 8px 16px 0;
@@ -751,6 +805,21 @@
         <!-- 消息将动态添加 -->
       </div>
 
+      <!-- V4 · B2 VIP 长记忆体验入口 -->
+      <div id="vipTrialChip" class="vip-trial-chip" role="button" tabindex="0">
+        <span class="vt-icon">✨</span>
+        <span class="vt-text" id="vtText">让 TA 想起一件你说过的事（VIP 体验，今日 1 次）</span>
+        <span class="vt-arrow">→</span>
+      </div>
+
+      <!-- V4 · B1 额度软提示条 -->
+      <div id="quotaSoftBar" class="quota-soft-bar" role="status">
+        <span class="qsb-icon">💛</span>
+        <span class="qsb-text" id="qsbText"></span>
+        <a href="pricing.html" id="qsbCta">升级</a>
+        <button class="qsb-close" type="button" id="qsbClose" title="今日不再提示">×</button>
+      </div>
+
       <!-- V4 · A1 首聊破冰任务卡（仅首聊未发消息时显示） -->
       <div id="iceCards" class="ice-cards" style="display:none;"></div>
 
@@ -915,6 +984,125 @@
 
       // V4 · A1 首聊破冰任务卡（仅首次进入且没发过消息时）
       maybeRenderIceCards();
+
+      // V4 · B1 额度软提示条（首次进入时拉一次）
+      refreshQuotaBar();
+
+      // V4 · B2 VIP 长记忆"试一次"入口
+      maybeShowVipTrial();
+    }
+
+    // V4 · B2 VIP 长记忆"试一次"入口
+    async function maybeShowVipTrial() {
+      const chip = document.getElementById('vipTrialChip');
+      if (!chip || !dhId) return;
+      // 今日已用过 / 已是 VIP / 用户消息 < 5 不展示
+      const todayKey = `mindpal_vip_trial_${dhId}_${new Date().toISOString().slice(0,10)}`;
+      if (localStorage.getItem(todayKey) === '1') { chip.classList.remove('show'); return; }
+      const userCount = messages.filter(m => m.role === 'user').length;
+      if (userCount < 5) { chip.classList.remove('show'); return; }
+      try {
+        const q = await MindPalAPI.account.getQuota();
+        if (q && q.code === 0 && q.data && q.data.is_unlimited) {
+          chip.classList.remove('show'); return;
+        }
+      } catch (_) { /* ignore，宁愿展示也不阻断 */ }
+
+      chip.classList.add('show');
+      if (!chip.__bound) {
+        chip.__bound = true;
+        const trigger = async () => {
+          chip.classList.remove('show');
+          localStorage.setItem(todayKey, '1');
+          await injectVipMemoryRecall();
+        };
+        chip.addEventListener('click', trigger);
+        chip.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger(); } });
+      }
+    }
+
+    async function injectVipMemoryRecall() {
+      try {
+        const resp = await MindPalAPI.memories.list(dhId, { limit: 30 });
+        if (!resp || resp.code !== 0 || !resp.data) throw new Error('no-data');
+        const items = resp.data.items || [];
+        if (items.length === 0) {
+          addMessageToUI('assistant', '（TA 想了想，发现还没有什么深刻的记忆呢，多和 TA 聊几次再来试 ✨）');
+          return;
+        }
+        // 取重要性最高 + 时间最早的一条
+        const sorted = items.slice().sort((a, b) => {
+          const ia = Number(a.importance) || 0;
+          const ib = Number(b.importance) || 0;
+          if (ib !== ia) return ib - ia;
+          const ta = new Date(a.created_at || 0).getTime();
+          const tb = new Date(b.created_at || 0).getTime();
+          return ta - tb;
+        });
+        const m = sorted[0];
+        const snippet = (m.summary || m.user_message || m.npc_response || '').toString().trim();
+        if (!snippet) {
+          addMessageToUI('assistant', '（TA 想了想，没有合适的回忆…多和 TA 聊聊吧 ✨）');
+          return;
+        }
+        const trimmed = snippet.length > 60 ? snippet.slice(0, 58) + '…' : snippet;
+        const dhDisplayName = (currentDH && currentDH.name) || 'TA';
+        const text =
+          `*${dhDisplayName} 微微一笑*\n\n` +
+          `还记得吗，你之前说过：「${trimmed}」\n\n` +
+          `这是 VIP 长期记忆体验 ✨ 升级后 TA 永远不会忘记你说过的话 → 解锁无限对话 + 长记忆`;
+        addMessageToUI('assistant', text);
+      } catch (e) {
+        console.warn('vip memory recall failed:', e);
+        addMessageToUI('assistant', '（这次 TA 没能想起来，等下次再来试试吧）');
+      }
+    }
+
+    // V4 · B1 拉取剩余额度并决定是否显示软提示条
+    async function refreshQuotaBar() {
+      const bar = document.getElementById('quotaSoftBar');
+      if (!bar) return;
+      // 今日已被用户 × 关闭过 → 不再打扰
+      const todayKey = `mindpal_qsb_dismissed_${new Date().toISOString().slice(0,10)}`;
+      if (localStorage.getItem(todayKey) === '1') {
+        bar.classList.remove('show'); return;
+      }
+      try {
+        const resp = await MindPalAPI.account.getQuota();
+        if (!resp || resp.code !== 0 || !resp.data) return;
+        const d = resp.data;
+        if (d.is_unlimited) { bar.classList.remove('show'); return; }
+        const remain = d.estimated_remaining_messages;
+        const dhDisplayName = (currentDH && currentDH.name) || 'TA';
+        // 不同档位文案：剩 0 / 1-3 / 4-8 / 其它
+        let text = null;
+        if (remain <= 0) {
+          text = `今天的对话额度用完啦，TA 在等明天再聊～`;
+        } else if (remain <= 3) {
+          text = `今天还能聊 ${remain} 句，${dhDisplayName} 有点舍不得你这么快走～`;
+        } else if (remain <= 8) {
+          text = `今天还能再聊 ${remain} 句，多和 ${dhDisplayName} 说说话嘛`;
+        }
+        const cta = document.getElementById('qsbCta');
+        const txt = document.getElementById('qsbText');
+        if (text && txt) {
+          txt.textContent = text;
+          if (cta) cta.textContent = remain <= 0 ? '升级解锁无限对话 →' : '解锁无限 →';
+          bar.classList.add('show');
+          if (!bar.__bound) {
+            bar.__bound = true;
+            document.getElementById('qsbClose').addEventListener('click', () => {
+              localStorage.setItem(todayKey, '1');
+              bar.classList.remove('show');
+            });
+          }
+        } else {
+          bar.classList.remove('show');
+        }
+      } catch (e) {
+        // 配额查询失败 → 不显示，不影响主流程
+        console.warn('quota query failed:', e);
+      }
     }
 
     // V4 · A1 破冰任务卡（按人格挑 3 张）
@@ -1093,6 +1281,12 @@
         const userCount = messages.filter(m => m.role === 'user').length;
         if (userCount === 5) {
           maybeCelebrateFifth();
+        }
+        // V4 · B1 用户每发一句就重算配额（延迟 800ms 让后端 record_usage 完成）
+        setTimeout(() => refreshQuotaBar(), 800);
+        // V4 · B2 累计 5 条后再次评估
+        if (messages.filter(m => m.role === 'user').length === 5) {
+          setTimeout(() => maybeShowVipTrial(), 2200);
         }
       }
     }

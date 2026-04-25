@@ -99,8 +99,9 @@ const MindPalConfig = {
       DETAIL:  (id) => `/api/v1/reports/${id}`,
     },
 
-    // 账户数据权利（PIPL §44/45/47）
+    // 账户数据权利（PIPL §44/45/47） + 配额查询
     ACCOUNT: {
+      QUOTA:          '/api/v1/account/quota',
       DATA_SUMMARY:   '/api/v1/account/data-summary',
       DATA_EXPORT:    '/api/v1/account/data-export',
       CLEAR_MEMORIES: '/api/v1/account/memories?confirm=true',

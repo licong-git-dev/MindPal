@@ -139,6 +139,46 @@ async def toggle_minor_mode(
     )
 
 
+@router.get("/quota", response_model=APIResponse)
+async def get_my_quota(
+    user_id: int = Depends(get_current_user_id),
+):
+    """
+    返回当前用户今日剩余的对话配额（轻量端点，供 chat.html 顶部软提示条使用）。
+
+    返回字段:
+      - is_unlimited: 是否无限（VIP）
+      - daily_token_limit / used_tokens / remaining_tokens
+      - usage_percent: 0-100
+      - estimated_remaining_messages: 按 1000 token/条估算的剩余条数
+    """
+    from app.services.ai.cost import get_cost_tracker
+    from app.core.quota import DEFAULT_CHAT_TOKENS
+
+    tracker = get_cost_tracker()
+    usage = tracker.get_player_usage(user_id)
+
+    is_unlimited = (usage.get("daily_token_limit", 0) < 0)
+    remaining_tokens = usage.get("remaining_tokens", -1)
+    estimated_remaining = (
+        -1 if is_unlimited or remaining_tokens < 0
+        else max(0, remaining_tokens // DEFAULT_CHAT_TOKENS)
+    )
+
+    return APIResponse(
+        code=0,
+        message="success",
+        data={
+            "is_unlimited": is_unlimited,
+            "daily_token_limit": usage.get("daily_token_limit"),
+            "used_tokens": usage.get("used_tokens"),
+            "remaining_tokens": remaining_tokens,
+            "usage_percent": round(usage.get("usage_percent", 0), 1),
+            "estimated_remaining_messages": estimated_remaining,
+        },
+    )
+
+
 @router.get("/data-summary", response_model=APIResponse)
 async def get_data_summary(
     user_id: int = Depends(get_current_user_id),

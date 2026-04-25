@@ -682,6 +682,10 @@ const MindPalAPI = {
    * - deleteAccount(password): 注销账户（级联删除全部数据）
    */
   account: {
+    async getQuota() {
+      return await MindPalAPI.request(MindPalConfig.API.ACCOUNT.QUOTA);
+    },
+
     async dataSummary() {
       return await MindPalAPI.request(MindPalConfig.API.ACCOUNT.DATA_SUMMARY);
     },
