@@ -69,6 +69,28 @@
     }
     .mem-clear-btn:hover { background: rgba(239, 68, 68, 0.2); }
 
+    /* V4 · 年度回顾入口 */
+    .mem-review-btn {
+      background: linear-gradient(135deg, #7c3aed, #ec4899);
+      color: #fff;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .mem-review-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.5);
+    }
+
     /* 工具栏（搜索 + 筛选） */
     .mem-toolbar {
       padding: 16px 20px;
@@ -359,6 +381,7 @@
         <h1 id="pageTitle">记忆时间线</h1>
         <div class="mem-subtitle" id="pageSubtitle">加载中...</div>
       </div>
+      <a class="mem-review-btn" id="yearlyReviewBtn" href="#" title="生成专属年度回顾">📖 我和 TA 的 N 天 →</a>
       <button class="mem-clear-btn" onclick="clearAllMemories()">清空全部</button>
     </header>
 
@@ -723,6 +746,8 @@
         window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
         return;
       }
+      const reviewBtn = document.getElementById('yearlyReviewBtn');
+      if (reviewBtn) reviewBtn.href = `yearly-review.html?id=${dhId}`;
       await loadStats();
       await loadDHInfo();
       // 更新 subtitle 为实际总数

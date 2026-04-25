@@ -947,6 +947,17 @@
       const key = `mindpal_affinity_${dhId}`;
       const clamped = Math.max(0, Math.min(100, v));
       localStorage.setItem(key, String(clamped));
+
+      // V4 · 记录好感度历史（供 yearly-review 画曲线图）
+      try {
+        const historyKey = `mindpal_affinity_history_${dhId}`;
+        const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+        history.push({ t: Date.now(), v: clamped });
+        // 限制最多 500 条（约半年日常用量）
+        if (history.length > 500) history.splice(0, history.length - 500);
+        localStorage.setItem(historyKey, JSON.stringify(history));
+      } catch (_) { /* 忽略 quota 异常 */ }
+
       renderAffinity(clamped);
       return clamped;
     }

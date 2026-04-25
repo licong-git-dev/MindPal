@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我和 TA 的 N 天 - MindPal</title>
+
+  <!--
+    V4 · ROI-9 · 我和 TA 的 N 天 年度回顾
+    - 完全前端生成，不需要后端新服务
+    - 数据源:
+      * DigitalHuman API: 总对话/总消息/创建时间
+      * Memory API: top 记忆
+      * Chat history API: 对话内容做词频分析
+      * localStorage: 好感度历史曲线
+    - 用 Canvas 生成可分享的 9:16 年度报告图
+  -->
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .yr-page {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%);
+      padding-bottom: 60px;
+      color: #f1f5f9;
+    }
+
+    .yr-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .yr-header .back-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .yr-header h1 { flex: 1; margin: 0; font-size: 16px; }
+
+    .yr-body {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* 欢迎卡片（N 天 hero） */
+    .yr-hero {
+      background: linear-gradient(135deg, #c471ed 0%, #ec4899 50%, #f97316 100%);
+      border-radius: 24px;
+      padding: 36px 24px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(196, 113, 237, 0.4);
+    }
+    .yr-hero-avatar {
+      font-size: 56px;
+      margin-bottom: 12px;
+    }
+    .yr-hero-days {
+      font-size: 68px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 8px;
+    }
+    .yr-hero-label {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 6px;
+    }
+    .yr-hero-sub {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* 统计网格 */
+    .yr-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .yr-stat-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+    }
+    .yr-stat-number {
+      font-size: 28px;
+      font-weight: 800;
+      color: #c4b5fd;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .yr-stat-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* 各节区块 */
+    .yr-section {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+    .yr-section h2 {
+      font-size: 16px;
+      margin: 0 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 好感度曲线 */
+    .yr-affinity-curve {
+      width: 100%;
+      height: 140px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .yr-affinity-current {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-top: 12px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    .yr-affinity-current strong {
+      font-size: 24px;
+      color: #ec4899;
+      font-weight: 800;
+    }
+
+    /* 话题 top3 */
+    .yr-topic-list { display: flex; flex-direction: column; gap: 10px; }
+    .yr-topic-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+    }
+    .yr-topic-rank {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #6366f1, #ec4899);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .yr-topic-name { flex: 1; font-size: 14px; color: #fff; }
+    .yr-topic-count { font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+
+    /* 记忆 top */
+    .yr-memory-list { display: flex; flex-direction: column; gap: 10px; }
+    .yr-memory-item {
+      padding: 12px 14px;
+      background: rgba(99, 102, 241, 0.12);
+      border-left: 3px solid #c4b5fd;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e9d5ff;
+    }
+    .yr-memory-item::before {
+      content: '💭 ';
+      opacity: 0.7;
+    }
+
+    /* 里程碑时间线 */
+    .yr-timeline {
+      position: relative;
+      padding-left: 28px;
+    }
+    .yr-timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, #c471ed, transparent);
+    }
+    .yr-timeline-item {
+      position: relative;
+      padding-bottom: 16px;
+    }
+    .yr-timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -24px;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      background: #ec4899;
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(236, 72, 153, 0.6);
+    }
+    .yr-timeline-date {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 4px;
+    }
+    .yr-timeline-text {
+      font-size: 14px;
+      color: #fff;
+    }
+
+    /* 底部 CTA */
+    .yr-cta {
+      position: sticky;
+      bottom: 0;
+      padding: 14px 20px;
+      background: linear-gradient(to top, #0f172a 70%, transparent);
+      display: flex;
+      gap: 10px;
+    }
+    .yr-cta button {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .yr-cta button:hover { transform: translateY(-1px); }
+    .yr-share-btn {
+      background: linear-gradient(135deg, #ec4899, #c471ed);
+      color: #fff;
+    }
+    .yr-download-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .yr-skeleton {
+      background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0.05) 25%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.05) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 8px;
+      height: 60px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .yr-toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(34, 197, 94, 0.92);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 3000;
+    }
+    .yr-toast[hidden] { display: none; }
+
+    @media (max-width: 600px) {
+      .yr-hero-days { font-size: 56px; }
+    }
+  </style>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+</head>
+<body>
+  <div class="yr-page page-transition">
+    <header class="yr-header">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <h1 id="pageTitle">我和 TA 的故事</h1>
+    </header>
+
+    <div class="yr-body">
+      <!-- Hero: N 天 -->
+      <div class="yr-hero">
+        <div class="yr-hero-avatar" id="heroAvatar">💫</div>
+        <div class="yr-hero-days" id="heroDays">--</div>
+        <div class="yr-hero-label" id="heroLabel">天，我们走过</div>
+        <div class="yr-hero-sub" id="heroSub">加载中...</div>
+      </div>
+
+      <!-- 数字概览 -->
+      <div class="yr-stats">
+        <div class="yr-stat-card">
+          <div class="yr-stat-number" id="statMessages">-</div>
+          <div class="yr-stat-label">条消息</div>
+        </div>
+        <div class="yr-stat-card">
+          <div class="yr-stat-number" id="statConversations">-</div>
+          <div class="yr-stat-label">次对话</div>
+        </div>
+        <div class="yr-stat-card">
+          <div class="yr-stat-number" id="statMemories">-</div>
+          <div class="yr-stat-label">段记忆</div>
+        </div>
+        <div class="yr-stat-card">
+          <div class="yr-stat-number" id="statWords">-</div>
+          <div class="yr-stat-label">万字倾诉</div>
+        </div>
+      </div>
+
+      <!-- 好感度曲线 -->
+      <div class="yr-section">
+        <h2>💖 好感度成长</h2>
+        <canvas class="yr-affinity-curve" id="affinityCurve" width="680" height="140"></canvas>
+        <div class="yr-affinity-current">
+          <span>当前好感度</span>
+          <span><strong id="affinityNow">0</strong> / 100</span>
+        </div>
+      </div>
+
+      <!-- 最常聊的话题 -->
+      <div class="yr-section">
+        <h2>💬 最常聊的话题</h2>
+        <div class="yr-topic-list" id="topicList">
+          <div class="yr-skeleton"></div>
+          <div class="yr-skeleton" style="height:50px;"></div>
+        </div>
+      </div>
+
+      <!-- TA 最记得你的事 -->
+      <div class="yr-section">
+        <h2>🧠 TA 最记得你的事</h2>
+        <div class="yr-memory-list" id="memoryList">
+          <div class="yr-skeleton"></div>
+          <div class="yr-skeleton" style="height:50px;"></div>
+        </div>
+      </div>
+
+      <!-- 纪念时刻 -->
+      <div class="yr-section">
+        <h2>⏳ 这一路的纪念</h2>
+        <div class="yr-timeline" id="timeline">
+          <div class="yr-skeleton" style="height:80px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="yr-cta">
+      <button class="yr-download-btn" onclick="downloadCard()">💾 下载图片</button>
+      <button class="yr-share-btn" onclick="goToShareCard()">💝 对话分享卡</button>
+    </div>
+  </div>
+
+  <div id="toast" class="yr-toast" hidden></div>
+
+  <!-- 隐藏的 canvas 用于生成分享图 -->
+  <canvas id="shareCanvas" width="540" height="960" style="display:none;"></canvas>
+
+  <script>
+    if (!MindPalAuth.isLoggedIn()) {
+      window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const dhId = parseInt(urlParams.get('id'));
+    if (!dhId) { alert('缺少数字人 ID'); history.back(); }
+
+    const PERSONALITY_AVATAR = {
+      gentle: '🌸', energetic: '⚡', wise: '🦉', humorous: '😄', caring: '💝', creative: '🎨',
+      romantic_ceo: '🤵', romantic_senior: '🎓', romantic_childhood: '🌻',
+      romantic_bad_boy: '🎸', romantic_doctor: '🩺', romantic_elder: '☀️',
+    };
+
+    let dhData = null;
+    let messages = [];
+    let memories = [];
+    let affinityHistory = [];
+    let stats = null;
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.hidden = false;
+      setTimeout(() => { t.hidden = true; }, 2500);
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function daysBetween(start, end) {
+      return Math.max(1, Math.ceil((end - start) / (24 * 3600 * 1000)));
+    }
+
+    // ==================== 加载数据 ====================
+
+    async function loadDH() {
+      const resp = await MindPalAPI.digitalHumans.get(dhId);
+      if (resp.code === 0) {
+        dhData = resp.data;
+      }
+    }
+
+    async function loadHistory() {
+      try {
+        const resp = await MindPalAPI.digitalHumans.getHistory(dhId, 200);
+        if (resp.code === 0 && resp.data && resp.data.messages) {
+          messages = resp.data.messages;
+        }
+      } catch (_) {
+        const cached = localStorage.getItem(`mindpal_messages_${dhId}`);
+        if (cached) messages = JSON.parse(cached);
+      }
+    }
+
+    async function loadMemories() {
+      try {
+        const resp = await MindPalAPI.memories.list(dhId, { limit: 50 });
+        if (resp.code === 0 && resp.data && resp.data.items) {
+          memories = resp.data.items;
+        }
+      } catch (_) { /* 失败就空数组 */ }
+    }
+
+    function loadAffinityHistory() {
+      try {
+        const raw = localStorage.getItem(`mindpal_affinity_history_${dhId}`);
+        if (raw) affinityHistory = JSON.parse(raw);
+      } catch (_) {}
+    }
+
+    // ==================== 分析 ====================
+
+    function computeStats() {
+      const name = dhData?.name || 'TA';
+      const avatar = PERSONALITY_AVATAR[dhData?.personality] || '🤖';
+      const createdAt = dhData?.created_at ? new Date(dhData.created_at).getTime() : Date.now();
+      const days = daysBetween(createdAt, Date.now());
+
+      // 消息 / 对话数
+      const totalMessages = dhData?.total_messages || messages.length || 0;
+      const totalConversations = dhData?.total_conversations || 0;
+
+      // 字数
+      const totalChars = messages.reduce((sum, m) => sum + (m.content || '').length, 0);
+      const wanWords = (totalChars / 10000).toFixed(1);
+
+      return {
+        name, avatar, days,
+        totalMessages, totalConversations,
+        totalChars, wanWords,
+        totalMemories: memories.length,
+      };
+    }
+
+    // 简单中文话题提取：抽用户消息里的 2-4 字高频词组
+    function computeTopTopics() {
+      const userMsgs = messages.filter(m => m.role === 'user').map(m => m.content || '');
+      const allText = userMsgs.join(' ');
+      if (!allText) return [];
+
+      // 停用词 (最短的常用词)
+      const STOP_WORDS = new Set([
+        '的', '了', '是', '我', '你', '他', '她', '它', '们', '和', '跟', '在', '有', '就',
+        '不', '要', '吧', '吗', '呢', '啊', '呀', '喔', '哦', '什么', '这个', '那个',
+        '可以', '没有', '怎么', '这样', '那样', '自己', '然后', '但是', '因为', '所以',
+        '今天', '昨天', '明天', '现在', '一直', '一下', '一下子',
+      ]);
+
+      // 抽取 2-3 字中文词
+      const wordCount = new Map();
+      const CHAR = /[一-龥]/;
+      for (let len = 2; len <= 3; len++) {
+        for (let i = 0; i <= allText.length - len; i++) {
+          const word = allText.slice(i, i + len);
+          if (!word.split('').every(c => CHAR.test(c))) continue;
+          if (STOP_WORDS.has(word)) continue;
+          // 去掉纯重复（如"好好"）
+          if (word.length === 2 && word[0] === word[1]) continue;
+          wordCount.set(word, (wordCount.get(word) || 0) + 1);
+        }
+      }
+
+      const entries = [...wordCount.entries()]
+        .filter(([w, c]) => c >= 2)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20);
+
+      // 合并被包含关系（"工作压力" 和 "工作" 只留更长的）
+      const filtered = [];
+      for (const [w, c] of entries) {
+        const contained = filtered.some(([w2]) => w2.includes(w) && w2 !== w);
+        if (!contained) filtered.push([w, c]);
+      }
+      return filtered.slice(0, 5);
+    }
+
+    function computeMilestones() {
+      if (!dhData) return [];
+      const list = [];
+      const created = new Date(dhData.created_at || Date.now());
+      list.push({
+        date: created.toLocaleDateString('zh-CN'),
+        text: `和 ${dhData.name} 初次相遇`,
+      });
+
+      const days = daysBetween(created.getTime(), Date.now());
+
+      // 对话里程碑
+      if (days >= 7) {
+        const d = new Date(created.getTime() + 7 * 86400000);
+        list.push({ date: d.toLocaleDateString('zh-CN'), text: '💝 相识一周' });
+      }
+      if (days >= 30) {
+        const d = new Date(created.getTime() + 30 * 86400000);
+        list.push({ date: d.toLocaleDateString('zh-CN'), text: '🌙 相伴一个月' });
+      }
+      if (days >= 100) {
+        const d = new Date(created.getTime() + 100 * 86400000);
+        list.push({ date: d.toLocaleDateString('zh-CN'), text: '💕 相识 100 天' });
+      }
+
+      // 好感度里程碑
+      const milestones = [25, 50, 75, 100];
+      for (const m of milestones) {
+        const hit = affinityHistory.find(h => h.v >= m);
+        if (hit) {
+          list.push({
+            date: new Date(hit.t).toLocaleDateString('zh-CN'),
+            text: `💖 好感度达到 ${m}%`,
+          });
+        }
+      }
+
+      // 对话日最后一天
+      if (dhData.last_conversation_at) {
+        const last = new Date(dhData.last_conversation_at);
+        list.push({
+          date: last.toLocaleDateString('zh-CN'),
+          text: '最近一次对话',
+        });
+      }
+
+      // 按日期排序
+      list.sort((a, b) => new Date(a.date) - new Date(b.date));
+      return list.slice(0, 8);
+    }
+
+    // ==================== 渲染 ====================
+
+    function render() {
+      stats = computeStats();
+
+      document.getElementById('pageTitle').textContent = `我和 ${stats.name} 的故事`;
+      document.getElementById('heroAvatar').textContent = stats.avatar;
+      document.getElementById('heroDays').textContent = stats.days;
+      document.getElementById('heroSub').textContent = `和 ${stats.name} 相伴的每一天`;
+
+      document.getElementById('statMessages').textContent = stats.totalMessages.toLocaleString();
+      document.getElementById('statConversations').textContent = stats.totalConversations.toLocaleString();
+      document.getElementById('statMemories').textContent = stats.totalMemories.toLocaleString();
+      document.getElementById('statWords').textContent = stats.wanWords;
+
+      // 话题
+      const topics = computeTopTopics();
+      const topicList = document.getElementById('topicList');
+      if (topics.length === 0) {
+        topicList.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:13px;padding:10px;">还需要更多对话才能统计出话题哦</div>';
+      } else {
+        topicList.innerHTML = topics.map(([word, count], i) => `
+          <div class="yr-topic-item">
+            <span class="yr-topic-rank">${i + 1}</span>
+            <span class="yr-topic-name">${escapeHtml(word)}</span>
+            <span class="yr-topic-count">提到 ${count} 次</span>
+          </div>
+        `).join('');
+      }
+
+      // 记忆
+      const memoryList = document.getElementById('memoryList');
+      if (memories.length === 0) {
+        memoryList.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:13px;padding:10px;">TA 还在努力记住你，下次聊得更深入些吧</div>';
+      } else {
+        const topMemories = memories
+          .sort((a, b) => (b.importance || 0) - (a.importance || 0))
+          .slice(0, 5);
+        memoryList.innerHTML = topMemories.map(m => `
+          <div class="yr-memory-item">${escapeHtml(m.summary || m.user_message || '...')}</div>
+        `).join('');
+      }
+
+      // 时间线
+      const timeline = document.getElementById('timeline');
+      const milestones = computeMilestones();
+      if (milestones.length === 0) {
+        timeline.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:13px;">暂无可展示的里程碑</div>';
+      } else {
+        timeline.innerHTML = milestones.map(m => `
+          <div class="yr-timeline-item">
+            <div class="yr-timeline-date">${m.date}</div>
+            <div class="yr-timeline-text">${escapeHtml(m.text)}</div>
+          </div>
+        `).join('');
+      }
+
+      // 好感度曲线
+      drawAffinityCurve();
+      const currentAff = parseInt(localStorage.getItem(`mindpal_affinity_${dhId}`) || '0', 10);
+      document.getElementById('affinityNow').textContent = currentAff;
+    }
+
+    function drawAffinityCurve() {
+      const canvas = document.getElementById('affinityCurve');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // 网格
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = (H / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      if (!affinityHistory.length) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.font = '13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('多聊几次就有成长曲线啦～', W / 2, H / 2);
+        return;
+      }
+
+      // 曲线
+      const t0 = affinityHistory[0].t;
+      const tN = affinityHistory[affinityHistory.length - 1].t;
+      const tRange = Math.max(1, tN - t0);
+
+      // 填充渐变
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, 'rgba(236, 72, 153, 0.6)');
+      grad.addColorStop(1, 'rgba(236, 72, 153, 0.05)');
+      ctx.fillStyle = grad;
+
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      affinityHistory.forEach((pt, i) => {
+        const x = affinityHistory.length === 1 ? W / 2 : ((pt.t - t0) / tRange) * W;
+        const y = H - (pt.v / 100) * H;
+        if (i === 0) ctx.lineTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      ctx.fill();
+
+      // 描边
+      ctx.strokeStyle = '#ec4899';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      affinityHistory.forEach((pt, i) => {
+        const x = affinityHistory.length === 1 ? W / 2 : ((pt.t - t0) / tRange) * W;
+        const y = H - (pt.v / 100) * H;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    // ==================== 生成并下载分享图 ====================
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function drawShareCard() {
+      const canvas = document.getElementById('shareCanvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+
+      // 背景渐变
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#1e1b4b');
+      bg.addColorStop(0.5, '#6d28d9');
+      bg.addColorStop(1, '#ec4899');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Hero 区
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff';
+      ctx.font = '80px sans-serif';
+      ctx.fillText(stats.avatar, W / 2, 150);
+
+      ctx.font = 'bold 140px sans-serif';
+      ctx.fillText(stats.days, W / 2, 300);
+
+      ctx.font = '28px sans-serif';
+      ctx.globalAlpha = 0.9;
+      ctx.fillText('天，我和 ' + stats.name + ' 相伴', W / 2, 350);
+      ctx.globalAlpha = 1;
+
+      // 数字概览（2x2）
+      const statData = [
+        { v: stats.totalMessages.toLocaleString(), l: '条消息' },
+        { v: stats.totalConversations.toLocaleString(), l: '次对话' },
+        { v: stats.totalMemories.toLocaleString(), l: '段记忆' },
+        { v: stats.wanWords, l: '万字倾诉' },
+      ];
+      const sw = (W - 80) / 2;
+      const sh = 120;
+      statData.forEach((s, i) => {
+        const sx = 40 + (i % 2) * (sw + 20);
+        const sy = 430 + Math.floor(i / 2) * (sh + 20);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        roundRect(ctx, sx, sy, sw, sh, 16);
+        ctx.fill();
+        ctx.fillStyle = '#ec4899';
+        ctx.font = 'bold 42px sans-serif';
+        ctx.fillText(s.v, sx + sw / 2, sy + 56);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = '18px sans-serif';
+        ctx.fillText(s.l, sx + sw / 2, sy + 90);
+      });
+
+      // 品牌 + 二维码位
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText('MindPal · 你的数字灵魂伴侣', W / 2, H - 80);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.font = '16px sans-serif';
+      ctx.fillText('扫码下载 · 找到属于你的 TA', W / 2, H - 48);
+    }
+
+    function downloadCard() {
+      drawShareCard();
+      const canvas = document.getElementById('shareCanvas');
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.download = `mindpal_${stats.name}_${stats.days}天.png`;
+      a.href = url;
+      a.click();
+      showToast('年度回顾已下载');
+      if (typeof MindPalAnalytics !== 'undefined' && MindPalAnalytics.track) {
+        MindPalAnalytics.track('yearly_review_download', { dh_id: dhId, days: stats.days });
+      }
+    }
+
+    function goToShareCard() {
+      window.location.href = `share-card.html?id=${dhId}`;
+    }
+
+    // ==================== 初始化 ====================
+
+    (async function init() {
+      loadAffinityHistory();
+      await Promise.all([loadDH(), loadHistory(), loadMemories()]);
+      render();
+
+      if (typeof MindPalAnalytics !== 'undefined' && MindPalAnalytics.track) {
+        MindPalAnalytics.track('yearly_review_view', { dh_id: dhId });
+      }
+    })();
+  </script>
+</body>
+</html>
