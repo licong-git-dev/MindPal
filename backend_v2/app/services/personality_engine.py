@@ -40,6 +40,7 @@ class PersonalityEngine:
             "avatar": "🌸",
             "sample_line": "今天过得怎么样？如果累了，我听你说。",
             "opening_message": "你来啦～今天过得怎么样？",
+            "opening_followup": "今天最想被听见的一件事，是什么？",
             "base_traits": {
                 "liveliness": 40,
                 "humor": 30,
@@ -60,6 +61,7 @@ class PersonalityEngine:
             "avatar": "⚡",
             "sample_line": "嘿！今天想做点什么有趣的事？",
             "opening_message": "嘿嘿你来啦！今天有没有什么想分享的？",
+            "opening_followup": "今天最让你想笑出声的瞬间是什么？",
             "base_traits": {
                 "liveliness": 90,
                 "humor": 70,
@@ -80,6 +82,7 @@ class PersonalityEngine:
             "avatar": "🦉",
             "sample_line": "这个问题有意思，让我们从另一个角度看看。",
             "opening_message": "来了。今天有什么想深入聊聊的话题吗？",
+            "opening_followup": "最近脑子里盘旋最久的一个问题是什么？",
             "base_traits": {
                 "liveliness": 30,
                 "humor": 40,
@@ -100,6 +103,7 @@ class PersonalityEngine:
             "avatar": "😄",
             "sample_line": "今天给你讲个冷笑话，听完别打我。",
             "opening_message": "来啦？先听个段子？（假装清嗓子）",
+            "opening_followup": "或者你今天有什么糟心事，让我给它包装成段子？",
             "base_traits": {
                 "liveliness": 70,
                 "humor": 95,
@@ -120,6 +124,7 @@ class PersonalityEngine:
             "avatar": "💝",
             "sample_line": "你昨天说的那件事后来怎么样了？",
             "opening_message": "等你好久啦。今天吃饭了吗？",
+            "opening_followup": "今天有没有哪件小事，让你觉得「还好」？",
             "base_traits": {
                 "liveliness": 50,
                 "humor": 40,
@@ -140,6 +145,7 @@ class PersonalityEngine:
             "avatar": "🎨",
             "sample_line": "试试从另一个时空想想这件事？",
             "opening_message": "（眼睛一亮）你终于来了！我刚在想一个奇怪的问题……",
+            "opening_followup": "你说，如果今晚要开个夜聊主题，你想聊什么？",
             "base_traits": {
                 "liveliness": 70,
                 "humor": 60,
@@ -168,6 +174,7 @@ class PersonalityEngine:
             "avatar": "🤵",
             "sample_line": "开会时我看了眼手机，你发的那条，我看见了。",
             "opening_message": "嗯？刚开完会，看到你的消息了。今天累吗？",
+            "opening_followup": "你今天的心情，让我猜，还是你说？",
             "base_traits": {
                 "liveliness": 30,
                 "humor": 40,
@@ -201,6 +208,7 @@ class PersonalityEngine:
             "avatar": "🎓",
             "sample_line": "...你今天吃午饭了吗。别又光喝咖啡。",
             "opening_message": "...嗯。来了。",
+            "opening_followup": "...今天好好吃饭了吗。",
             "base_traits": {
                 "liveliness": 20,
                 "humor": 30,
@@ -233,6 +241,7 @@ class PersonalityEngine:
             "avatar": "🌻",
             "sample_line": "今天回家我经过你家楼下，阳台的猫又在晒太阳。",
             "opening_message": "你回来啦？我刚经过你家楼下，阳台的猫在晒太阳呢。",
+            "opening_followup": "对了，你今天有没有想我？哪怕一秒都行～",
             "base_traits": {
                 "liveliness": 65,
                 "humor": 55,
@@ -265,6 +274,7 @@ class PersonalityEngine:
             "avatar": "🎸",
             "sample_line": "哎？你又在加班？等下我去接你，顺便给你带杯你爱喝的。",
             "opening_message": "哎？你来啦？今天想听我弹什么歌？",
+            "opening_followup": "或者，你今天最想干嘛？我陪你。",
             "base_traits": {
                 "liveliness": 80,
                 "humor": 85,
@@ -297,6 +307,7 @@ class PersonalityEngine:
             "avatar": "🩺",
             "sample_line": "最近睡眠怎么样？我下班顺路给你带点东西。",
             "opening_message": "嗯，来了。最近睡眠怎么样？",
+            "opening_followup": "顺便交代一下，今天身体哪里不舒服？老实说。",
             "base_traits": {
                 "liveliness": 40,
                 "humor": 50,
@@ -329,6 +340,7 @@ class PersonalityEngine:
             "avatar": "☀️",
             "sample_line": "累了就过来吧，不用解释什么。",
             "opening_message": "来了？坐下歇会儿。今天怎么样？",
+            "opening_followup": "你今天累不累？想要被听一会儿吗？",
             "base_traits": {
                 "liveliness": 50,
                 "humor": 45,
@@ -499,6 +511,7 @@ class PersonalityEngine:
                 "avatar": template.get("avatar", "🤖"),
                 "sample_line": template.get("sample_line", ""),
                 "opening_message": template.get("opening_message", ""),
+                "opening_followup": template.get("opening_followup", ""),
                 "base_traits": template["base_traits"]
             }
         return {
@@ -509,6 +522,7 @@ class PersonalityEngine:
             "avatar": "🤖",
             "sample_line": "",
             "opening_message": "",
+            "opening_followup": "",
             "base_traits": {}
         }
 
@@ -529,6 +543,7 @@ class PersonalityEngine:
                 "avatar": value.get("avatar", "🤖"),
                 "sample_line": value.get("sample_line", ""),
                 "opening_message": value.get("opening_message", ""),
+                "opening_followup": value.get("opening_followup", ""),
                 "base_traits": value["base_traits"]
             }
             for key, value in self.PERSONALITY_TEMPLATES.items()

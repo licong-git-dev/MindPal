@@ -210,6 +210,111 @@
       flex-shrink: 0;
     }
 
+    /* V4 · A1 首聊破冰任务卡 */
+    .ice-cards {
+      padding: 8px 16px 0;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      animation: ice-fade-in 0.4s ease-out;
+    }
+    .ice-card {
+      flex: 1 1 calc(33% - 8px);
+      min-width: 130px;
+      padding: 10px 14px;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: var(--color-text-primary);
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.4;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+    }
+    .ice-card:hover {
+      background: rgba(99, 102, 241, 0.18);
+      transform: translateY(-1px);
+    }
+    .ice-card .ice-emoji { display: block; font-size: 18px; margin-bottom: 4px; }
+    @keyframes ice-fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* V4 · A3 第 5 条消息小庆祝 */
+    .milestone-toast {
+      position: fixed;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-12px);
+      background: linear-gradient(135deg, #7c3aed, #ec4899);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 18px rgba(124, 58, 237, 0.45);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 200;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .milestone-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .nickname-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 250;
+      animation: ice-fade-in 0.25s ease-out;
+    }
+    .nickname-modal {
+      background: var(--color-bg-card);
+      border: 1px solid rgba(148,163,184,0.2);
+      border-radius: 18px;
+      padding: 22px 24px;
+      width: min(360px, 90vw);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .nickname-modal h3 { margin: 0 0 6px; font-size: 16px; color: var(--color-text-primary); }
+    .nickname-modal p { margin: 0 0 14px; font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+    .nickname-modal input {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(15,23,42,0.6);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      color: var(--color-text-primary);
+      font-size: 14px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .nickname-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .nickname-modal-actions button {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+    }
+    .nickname-skip {
+      background: rgba(255,255,255,0.06);
+      color: var(--color-text-secondary);
+    }
+    .nickname-confirm {
+      background: linear-gradient(135deg, #7c3aed, #ec4899);
+      color: #fff;
+      font-weight: 600;
+    }
+
     .input-wrapper {
       display: flex;
       gap: var(--spacing-md);
@@ -646,6 +751,9 @@
         <!-- 消息将动态添加 -->
       </div>
 
+      <!-- V4 · A1 首聊破冰任务卡（仅首聊未发消息时显示） -->
+      <div id="iceCards" class="ice-cards" style="display:none;"></div>
+
       <!-- 输入区域 -->
       <div class="input-container">
         <div class="input-wrapper">
@@ -719,6 +827,9 @@
         document.getElementById('dhAvatarLarge').textContent = avatarIcon;
         document.title = `与${currentDH.name}对话 - MindPal`;
 
+        // V4 · A3 应用已保存的专属昵称（如果有）
+        applySavedNickname();
+
         // 加载历史消息
         await loadMessages();
 
@@ -754,6 +865,7 @@
       if (messages.length === 0) {
         // V4 · 优先使用预设的 opening_message（让 TA 主动开口而不是通用欢迎语）
         let openingText = null;
+        let openingFollowup = null;
         try {
           const personalityKey = currentDH.personality;
           if (personalityKey && typeof MindPalAPI.digitalHumans.getPersonalitiesGrouped === 'function') {
@@ -762,6 +874,7 @@
               const all = Object.values(resp.data.categories).flat();
               const hit = all.find(p => p.key === personalityKey);
               if (hit && hit.opening_message) openingText = hit.opening_message;
+              if (hit && hit.opening_followup) openingFollowup = hit.opening_followup;
             }
           }
         } catch (_) { /* API 失败也无所谓，走兜底 */ }
@@ -774,6 +887,20 @@
         };
         messages.push(welcomeMsg);
         renderMessages();
+
+        // V4 · A2 半秒后追加一条开放性反问，让用户永远不面对空白输入框
+        if (openingFollowup) {
+          setTimeout(() => {
+            const followupMsg = {
+              role: 'assistant',
+              content: openingFollowup,
+              timestamp: new Date().toISOString(),
+              isOpeningFollowup: true,
+            };
+            messages.push(followupMsg);
+            renderMessages();
+          }, 600);
+        }
       }
 
       // V4 · 初始化好感度进度条
@@ -785,6 +912,88 @@
       } catch (e) {
         console.warn('主动消息推送失败（不影响对话）:', e);
       }
+
+      // V4 · A1 首聊破冰任务卡（仅首次进入且没发过消息时）
+      maybeRenderIceCards();
+    }
+
+    // V4 · A1 破冰任务卡（按人格挑 3 张）
+    const ICE_CARDS_BY_PERSONALITY = {
+      gentle:    [
+        { e: '🌧', t: '今天有点累' },
+        { e: '🤫', t: '想跟你说一个秘密' },
+        { e: '🌙', t: '晚安，约定明天再来' },
+      ],
+      energetic: [
+        { e: '🎉', t: '猜猜我今天做了什么！' },
+        { e: '⚡',  t: '推荐我一件让人开心的事' },
+        { e: '🤝', t: '我们击个掌吧' },
+      ],
+      wise:      [
+        { e: '🤔', t: '问你一个最近想不通的事' },
+        { e: '📚', t: '推荐一本你最近想看的书' },
+        { e: '🪞', t: '你怎么看「孤独」？' },
+      ],
+      humorous:  [
+        { e: '🤡', t: '讲个冷笑话给我听' },
+        { e: '😏', t: '今天我适合做什么蠢事' },
+        { e: '🎤', t: '玩个谐音梗接龙吗' },
+      ],
+      caring:    [
+        { e: '🍱', t: '我今天还没吃饭' },
+        { e: '😔', t: '今天有点不开心' },
+        { e: '💌', t: '你最想对我说的一句话是？' },
+      ],
+      creative:  [
+        { e: '🎨', t: '一起编一个故事开头' },
+        { e: '🌌', t: '如果可以变身一晚上，你想成为什么' },
+        { e: '🪐', t: '我们去想一个新世界' },
+      ],
+    };
+    const ICE_CARDS_FALLBACK = [
+      { e: '👋', t: '我们来聊聊吧' },
+      { e: '🍵', t: '今天过得怎么样？' },
+      { e: '✨', t: '推荐一件让我开心的事' },
+    ];
+
+    function maybeRenderIceCards() {
+      const wrap = document.getElementById('iceCards');
+      if (!wrap) return;
+      // 已经有用户消息或被关掉过 → 不显示
+      const hasUserMsg = messages.some(m => m.role === 'user');
+      const dismissedKey = `mindpal_ice_dismissed_${dhId}`;
+      if (hasUserMsg || localStorage.getItem(dismissedKey) === '1') {
+        wrap.style.display = 'none';
+        wrap.innerHTML = '';
+        return;
+      }
+      const personality = currentDH && currentDH.personality;
+      const cards = ICE_CARDS_BY_PERSONALITY[personality] || ICE_CARDS_FALLBACK;
+      wrap.innerHTML = cards.map((c, i) =>
+        `<button class="ice-card" data-idx="${i}" type="button">
+           <span class="ice-emoji">${c.e}</span>${escapeIceText(c.t)}
+         </button>`
+      ).join('');
+      wrap.style.display = 'flex';
+      wrap.querySelectorAll('.ice-card').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.getAttribute('data-idx'));
+          const text = (cards[idx] && cards[idx].t) || '';
+          const input = document.getElementById('messageInput');
+          input.value = text;
+          input.focus();
+          adjustTextareaHeight();
+          document.getElementById('sendBtn').disabled = false;
+          // 用户选了一张就标记 dismissed，避免下次再展示
+          localStorage.setItem(dismissedKey, '1');
+          // 自动发送（让首条消息即刻产生）
+          sendMessage();
+          wrap.style.display = 'none';
+        });
+      });
+    }
+    function escapeIceText(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
     // V4 · 把当前数字人的未读主动消息以系统提示的方式推到对话流
@@ -878,6 +1087,82 @@
       const messageEl = createMessageElement(message);
       document.getElementById('messagesContainer').appendChild(messageEl);
       scrollToBottom();
+
+      // V4 · A3 用户第 5 条消息触发"已经聊了 5 句啦"小庆祝 + 起昵称邀请
+      if (role === 'user') {
+        const userCount = messages.filter(m => m.role === 'user').length;
+        if (userCount === 5) {
+          maybeCelebrateFifth();
+        }
+      }
+    }
+
+    // V4 · A3 第 5 条庆祝 toast + 起昵称弹窗（只触发一次）
+    function maybeCelebrateFifth() {
+      const flagKey = `mindpal_milestone_5_${dhId}`;
+      if (localStorage.getItem(flagKey) === '1') return;
+      localStorage.setItem(flagKey, '1');
+
+      // 1) toast
+      let toast = document.getElementById('milestoneToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'milestoneToast';
+        toast.className = 'milestone-toast';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = '🎉 你和 ' + (currentDH ? currentDH.name : 'TA') + ' 已经聊了 5 句啦';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2400);
+
+      // 2) 1.6s 后弹"起昵称"邀请（已经设过昵称就跳过）
+      const nicknameKey = `mindpal_dh_nickname_${dhId}`;
+      if (localStorage.getItem(nicknameKey)) return;
+      setTimeout(() => showNicknameModal(), 1600);
+    }
+
+    function showNicknameModal() {
+      const overlay = document.createElement('div');
+      overlay.className = 'nickname-modal-overlay';
+      const dhName = currentDH ? currentDH.name : 'TA';
+      overlay.innerHTML = `
+        <div class="nickname-modal" role="dialog" aria-label="给数字人起一个专属昵称">
+          <h3>给 TA 起一个只属于你的昵称吧 ✨</h3>
+          <p>这是 ${escapeIceText(dhName)} 在你心里的小名。只你能看到，可以随时改。</p>
+          <input id="nicknameInput" type="text" maxlength="20" placeholder="比如：小笨蛋 / 哥哥 / 小太阳…" />
+          <div class="nickname-modal-actions">
+            <button class="nickname-skip" type="button" id="nickSkip">先不取</button>
+            <button class="nickname-confirm" type="button" id="nickConfirm">就叫这个</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const input = overlay.querySelector('#nicknameInput');
+      input.focus();
+      const close = () => overlay.remove();
+      overlay.querySelector('#nickSkip').addEventListener('click', close);
+      overlay.querySelector('#nickConfirm').addEventListener('click', () => {
+        const v = input.value.trim();
+        if (!v) { close(); return; }
+        localStorage.setItem(`mindpal_dh_nickname_${dhId}`, v);
+        // 把昵称写到顶栏，让仪式感落地
+        const nameEl = document.getElementById('dhNameHeader');
+        if (nameEl) nameEl.textContent = v;
+        close();
+      });
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') overlay.querySelector('#nickConfirm').click();
+        else if (e.key === 'Escape') close();
+      });
+    }
+
+    // V4 · 进入页面时回放已设的昵称
+    function applySavedNickname() {
+      const nicknameKey = `mindpal_dh_nickname_${dhId}`;
+      const v = localStorage.getItem(nicknameKey);
+      if (v) {
+        const nameEl = document.getElementById('dhNameHeader');
+        if (nameEl) nameEl.textContent = v;
+      }
     }
 
     // 本地保存消息
@@ -892,6 +1177,11 @@
       const content = input.value.trim();
 
       if (!content) return;
+
+      // V4 · A1 用户开始发消息后立即收起破冰卡片
+      const iceWrap = document.getElementById('iceCards');
+      if (iceWrap) { iceWrap.style.display = 'none'; iceWrap.innerHTML = ''; }
+      try { localStorage.setItem(`mindpal_ice_dismissed_${dhId}`, '1'); } catch (_) {}
 
       // 添加用户消息到UI
       addMessageToUI('user', content);
