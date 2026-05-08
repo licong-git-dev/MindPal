@@ -3,6 +3,21 @@
 > 本文档对应 commits `ef833a2`（ROI-7）+ `fadd40e`（C2 CP）。
 > 上线前请把这份手册过一遍，按 step 一项一项做。
 
+## 0. 部署目标（最重要！）
+
+| 项 | 值 |
+|---|---|
+| 部署服务器 | 阿里云 ECS · `aliyun-lc-server-43` · `8.136.34.43` |
+| 项目根路径（建议） | `/opt/mindpal/` |
+| backend 工作目录 | `/opt/mindpal/backend_v2/` |
+| Python 虚拟环境（如不用 docker） | `/opt/mindpal/venv/` |
+| 日志目录 | `/var/log/mindpal/` |
+
+**首次上线请先看 [FIRST_DEPLOY_CHECKLIST.md](FIRST_DEPLOY_CHECKLIST.md)** — 含 SSH 配置、`.env` 初始化、防火墙等只做一次的事。
+**之后日常部署用** `deploy/aliyun-bootstrap.sh`（位于 repo 根）从你的本地一键执行。
+
+⚠ 凭证：服务器 root 密码、阿里云账号密码 **不会**写入任何文件。一切自动化都靠 SSH 公钥免密。
+
 ## 一、新增数据表（必做 · 不做就 500）
 
 ### 表清单
