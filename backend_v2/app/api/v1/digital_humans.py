@@ -143,48 +143,76 @@ async def create_digital_human(
 @router.get("", response_model=APIResponse)
 async def list_digital_humans(
     page: int = Query(1, ge=1),
-    size: int = Query(20, ge=1, le=50),
+    size: int = Query(50, ge=1, le=100),
+    include_cp: bool = Query(
+        False,
+        description="是否一并返回当前用户作为 CP partner 共养的数字人（C2 双人共养）",
+    ),
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
-    """获取用户的数字人列表"""
-    # 查询总数
-    stmt = select(DigitalHuman).where(
-        and_(
-            DigitalHuman.user_id == user_id,
-            DigitalHuman.is_active == True
+    """获取用户的数字人列表（默认只返回自己拥有的；include_cp=true 时也带上 CP 共养）。
+
+    返回 data 是数字人对象的扁平数组（不再是 {total,items} 包装）。
+    每个数字人对象额外字段:
+      - is_cp_partner_view (bool): True 表示此条目是用户作为伙伴 (user_b) 拿到的；
+                                   False 表示用户是主人 (user_a)
+      - cp_owner_id  (int|None): 仅 is_cp_partner_view=True 时给出
+    """
+    own_stmt = (
+        select(DigitalHuman)
+        .where(
+            and_(
+                DigitalHuman.user_id == user_id,
+                DigitalHuman.is_active == True,
+            )
         )
+        .order_by(desc(DigitalHuman.is_default), desc(DigitalHuman.last_conversation_at))
     )
-    result = await db.execute(stmt)
-    all_dhs = result.scalars().all()
-    total = len(all_dhs)
+    res = await db.execute(own_stmt)
+    own_dhs = list(res.scalars().all())
 
-    # 分页查询
-    stmt = select(DigitalHuman).where(
-        and_(
-            DigitalHuman.user_id == user_id,
-            DigitalHuman.is_active == True
+    items: list[dict] = []
+    for dh in own_dhs:
+        d = dh.to_dict()
+        d["personality_display"] = dh.get_personality_display()
+        d["is_cp_partner_view"] = False
+        items.append(d)
+
+    if include_cp:
+        # 拿当前用户作为 user_b（被邀请方）参与的 active bond
+        from app.models.cp import CpBond
+
+        bond_stmt = select(CpBond).where(
+            CpBond.status == "active",
+            CpBond.user_b == user_id,
         )
-    ).order_by(desc(DigitalHuman.is_default), desc(DigitalHuman.last_conversation_at)).offset((page - 1) * size).limit(size)
+        bond_res = await db.execute(bond_stmt)
+        bonds = list(bond_res.scalars().all())
 
-    result = await db.execute(stmt)
-    dhs = result.scalars().all()
+        if bonds:
+            partner_dh_ids = [b.dh_id for b in bonds]
+            owner_by_dh = {b.dh_id: b.user_a for b in bonds}
+            partner_stmt = select(DigitalHuman).where(
+                DigitalHuman.id.in_(partner_dh_ids),
+                DigitalHuman.is_active == True,
+            )
+            partner_res = await db.execute(partner_stmt)
+            for dh in partner_res.scalars().all():
+                d = dh.to_dict()
+                d["personality_display"] = dh.get_personality_display()
+                d["is_cp_partner_view"] = True
+                d["cp_owner_id"] = owner_by_dh.get(dh.id)
+                items.append(d)
 
-    items = []
-    for dh in dhs:
-        item = dh.to_dict()
-        item["personality_display"] = dh.get_personality_display()
-        items.append(item)
+    # 简单分页：在最终拼好的 list 上切片
+    start = (page - 1) * size
+    paged = items[start : start + size]
 
     return APIResponse(
         code=0,
         message="success",
-        data={
-            "total": total,
-            "page": page,
-            "size": size,
-            "items": items
-        }
+        data=paged,
     )
 
 

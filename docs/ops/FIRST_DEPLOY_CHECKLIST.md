@@ -87,39 +87,33 @@ mkdir -p /opt/mindpal/backend_v2
 nano /opt/mindpal/backend_v2/.env
 ```
 
-最小必须字段（参考 `app/config.py`）：
+**最简方式** — 用仓库里的模板：
 
 ```bash
-# 基础
-ENVIRONMENT=production
-JWT_SECRET_KEY=<openssl rand -hex 32 出来的随机串>
-SECRET_KEY=<同上>
-
-# DB / 缓存（compose 内部网络，按 docker-compose.yml 默认）
-DATABASE_URL=postgresql+asyncpg://mindpal:mindpal123@postgres:5432/mindpal
-REDIS_URL=redis://redis:6379/0
-QDRANT_HOST=qdrant
-QDRANT_PORT=6333
-
-# LLM（阿里云通义千问）
-DASHSCOPE_API_KEY=<去阿里云 DashScope 控制台拿>
-QIANWEN_MODEL=qwen-turbo
-
-# 可选：Anthropic / OpenAI 备份通道
-ANTHROPIC_API_KEY=
-OPENAI_API_KEY=
-
-# 支付（阿里云直付）
-ALIPAY_APP_ID=
-ALIPAY_PRIVATE_KEY_PATH=/opt/mindpal/secrets/alipay_app_private_key.pem
-ALIPAY_PUBLIC_KEY_PATH=/opt/mindpal/secrets/alipay_public_key.pem
-
-# 内容审核
-ALICLOUD_GREEN_AK=
-ALICLOUD_GREEN_SK=
+cp /opt/mindpal/backend_v2/.env.example /opt/mindpal/backend_v2/.env
+nano /opt/mindpal/backend_v2/.env
 ```
 
-⚠ `JWT_SECRET_KEY` 一旦切换就所有用户被强制重新登录。生产不要再随便重新生成。
+[backend_v2/.env.example](../../backend_v2/.env.example) 已经覆盖所有字段。生产改 4 个就够：
+
+| 字段 | 怎么改 |
+|---|---|
+| `DEBUG` | 设 `false`（生产硬性要求） |
+| `SECRET_KEY` | `openssl rand -hex 32` 随机生成。**保管好** — 一旦换所有用户被踢下线 |
+| `DATABASE_URL` | docker compose 默认即 `postgresql+asyncpg://mindpal:mindpal123@postgres:5432/mindpal`，**生产必须**改 postgres 密码 |
+| `ALLOWED_ORIGINS` | 生产域名 JSON 数组：`["https://your-domain.com"]`（不能用 `*`） |
+| `DASHSCOPE_API_KEY` | 去 [阿里云 DashScope 控制台](https://dashscope.console.aliyun.com/) 拿真 key |
+
+**必填**字段（缺会启动失败）：上表 4 个。
+
+**进阶**字段（按需启用）：
+- `ANTHROPIC_API_KEY` — Claude 备份通道
+- `ALIPAY_APP_ID/PRIVATE_KEY/PUBLIC_KEY/ALIPAY_PUBLIC_KEY` — 支付要用
+- `ALIYUN_ACCESS_KEY_ID/SECRET` + `MODERATION_ALIYUN_ENABLED=true` — 阿里云绿网内容审核
+- `CRISIS_WEBHOOK_URL` — 危机告警推送（slack/dingtalk/feishu/wechat_work）
+
+⚠ `SECRET_KEY` 一旦切换所有用户被强制重新登录。生产不要再随便重新生成。
+⚠ config.py `validate_security_defaults` 会在 DEBUG=false 且 SECRET_KEY 是默认值时**直接拒绝启动**。
 
 ---
 

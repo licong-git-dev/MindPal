@@ -143,6 +143,21 @@
       margin-bottom: var(--spacing-2xl);
     }
 
+    /* V4 · E4 CP 共养徽标 */
+    .dh-cp-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 3px 9px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ec4899, #c471ed);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(236, 72, 153, 0.35);
+      z-index: 2;
+    }
+
     /* V4 · ROI-7 主动消息红点徽标 */
     .dh-card { position: relative; }
     .dh-proactive-badge {
@@ -421,8 +436,8 @@
       const dhCount = document.getElementById('dhCount');
 
       try {
-        // 调用API获取数字人列表
-        const result = await MindPalAPI.digitalHumans.list();
+        // 调用API获取数字人列表（一并拉 CP 共养的 DH）
+        const result = await MindPalAPI.digitalHumans.list({ includeCp: true });
 
         // 处理APIResponse格式 {code, message, data}
         if (result.code !== 0) {
@@ -626,14 +641,25 @@
         window.location.href = `memory.html?id=${dh.id}`;
       });
 
+      // V4 · E4 CP 共养（user_b）的 DH 不能再发起新邀请、不能删
+      const isCpPartnerView = !!dh.is_cp_partner_view;
+
       const cpButton = document.createElement('button');
       cpButton.className = 'btn btn-small btn-secondary';
       cpButton.textContent = '💕 邀请共养';
-      cpButton.title = '邀请你的好友/恋人共同陪伴 TA';
-      cpButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        onInviteCP(dh.id, dh.name);
-      });
+      cpButton.title = isCpPartnerView
+        ? '只有 TA 的主人才能再邀请其他伙伴'
+        : '邀请你的好友/恋人共同陪伴 TA';
+      if (isCpPartnerView) {
+        cpButton.disabled = true;
+        cpButton.style.opacity = '0.4';
+        cpButton.style.cursor = 'not-allowed';
+      } else {
+        cpButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          onInviteCP(dh.id, dh.name);
+        });
+      }
 
       const momentsButton = document.createElement('button');
       momentsButton.className = 'btn btn-small btn-secondary';
@@ -646,10 +672,17 @@
 
       const deleteButton = document.createElement('button');
       deleteButton.className = 'btn btn-small btn-secondary';
-      deleteButton.textContent = '删除';
+      deleteButton.textContent = isCpPartnerView ? '🔓 退出 CP' : '删除';
+      deleteButton.title = isCpPartnerView
+        ? '退出 CP 关系（不会删 TA 的本体，主人那边保留所有数据）'
+        : '永久删除 TA 与所有对话记录';
       deleteButton.addEventListener('click', (event) => {
         event.stopPropagation();
-        deleteDH(dh.id);
+        if (isCpPartnerView) {
+          leaveCPForDH(dh.id, dh.name);
+        } else {
+          deleteDH(dh.id);
+        }
       });
 
       actions.appendChild(chatButton);
@@ -657,6 +690,15 @@
       actions.appendChild(momentsButton);
       actions.appendChild(cpButton);
       actions.appendChild(deleteButton);
+
+      // V4 · E4 CP 共养徽章
+      if (isCpPartnerView) {
+        const cpBadge = document.createElement('span');
+        cpBadge.className = 'dh-cp-badge';
+        cpBadge.textContent = '💕 CP 共养';
+        cpBadge.title = 'TA 的主人邀请你共同陪伴';
+        card.appendChild(cpBadge);
+      }
 
       card.appendChild(avatar);
       card.appendChild(info);
@@ -735,6 +777,27 @@
     function buildAcceptLink(code) {
       const base = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}`;
       return `${base}dh-list.html?cp=${encodeURIComponent(code)}`;
+    }
+
+    // V4 · E4 退出 CP（user_b 视角；找到对应 bond 然后 DELETE）
+    async function leaveCPForDH(dhId, dhName) {
+      if (!confirm(`确认退出和「${dhName}」的 CP 关系吗？\n\n这只解除你的访问权，不会删 TA 本体；主人那边保留所有对话和记忆。`)) return;
+      try {
+        const list = await MindPalAPI.cp.listBonds();
+        if (list.code !== 0) throw new Error(list.message || '查询 bond 失败');
+        const bonds = (list.data && list.data.items) || [];
+        const my = bonds.find(b => b.dh_id === dhId && !b.is_owner);
+        if (!my) {
+          alert('找不到对应的 CP 关系（可能已经退出过了）。刷新一下试试。');
+          return;
+        }
+        const r = await MindPalAPI.cp.leaveBond(my.bond_id);
+        if (r.code !== 0) throw new Error(r.message || '退出失败');
+        alert(`已退出和「${dhName}」的 CP 关系。`);
+        loadDigitalHumans();
+      } catch (err) {
+        alert('退出失败：' + (err.message || err));
+      }
     }
 
     // V4 · C2 输入邀请码加入对方的 TA

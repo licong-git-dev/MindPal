@@ -247,9 +247,16 @@ const MindPalAPI = {
   digitalHumans: {
     /**
      * 获取数字人列表
+     * @param {Object} opts - { includeCp: bool }  传 true 时一并返回 CP 共养的 DH
      */
-    async list() {
-      return await MindPalAPI.request(MindPalConfig.API.DIGITAL_HUMANS.LIST);
+    async list(opts = {}) {
+      const params = new URLSearchParams();
+      if (opts.includeCp) params.set('include_cp', 'true');
+      const qs = params.toString();
+      const url = qs
+        ? `${MindPalConfig.API.DIGITAL_HUMANS.LIST}?${qs}`
+        : MindPalConfig.API.DIGITAL_HUMANS.LIST;
+      return await MindPalAPI.request(url);
     },
 
     /**
