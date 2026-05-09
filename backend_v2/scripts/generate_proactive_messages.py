@@ -107,8 +107,29 @@ async def _generate_with_retry(
       - GeneratedProactive 对象 → 成功，调用方写库
       - None → generator 主动判断"无需生成"（idle 不足 / 已有未读 等），不算失败
       - 抛异常 → MAX_ATTEMPTS 次都失败，调用方负责吃掉并写死信
+
+    G4-3 调度优先级：先尝试 anniversary（同步、纯计算）→ 命中即返回；
+                     否则进 idle 主路径（异步，会查 DHMessage 最近时间）。
+                     anniversary 成功后仍要由 generate() 内部的 _has_pending 去重，
+                     这里独立调 _has_pending 来保证 anniversary 路径也不重复。
     """
     generator = get_proactive_generator()
+
+    # 优先 anniversary（同步、便宜，命中天数才有结果）
+    try:
+        anniv = generator.generate_anniversary(dh)
+        if anniv is not None:
+            # 复用 generator 的去重判断，避免与已有未读消息重复
+            if not await generator._has_pending(session, dh.user_id, dh.id, anniv.expires_at):
+                return anniv
+            # 已有未读 → 跳过 anniversary，继续走 idle（也会被 generate 内的去重再过一次）
+    except Exception as exc:  # noqa: BLE001
+        # anniversary 出问题不要影响 idle 主路径，记日志继续
+        print(
+            f"[ANNIVERSARY-SKIP] dh={dh.id}: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+
     last_exc: Optional[BaseException] = None
     for attempt in range(MAX_ATTEMPTS):
         try:

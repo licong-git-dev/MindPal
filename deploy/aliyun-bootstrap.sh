@@ -116,8 +116,8 @@ echo "[init] running migrations..."
 docker compose run --rm backend python -m scripts.create_dh_tables || true
 docker compose run --rm backend python -m scripts.create_proactive_cp_tables
 docker compose run --rm backend python -m scripts.seed_products || true
-echo "[init] starting backend + proactive_worker..."
-docker compose up -d backend proactive_worker
+echo "[init] starting backend + proactive_worker + frontend..."
+docker compose up -d backend proactive_worker frontend
 docker compose ps
 EOF
   ok "init done. 验证："
@@ -136,9 +136,9 @@ git checkout $GIT_BRANCH
 git pull --ff-only origin $GIT_BRANCH
 cd backend_v2
 echo "[update] rebuilding..."
-docker compose build backend proactive_worker
+docker compose build backend proactive_worker frontend
 echo "[update] restarting..."
-docker compose up -d backend proactive_worker
+docker compose up -d backend proactive_worker frontend
 docker compose ps
 EOF
   ok "update done"
@@ -205,9 +205,9 @@ fails()  { color '31' "  ✗ $*"; FAIL=$((FAIL+1)); RC=1; }
 
 cd /opt/mindpal/backend_v2 2>/dev/null || { color 31 "✗ /opt/mindpal/backend_v2 不存在 — 先跑 init"; exit 2; }
 
-color 36 "[1/5] docker compose 进程"
+color 36 "[1/6] docker compose 进程"
 ps_out=$(docker compose ps --format json 2>/dev/null || true)
-for svc in postgres redis qdrant backend proactive_worker; do
+for svc in postgres redis qdrant backend proactive_worker frontend; do
   if echo "$ps_out" | grep -q "\"Service\":\"$svc\".*\"State\":\"running\""; then
     oks "$svc up"
   else
@@ -215,23 +215,30 @@ for svc in postgres redis qdrant backend proactive_worker; do
   fi
 done
 
-color 36 "[2/5] backend /docs (OpenAPI 自动文档)"
+color 36 "[2/6] backend /docs (OpenAPI 自动文档)"
 http=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/docs || echo 000)
 if [ "$http" = "200" ]; then oks "/docs → 200"; else fails "/docs → $http (期望 200)"; fi
 
-color 36 "[3/5] backend /openapi.json 含新路由"
+color 36 "[3/6] backend /openapi.json 含新路由"
 oa=$(curl -s http://localhost:8000/openapi.json || true)
 for path in '/api/v1/proactive/mine' '/api/v1/cp/bonds' '/api/v1/account/quota'; do
   if echo "$oa" | grep -q "\"$path\""; then oks "$path 已注册"; else fails "$path 缺失"; fi
 done
 
-color 36 "[4/5] 数据库表"
+color 36 "[4/6] frontend (nginx) 出 200"
+http=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:80/ || echo 000)
+if [ "$http" = "200" ] || [ "$http" = "304" ]; then oks "/ → $http"; else fails "/ → $http (期望 200/304)"; fi
+http=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:80/api/v1/auth/health 2>/dev/null || echo 000)
+# 反代是否打通：404 也算 OK（端点不存在是后端的事，nginx 至少接到了）
+if [ "$http" != "000" ]; then oks "nginx → backend 反代联通 (got $http)"; else fails "nginx → backend 不通"; fi
+
+color 36 "[5/6] 数据库表"
 tables=$(docker compose exec -T postgres psql -U mindpal -d mindpal -tA -c "SELECT tablename FROM pg_tables WHERE schemaname='public';" 2>/dev/null || echo "")
 for tbl in users digital_humans dh_messages proactive_messages cp_invitations cp_bonds; do
   if echo "$tables" | grep -qx "$tbl"; then oks "table $tbl"; else fails "table $tbl 缺失"; fi
 done
 
-color 36 "[5/5] proactive_worker 心跳"
+color 36 "[6/6] proactive_worker 心跳"
 last=$(docker compose logs --tail 50 proactive_worker 2>/dev/null | tail -10 | grep -E 'sleeping|done|FAIL' | tail -1 || true)
 if [ -n "$last" ]; then oks "proactive_worker 最近一行: ${last:0:80}"; else fails "proactive_worker 无近期日志"; fi
 

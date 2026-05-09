@@ -174,6 +174,25 @@ http://8.136.34.43:8000/docs    # OpenAPI 自动文档
 
 ---
 
+## P6.5 · GitHub Actions 自动部署（推荐 · 一次配完终身受益）
+
+让 push 到 master 自动调 `bootstrap.sh update` + smoketest。
+
+仓库 → **Settings → Secrets and variables → Actions** → `New repository secret`：
+
+| Secret 名 | 值 | 怎么拿 |
+|---|---|---|
+| `SSH_PRIVATE_KEY` | 你**本地**那对部署 key 的私钥（**完整**，含 `-----BEGIN... -----END...`）| `cat ~/.ssh/id_ed25519` |
+| `SSH_HOST_KEY` | 生产机的 SSH host key 指纹（防 MITM） | `ssh-keyscan -H 8.136.34.43` 整段粘贴 |
+| `PROD_HOST` | `root@8.136.34.43` | 直接填（不是密码） |
+
+加完之后：
+- push 到 master 触发自动 update + smoketest
+- Actions 页 → Run workflow 可以手动跑 `update / migrate / smoketest`
+- 工作流 [.github/workflows/deploy.yml](../../.github/workflows/deploy.yml) **不会**跑 `init`（首次部署必须人工）
+
+⚠ `SSH_PRIVATE_KEY` 一旦泄露，攻击者就拿到了你的生产 root。强烈建议给 CI 单独建一对 ed25519 key（不要复用你本地登录用的 key），并在 ECS 上用 `~/.ssh/authorized_keys` 加 `from="<github-runner-cidr>"` 限制 IP（可选）。
+
 ## P7 · 域名 + HTTPS（可选，**算法备案**前要）
 
 - [ ] 阿里云控制台买域名，做 ICP 备案
