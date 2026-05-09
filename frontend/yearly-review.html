@@ -766,13 +766,53 @@
         ctx.fillText(s.l, sx + sw / 2, sy + 90);
       });
 
-      // 品牌 + 二维码位
+      // 品牌 + 二维码（V4 · F1）
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 24px sans-serif';
-      ctx.fillText('MindPal · 你的数字灵魂伴侣', W / 2, H - 80);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.font = '16px sans-serif';
-      ctx.fillText('扫码下载 · 找到属于你的 TA', W / 2, H - 48);
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('MindPal · 你的数字灵魂伴侣', 40, H - 86);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('扫描右下二维码，看' + (stats.name || 'TA') + '和我的故事', 40, H - 60);
+      ctx.fillText('找到属于你的 TA →', 40, H - 36);
+
+      // QR 右下角（150x150 + 8 padding 白底）
+      const qrSize = 150;
+      const qrX = W - qrSize - 36;
+      const qrY = H - qrSize - 30;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16);
+      if (yrQrReady && yrQrImage) {
+        try { ctx.drawImage(yrQrImage, qrX, qrY, qrSize, qrSize); } catch (_) {}
+      } else {
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('（二维码加载中…）', qrX + qrSize / 2, qrY + qrSize / 2);
+      }
+      ctx.textAlign = 'center';
+    }
+
+    // V4 · F1 yearly-review 邀请链接 + QR 预加载
+    let yrQrImage = null;
+    let yrQrReady = false;
+    function preloadYrQr() {
+      const user = MindPalAuth.getCurrentUser() || {};
+      const inviterId = user.id || user.user_id || user.phone || '';
+      const inviterName = user.username || user.nickname || '朋友';
+      const params = new URLSearchParams();
+      if (inviterId) params.set('u', String(inviterId));
+      params.set('i', inviterName);
+      params.set('n', stats.name || 'TA');
+      if (stats.days) params.set('d', String(stats.days));
+      const base = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}share-landing.html`;
+      const url = `${base}?${params.toString()}`;
+      const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(url)}&size=300x300&margin=0&qzone=1&color=000000&bgcolor=ffffff`;
+      yrQrImage = new Image();
+      yrQrImage.crossOrigin = 'anonymous';
+      yrQrImage.onload = () => { yrQrReady = true; drawShareCard(); };
+      yrQrImage.onerror = () => { yrQrReady = false; };
+      yrQrImage.src = qrSrc;
     }
 
     function downloadCard() {
@@ -799,6 +839,7 @@
       loadAffinityHistory();
       await Promise.all([loadDH(), loadHistory(), loadMemories()]);
       render();
+      preloadYrQr();    // V4 · F1 触发 QR 预加载（加载完会自动 redraw）
 
       if (typeof MindPalAnalytics !== 'undefined' && MindPalAnalytics.track) {
         MindPalAnalytics.track('yearly_review_view', { dh_id: dhId });

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CP 关系管理 - MindPal</title>
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    body { margin: 0; background: var(--color-bg-dark); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; }
+    .cp-page { min-height: 100vh; max-width: 760px; margin: 0 auto; padding: 24px 20px 40px; }
+    .cp-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .cp-back { background: rgba(255,255,255,0.08); border: none; width: 36px; height: 36px; border-radius: 50%; color: #fff; cursor: pointer; font-size: 18px; }
+    .cp-title { flex: 1; font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #ec4899, #c471ed); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    .cp-intro {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      margin-bottom: 18px;
+      line-height: 1.6;
+      padding: 14px 16px;
+      background: rgba(99, 102, 241, 0.08);
+      border-left: 3px solid var(--color-primary-1);
+      border-radius: 8px;
+    }
+
+    .cp-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      margin: 24px 0 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .cp-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .cp-card-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .cp-card-main { flex: 1; min-width: 0; }
+    .cp-card-name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .cp-card-role {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 8px;
+      margin-right: 6px;
+      font-weight: 600;
+    }
+    .cp-card-role.owner { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .cp-card-role.partner { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
+    .cp-card-meta {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+    .cp-card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .cp-btn {
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+      font-weight: 500;
+    }
+    .cp-btn-primary {
+      background: var(--color-primary-1);
+      color: #fff;
+    }
+    .cp-btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--color-text-primary);
+    }
+    .cp-btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .cp-btn:hover { transform: translateY(-1px); }
+
+    .cp-empty {
+      padding: 50px 20px;
+      text-align: center;
+      color: var(--color-text-secondary);
+    }
+    .cp-empty-icon { font-size: 48px; opacity: 0.5; margin-bottom: 12px; }
+    .cp-empty-tip { font-size: 14px; line-height: 1.6; max-width: 420px; margin: 0 auto; }
+
+    .cp-skel {
+      height: 90px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100%);
+      background-size: 200% 100%;
+      animation: cp-shimmer 1.4s infinite;
+      border-radius: 14px;
+      margin-bottom: 12px;
+    }
+    @keyframes cp-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    .cp-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(34,197,94,0.92);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 200;
+    }
+    .cp-toast.show { opacity: 1; }
+    .cp-toast.error { background: rgba(239,68,68,0.92); }
+  </style>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/analytics.js"></script>
+</head>
+<body>
+  <div class="cp-page">
+    <div class="cp-header">
+      <button class="cp-back" onclick="history.back()">←</button>
+      <div class="cp-title">CP 关系管理 💕</div>
+    </div>
+
+    <div class="cp-intro">
+      CP（双人共养）= 你和伙伴共同陪伴一个数字人。两边都能看到所有对话和记忆。<br>
+      在数字人卡片点「💕 邀请共养」生成 6 位邀请码 → 伙伴在「💕 加入 CP」输入码 → 自动建立。
+    </div>
+
+    <div class="cp-section-title">作为主人 · 我邀请了的</div>
+    <div id="ownerList">
+      <div class="cp-skel"></div>
+    </div>
+
+    <div class="cp-section-title">作为伙伴 · 我加入的</div>
+    <div id="partnerList">
+      <div class="cp-skel"></div>
+    </div>
+
+    <div id="toast" class="cp-toast"></div>
+  </div>
+
+  <script>
+    if (!MindPalAuth.isLoggedIn()) {
+      window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+    }
+
+    function showToast(msg, isErr) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'cp-toast' + (isErr ? ' error' : '') + ' show';
+      setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '';
+      const days = Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+      const md = `${d.getMonth()+1}.${String(d.getDate()).padStart(2,'0')}`;
+      return days === 0 ? '今天开始' : `${md} 起 · 第 ${days} 天`;
+    }
+
+    function renderCard(bond, isOwner) {
+      const card = document.createElement('div');
+      card.className = 'cp-card';
+      card.innerHTML = `
+        <div class="cp-card-avatar">💕</div>
+        <div class="cp-card-main">
+          <div class="cp-card-name">
+            <span class="cp-card-role ${isOwner ? 'owner' : 'partner'}">${isOwner ? '主人' : '伙伴'}</span>
+            ${escapeHtml(bond.dh_name || '数字人')}
+          </div>
+          <div class="cp-card-meta">
+            和 <b>${escapeHtml(bond.partner_name || '伙伴')}</b> 共养 · ${fmtDate(bond.started_at)}
+          </div>
+        </div>
+        <div class="cp-card-actions">
+          <button class="cp-btn cp-btn-primary" data-act="open">进入对话</button>
+          <button class="cp-btn cp-btn-danger" data-act="leave">${isOwner ? '解除关系' : '退出'}</button>
+        </div>
+      `;
+      card.querySelector('[data-act="open"]').addEventListener('click', () => {
+        window.location.href = `chat.html?id=${bond.dh_id}`;
+      });
+      card.querySelector('[data-act="leave"]').addEventListener('click', () => {
+        leaveBond(bond.bond_id, bond.dh_name, isOwner);
+      });
+      return card;
+    }
+
+    async function leaveBond(bondId, dhName, isOwner) {
+      const tip = isOwner
+        ? `解除和「${dhName}」上的所有 CP 关系吗？\n伙伴会失去访问权，但 TA 本体和数据都保留在你这边。`
+        : `退出「${dhName}」的 CP 关系吗？\n这只解除你的访问权，不删除 TA 本体。`;
+      if (!confirm(tip)) return;
+      try {
+        const r = await MindPalAPI.cp.leaveBond(bondId);
+        if (r.code !== 0) throw new Error(r.message || '退出失败');
+        showToast('已解除');
+        await load();
+      } catch (e) {
+        showToast('失败：' + (e.message || e), true);
+      }
+    }
+
+    async function load() {
+      const ownerWrap = document.getElementById('ownerList');
+      const partnerWrap = document.getElementById('partnerList');
+      ownerWrap.innerHTML = '<div class="cp-skel"></div>';
+      partnerWrap.innerHTML = '<div class="cp-skel"></div>';
+      try {
+        const r = await MindPalAPI.cp.listBonds();
+        if (r.code !== 0) throw new Error(r.message || '加载失败');
+        const items = (r.data && r.data.items) || [];
+        const owners = items.filter(b => b.is_owner);
+        const partners = items.filter(b => !b.is_owner);
+
+        ownerWrap.innerHTML = '';
+        if (owners.length === 0) {
+          ownerWrap.innerHTML = `
+            <div class="cp-empty">
+              <div class="cp-empty-icon">📭</div>
+              <div class="cp-empty-tip">还没邀请过任何伙伴。在「我的数字人」里点 <b>💕 邀请共养</b> 即可发出邀请码。</div>
+            </div>`;
+        } else {
+          owners.forEach(b => ownerWrap.appendChild(renderCard(b, true)));
+        }
+
+        partnerWrap.innerHTML = '';
+        if (partners.length === 0) {
+          partnerWrap.innerHTML = `
+            <div class="cp-empty">
+              <div class="cp-empty-icon">🌱</div>
+              <div class="cp-empty-tip">还没加入任何 CP 关系。如果伙伴给了你 6 位邀请码，回到「我的数字人」点 <b>💕 加入 CP</b> 输入即可。</div>
+            </div>`;
+        } else {
+          partners.forEach(b => partnerWrap.appendChild(renderCard(b, false)));
+        }
+      } catch (e) {
+        ownerWrap.innerHTML = '';
+        partnerWrap.innerHTML = '';
+        showToast('加载失败：' + (e.message || e), true);
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

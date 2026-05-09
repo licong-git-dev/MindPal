@@ -64,6 +64,7 @@ MindPal · 阿里云部署脚本
   init      首次部署（克隆 + 建表 + 启动）
   update    日常升级（pull + rebuild + restart）
   migrate   只跑 migration（建表脚本，幂等）
+  smoketest 上线后冒烟：curl 5 个关键端点 + 检查 worker 进程
   status    服务状态
   logs [proactive]   日志
   shell     直接 SSH 进生产机交互（你来执行）
@@ -187,12 +188,73 @@ cmd_shell() {
   ssh "$PROD_HOST"
 }
 
+# F4 · 上线后冒烟
+# 走 ssh 在生产机内 curl localhost:8000，避免被 nginx / 安全组干扰判断真实状态
+cmd_smoketest() {
+  check_ssh
+  info "running smoketest on $PROD_HOST..."
+  remote bash -se <<'EOF'
+set -uo pipefail   # 不要 -e: 单点失败不要中断整体冒烟，用打印总结
+RC=0
+PASS=0
+FAIL=0
+
+color() { printf '\033[%sm%s\033[0m\n' "$1" "$2"; }
+oks()    { color '32' "  ✓ $*"; PASS=$((PASS+1)); }
+fails()  { color '31' "  ✗ $*"; FAIL=$((FAIL+1)); RC=1; }
+
+cd /opt/mindpal/backend_v2 2>/dev/null || { color 31 "✗ /opt/mindpal/backend_v2 不存在 — 先跑 init"; exit 2; }
+
+color 36 "[1/5] docker compose 进程"
+ps_out=$(docker compose ps --format json 2>/dev/null || true)
+for svc in postgres redis qdrant backend proactive_worker; do
+  if echo "$ps_out" | grep -q "\"Service\":\"$svc\".*\"State\":\"running\""; then
+    oks "$svc up"
+  else
+    fails "$svc not running"
+  fi
+done
+
+color 36 "[2/5] backend /docs (OpenAPI 自动文档)"
+http=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/docs || echo 000)
+if [ "$http" = "200" ]; then oks "/docs → 200"; else fails "/docs → $http (期望 200)"; fi
+
+color 36 "[3/5] backend /openapi.json 含新路由"
+oa=$(curl -s http://localhost:8000/openapi.json || true)
+for path in '/api/v1/proactive/mine' '/api/v1/cp/bonds' '/api/v1/account/quota'; do
+  if echo "$oa" | grep -q "\"$path\""; then oks "$path 已注册"; else fails "$path 缺失"; fi
+done
+
+color 36 "[4/5] 数据库表"
+tables=$(docker compose exec -T postgres psql -U mindpal -d mindpal -tA -c "SELECT tablename FROM pg_tables WHERE schemaname='public';" 2>/dev/null || echo "")
+for tbl in users digital_humans dh_messages proactive_messages cp_invitations cp_bonds; do
+  if echo "$tables" | grep -qx "$tbl"; then oks "table $tbl"; else fails "table $tbl 缺失"; fi
+done
+
+color 36 "[5/5] proactive_worker 心跳"
+last=$(docker compose logs --tail 50 proactive_worker 2>/dev/null | tail -10 | grep -E 'sleeping|done|FAIL' | tail -1 || true)
+if [ -n "$last" ]; then oks "proactive_worker 最近一行: ${last:0:80}"; else fails "proactive_worker 无近期日志"; fi
+
+echo ""
+color 36 "==== 总结 ===="
+[ "$FAIL" -eq 0 ] && color 32 "✓ ALL PASS ($PASS checks)" || color 31 "✗ FAIL=$FAIL  PASS=$PASS"
+exit $RC
+EOF
+  rc=$?
+  if [ $rc -eq 0 ]; then
+    ok "smoketest passed"
+  else
+    die "smoketest failed (rc=$rc)"
+  fi
+}
+
 case "$CMD" in
-  init)     cmd_init ;;
-  update)   cmd_update ;;
-  migrate)  cmd_migrate ;;
-  status)   cmd_status ;;
-  logs)     cmd_logs "${2:-backend}" ;;
-  shell)    cmd_shell ;;
-  help|*)   cmd_help ;;
+  init)       cmd_init ;;
+  update)     cmd_update ;;
+  migrate)    cmd_migrate ;;
+  smoketest)  cmd_smoketest ;;
+  status)     cmd_status ;;
+  logs)       cmd_logs "${2:-backend}" ;;
+  shell)      cmd_shell ;;
+  help|*)     cmd_help ;;
 esac

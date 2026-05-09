@@ -498,15 +498,36 @@
         if (y > H - 180) break; // 空间留给底部
       }
 
-      // 底部品牌区
+      // 底部品牌区 + QR（V4 · F1）
       ctx.fillStyle = theme.footerColor;
       ctx.font = '18px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('MindPal · 你的数字灵魂伴侣', W / 2, H - 50);
-      ctx.font = '14px -apple-system, sans-serif';
-      ctx.globalAlpha = 0.5;
-      ctx.fillText('扫码下载 App · 找到专属于你的 TA', W / 2, H - 24);
+      ctx.textAlign = 'left';
+      ctx.fillText('MindPal · 你的数字灵魂伴侣', 32, H - 60);
+      ctx.font = '13px -apple-system, sans-serif';
+      ctx.globalAlpha = 0.55;
+      ctx.fillText('扫描右侧二维码', 32, H - 36);
+      ctx.fillText('看「' + dhInfo.name + '」和我的故事', 32, H - 16);
       ctx.globalAlpha = 1;
+
+      // QR 在右下角（120x120 框 + 8px padding）
+      const qrSize = 120;
+      const qrX = W - qrSize - 24;
+      const qrY = H - qrSize - 24;
+      // 白色底卡（保证 QR 在所有主题上都可识别）
+      ctx.fillStyle = '#ffffff';
+      roundRect(ctx, qrX - 6, qrY - 6, qrSize + 12, qrSize + 12, 10);
+      ctx.fill();
+      if (qrReady && qrImage) {
+        try {
+          ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+        } catch (_) { /* CORS taint 防御 */ }
+      } else {
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('（二维码加载中…）', qrX + qrSize / 2, qrY + qrSize / 2);
+      }
+      ctx.textAlign = 'center';
     }
 
     function roundRect(ctx, x, y, w, h, r) {
@@ -588,9 +609,41 @@
       }
     }
 
+    // V4 · F1 邀请链接 + QR 二维码（贴在分享卡右下角）
+    let inviteUrl = '';
+    let qrImage = null;
+    let qrReady = false;
+
+    function computeInviteUrl() {
+      const user = MindPalAuth.getCurrentUser() || {};
+      const inviterId = user.id || user.user_id || user.phone || '';
+      const inviterName = user.username || user.nickname || '朋友';
+      const params = new URLSearchParams();
+      if (inviterId) params.set('u', String(inviterId));
+      params.set('i', inviterName);
+      params.set('n', dhInfo.name || 'TA');
+      const base = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}share-landing.html`;
+      return `${base}?${params.toString()}`;
+    }
+
+    function preloadQr() {
+      try {
+        inviteUrl = computeInviteUrl();
+      } catch (_) { inviteUrl = ''; }
+      if (!inviteUrl) return;
+      // api.qrserver.com 公开 QR 服务，支持 CORS（anonymous）
+      const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(inviteUrl)}&size=180x180&margin=0&qzone=1&color=000000&bgcolor=ffffff`;
+      qrImage = new Image();
+      qrImage.crossOrigin = 'anonymous';
+      qrImage.onload = () => { qrReady = true; drawCanvas(); };
+      qrImage.onerror = () => { qrReady = false; /* 静默退化，画板照常出 */ };
+      qrImage.src = qrSrc;
+    }
+
     (async function init() {
       await loadDH();
       await loadMessages();
+      preloadQr();      // 触发预加载，加载完后会自动 redraw
       drawCanvas();
       updateCount();
     })();
